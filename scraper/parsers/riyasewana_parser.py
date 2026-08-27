@@ -34,7 +34,9 @@ class RiyasewanaParser:
         """Extracts currency value from strings like 'Rs. 8,500,000' or '8500000'."""
         if not val:
             return None
-        cleaned = re.sub(r"[^\d.]", "", str(val).replace(",", ""))
+        # Remove currency indicators like 'Rs.', 'Rs', 'LKR'
+        cleaned_str = re.sub(r"(?i)(rs\.?|lkr)", "", str(val))
+        cleaned = re.sub(r"[^\d.]", "", cleaned_str.replace(",", "")).strip(".")
         try:
             return float(cleaned) if cleaned else None
         except ValueError:

@@ -9,16 +9,16 @@ from pydantic import BaseModel, Field
 
 class ValuationRequest(BaseModel):
     category: str = Field(default="Cars", description="Vehicle Category (e.g. Cars, Vans, SUVs, Motorbikes, Three-Wheel, Lorries, Buses)")
-    make: str = Field(..., example="Toyota", description="Vehicle Manufacturer")
-    model: str = Field(..., example="Aqua", description="Vehicle Model")
-    yom: int = Field(..., ge=1970, le=2026, example=2018, description="Year of Manufacture")
-    mileage_km: int = Field(..., ge=0, example=65000, description="Mileage in kilometers")
-    fuel_type: str = Field(default="Petrol", example="Hybrid", description="Fuel Type")
-    transmission: str = Field(default="Automatic", example="Automatic", description="Transmission Type")
-    condition: str = Field(default="Used", example="Used", description="Condition (Brand New, Reconditioned, Used)")
-    engine_cc: Optional[int] = Field(default=1500, example=1500, description="Engine Capacity in cc")
-    district: Optional[str] = Field(default="Colombo", example="Colombo", description="Sri Lankan District")
-    seller_asking_price: Optional[float] = Field(default=None, example=8500000.0, description="Seller asking price in LKR")
+    make: str = Field(..., json_schema_extra={"example": "Toyota"}, description="Vehicle Manufacturer")
+    model: str = Field(..., json_schema_extra={"example": "Aqua"}, description="Vehicle Model")
+    yom: int = Field(..., ge=1970, le=2026, json_schema_extra={"example": 2018}, description="Year of Manufacture")
+    mileage_km: int = Field(..., ge=0, json_schema_extra={"example": 65000}, description="Mileage in kilometers")
+    fuel_type: str = Field(default="Petrol", json_schema_extra={"example": "Hybrid"}, description="Fuel Type")
+    transmission: str = Field(default="Automatic", json_schema_extra={"example": "Automatic"}, description="Transmission Type")
+    condition: str = Field(default="Used", json_schema_extra={"example": "Used"}, description="Condition (Brand New, Reconditioned, Used)")
+    engine_cc: Optional[int] = Field(default=1500, json_schema_extra={"example": 1500}, description="Engine Capacity in cc")
+    district: Optional[str] = Field(default="Colombo", json_schema_extra={"example": "Colombo"}, description="Sri Lankan District")
+    seller_asking_price: Optional[float] = Field(default=None, json_schema_extra={"example": 8500000.0}, description="Seller asking price in LKR")
     include_shap_explanation: bool = Field(default=True, description="Whether to compute SHAP factor contributions")
     include_negotiation_insights: bool = Field(default=True, description="Whether to include data-driven negotiation insights")
 
@@ -60,11 +60,11 @@ class ValuationResponse(BaseModel):
 # --- Comparable Vehicles Schemas ---
 
 class ComparableSearchRequest(BaseModel):
-    category: str = Field(default="Cars", example="Cars")
-    make: str = Field(..., example="Toyota")
-    model: str = Field(..., example="Aqua")
-    yom: int = Field(..., example=2018)
-    mileage_km: int = Field(..., example=65000)
+    category: str = Field(default="Cars", json_schema_extra={"example": "Cars"})
+    make: str = Field(..., json_schema_extra={"example": "Toyota"})
+    model: str = Field(..., json_schema_extra={"example": "Aqua"})
+    yom: int = Field(..., json_schema_extra={"example": 2018})
+    mileage_km: int = Field(..., json_schema_extra={"example": 65000})
     fuel_type: Optional[str] = Field(default="Hybrid")
     transmission: Optional[str] = Field(default="Automatic")
     district: Optional[str] = Field(default="Colombo")
