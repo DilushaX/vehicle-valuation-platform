@@ -1,1 +1,1 @@
-from database.connection import Base
+# Package marker for tests

@@ -1,3 +1,4 @@
+import json
 from datetime import datetime
 
 from sqlalchemy import select
@@ -24,6 +25,14 @@ class VehicleRepository:
 
         return self.db.scalar(statement)
 
+    def get_validation_issues(self, listing: Listing) -> list:
+        if not listing.validation_issues:
+            return []
+        try:
+            return json.loads(listing.validation_issues)
+        except (json.JSONDecodeError, TypeError):
+            return []
+
     def create_vehicle(self, data: dict) -> Vehicle:
 
         vehicle = Vehicle(
@@ -48,6 +57,18 @@ class VehicleRepository:
         data: dict,
     ) -> Listing:
 
+        validation_issues_val = data.get("validation_issues", [])
+        if isinstance(validation_issues_val, (list, dict)):
+            validation_issues_json = json.dumps(validation_issues_val)
+        elif validation_issues_val is None:
+            validation_issues_json = json.dumps([])
+        else:
+            try:
+                json.loads(validation_issues_val)
+                validation_issues_json = str(validation_issues_val)
+            except (ValueError, TypeError):
+                validation_issues_json = json.dumps([str(validation_issues_val)])
+
         listing = Listing(
             listing_id=data["listing_id"],
             vehicle_id=vehicle.id,
@@ -58,9 +79,7 @@ class VehicleRepository:
             district=data.get("district"),
             source=data.get("source", "riyasewana"),
             current_status="ACTIVE",
-            validation_issues=str(
-                data.get("validation_issues", [])
-            ),
+            validation_issues=validation_issues_json,
             ml_eligible=data.get("is_valid", False),
         )
 

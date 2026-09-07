@@ -1,3 +1,4 @@
+import json
 from datetime import datetime
 from decimal import Decimal
 
@@ -130,6 +131,14 @@ class Listing(Base):
         cascade="all, delete-orphan",
     )
 
+    def get_validation_issues(self) -> list:
+        if not self.validation_issues:
+            return []
+        try:
+            return json.loads(self.validation_issues)
+        except (json.JSONDecodeError, TypeError):
+            return []
+
     __table_args__ = (
         Index("idx_listing_status", "current_status"),
         Index("idx_listing_source", "source"),
@@ -229,6 +238,11 @@ class ScrapeRun(Base):
         default="RUNNING",
     )
 
+    observations: Mapped[list["ListingObservation"]] = relationship(
+        back_populates="scrape_run",
+        cascade="all, delete-orphan",
+    )
+
 
 class ListingObservation(Base):
     __tablename__ = "listing_observations"
@@ -264,6 +278,10 @@ class ListingObservation(Base):
     )
 
     listing: Mapped["Listing"] = relationship(
+        back_populates="observations"
+    )
+
+    scrape_run: Mapped["ScrapeRun"] = relationship(
         back_populates="observations"
     )
 
