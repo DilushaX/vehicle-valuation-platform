@@ -10,6 +10,7 @@ ENV/
 .env
 .pytest_cache/
 *.db
+data/*.db
 *.sqlite3
 .DS_Store
 .idea/
