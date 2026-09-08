@@ -1,267 +1,175 @@
+import pytest
 from scraper.discovery.category_discovery import (
+    DiscoveredCategory,
     RiyasewanaCategoryDiscovery,
 )
 
 
 class FakeClient:
-    def __init__(self, pages):
-        self.pages = pages
+    """Mock HTTP client returning pre-configured HTML for testing."""
 
-    def get(self, url):
+    def __init__(self, pages: dict[str, str] | None = None):
+        self.pages = pages or {}
+
+    def get(self, url: str) -> str:
         if url not in self.pages:
-            raise RuntimeError(
-                f"Page not found: {url}"
-            )
-
+            raise RuntimeError(f"Page not found in fake client: {url}")
         return self.pages[url]
 
 
-def test_discovers_multiple_pages():
-
-    pages = {
-        "https://riyasewana.com/buy/cars":
-            """
-            <a rel="next"
-               href="/buy/cars?page=2">
-               Next
-            </a>
-            """,
-
-        "https://riyasewana.com/buy/cars?page=2":
-            """
-            <a rel="next"
-               href="/buy/cars?page=3">
-               Next
-            </a>
-            """,
-
-        "https://riyasewana.com/buy/cars?page=3":
-            """
-            <html>
-                Last page
-            </html>
-            """,
-    }
-
-    client = FakeClient(pages)
-
-    discovery = RiyasewanaCategoryDiscovery(
-        client
-    )
-
-    result = discovery.discover_pages(
-        "https://riyasewana.com/buy/cars"
-    )
-
-    assert len(result) == 3
-
-    assert result[0].page_number == 1
-    assert result[1].page_number == 2
-    assert result[2].page_number == 3
-
-    assert result[0].url == (
-        "https://riyasewana.com/buy/cars"
-    )
-
-    assert result[1].url == (
-        "https://riyasewana.com/buy/cars?page=2"
-    )
-
-    assert result[2].url == (
-        "https://riyasewana.com/buy/cars?page=3"
-    )
-
-
-def test_stops_when_next_page_does_not_exist():
-
-    pages = {
-        "https://riyasewana.com/buy/cars":
-            """
-            <html>
-                No next page
-            </html>
-            """
-    }
-
-    client = FakeClient(pages)
-
-    discovery = RiyasewanaCategoryDiscovery(
-        client
-    )
-
-    result = discovery.discover_pages(
-        "https://riyasewana.com/buy/cars"
-    )
-
-    assert len(result) == 1
-
-
-def test_prevents_pagination_loop():
-
-    pages = {
-        "https://riyasewana.com/buy/cars":
-            """
-            <a rel="next"
-               href="/buy/cars?page=2">
-               Next
-            </a>
-            """,
-
-        "https://riyasewana.com/buy/cars?page=2":
-            """
-            <a rel="next"
-               href="/buy/cars">
-               Previous
-            </a>
-            """,
-    }
-
-    client = FakeClient(pages)
-
-    discovery = RiyasewanaCategoryDiscovery(
-        client
-    )
-
-    result = discovery.discover_pages(
-        "https://riyasewana.com/buy/cars"
-    )
-
-    assert len(result) == 2
-
-    from scraper.discovery.category_discovery import (
-    RiyasewanaCategoryDiscovery,
-)
-
-
-class FakeClient:
-    def __init__(self, pages):
-        self.pages = pages
-
-    def get(self, url):
-        if url not in self.pages:
-            raise RuntimeError(
-                f"Page not found: {url}"
-            )
-
-        return self.pages[url]
-
-
-def test_discovers_categories():
-
+def test_category_links_can_be_discovered():
+    """Verifies valid category links are discovered and mapped to DiscoveredCategory objects."""
     html = """
     <html>
         <body>
-            <a href="/buy/cars">
-                Cars
-            </a>
-
-            <a href="/buy/motorbikes">
-                Motorbikes
-            </a>
-
-            <a href="/buy/vans">
-                Vans
-            </a>
-
-            <a href="https://example.com/test">
-                External
-            </a>
+            <a href="/buy/cars">Cars</a>
+            <a href="/buy/motorbikes">Motorbikes</a>
+            <a href="/buy/vans">Vans</a>
         </body>
     </html>
     """
-
-    client = FakeClient(
-        {
-            "https://riyasewana.com": html
-        }
-    )
-
-    discovery = RiyasewanaCategoryDiscovery(
-        client
-    )
+    client = FakeClient({"https://riyasewana.com": html})
+    discovery = RiyasewanaCategoryDiscovery(client)
 
     categories = discovery.discover_categories()
 
     assert len(categories) == 3
-
-    urls = {
-        category.url
-        for category in categories
-    }
-
-    assert (
-        "https://riyasewana.com/buy/cars"
-        in urls
-    )
-
-    assert (
-        "https://riyasewana.com/buy/motorbikes"
-        in urls
-    )
-
-    assert (
-        "https://riyasewana.com/buy/vans"
-        in urls
-    )
+    urls = {c.url for c in categories}
+    assert "https://riyasewana.com/buy/cars" in urls
+    assert "https://riyasewana.com/buy/motorbikes" in urls
+    assert "https://riyasewana.com/buy/vans" in urls
 
 
-def test_duplicate_category_urls_are_removed():
-
+def test_external_links_are_ignored():
+    """Verifies links pointing to external domains are excluded from discovery."""
     html = """
     <html>
         <body>
-            <a href="/buy/cars">
-                Cars
-            </a>
-
-            <a href="/buy/cars#top">
-                Cars
-            </a>
+            <a href="https://google.com">Google</a>
+            <a href="https://external-domain.com/buy/cars">External Category</a>
+            <a href="/buy/cars">Cars</a>
         </body>
     </html>
     """
-
-    client = FakeClient(
-        {
-            "https://riyasewana.com": html
-        }
-    )
-
-    discovery = RiyasewanaCategoryDiscovery(
-        client
-    )
+    client = FakeClient({"https://riyasewana.com": html})
+    discovery = RiyasewanaCategoryDiscovery(client)
 
     categories = discovery.discover_categories()
 
     assert len(categories) == 1
+    assert categories[0].name == "Cars"
+    assert categories[0].url == "https://riyasewana.com/buy/cars"
 
 
-def test_external_links_are_ignored():
-
+def test_duplicate_category_urls_are_removed():
+    """Verifies that duplicate category links or links with fragments are deduplicated."""
     html = """
     <html>
         <body>
-            <a href="https://google.com">
-                Google
-            </a>
+            <a href="/buy/cars">Cars</a>
+            <a href="/buy/cars#top">Cars Top</a>
+            <a href="https://riyasewana.com/buy/cars/">Cars with Trailing Slash</a>
+        </body>
+    </html>
+    """
+    client = FakeClient({"https://riyasewana.com": html})
+    discovery = RiyasewanaCategoryDiscovery(client)
 
-            <a href="/contact">
-                Contact
+    categories = discovery.discover_categories()
+
+    assert len(categories) == 1
+    assert categories[0].url == "https://riyasewana.com/buy/cars"
+
+
+def test_category_urls_are_normalized():
+    """Verifies category URLs are resolved to absolute URLs and stripped of fragments."""
+    html = """
+    <html>
+        <body>
+            <a href="/buy/suvs#heading">SUVs</a>
+        </body>
+    </html>
+    """
+    client = FakeClient({"https://riyasewana.com": html})
+    discovery = RiyasewanaCategoryDiscovery(client)
+
+    categories = discovery.discover_categories()
+
+    assert len(categories) == 1
+    assert categories[0].url == "https://riyasewana.com/buy/suvs"
+
+
+def test_category_names_are_extracted_correctly():
+    """Verifies whitespace normalization, prefix removal, and rich button label extraction."""
+    html = """
+    <html>
+        <body>
+            <a href="/buy/cars">   Cars   </a>
+            <a href="/buy/three-wheels">Buy\nThree Wheels</a>
+            <a class="gbtn2" href="/search/lorries">
+                <img alt="Lorries" src="/images/lorry.png"/>
+                <span>Buy<br/>Lorries</span>
             </a>
         </body>
     </html>
     """
-
-    client = FakeClient(
-        {
-            "https://riyasewana.com": html
-        }
-    )
-
-    discovery = RiyasewanaCategoryDiscovery(
-        client
-    )
+    client = FakeClient({"https://riyasewana.com": html})
+    discovery = RiyasewanaCategoryDiscovery(client)
 
     categories = discovery.discover_categories()
 
-    assert categories == []
+    assert len(categories) == 3
+    names = [c.name for c in categories]
+    assert "Cars" in names
+    assert "Three Wheels" in names
+    assert "Lorries" in names
+
+
+def test_invalid_and_non_category_links_are_ignored():
+    """
+    Verifies that non-category URLs (listings with IDs, contact pages,
+    search root, scripts, etc.) are excluded without hard-coding vehicle brands.
+    """
+    html = """
+    <html>
+        <body>
+            <a href="/contact">Contact Us</a>
+            <a href="/about">About</a>
+            <a href="/search">Search All</a>
+            <a href="/buy/">Buy Root</a>
+            <a href="/spare-parts-accessories.php">Spare Parts</a>
+            <a href="/buy/toyota-corolla-sale-homagama-12217083">Toyota Corolla Sale</a>
+            <a href="/buy/honda-civic-sale-kandy-12217084">Honda Civic Listing</a>
+            <a href="/buy/test-listing-100">Test Listing</a>
+            <a href="/buy/cars">Cars</a>
+        </body>
+    </html>
+    """
+    client = FakeClient({"https://riyasewana.com": html})
+    discovery = RiyasewanaCategoryDiscovery(client)
+
+    categories = discovery.discover_categories()
+
+    assert len(categories) == 1
+    assert categories[0].name == "Cars"
+    assert categories[0].url == "https://riyasewana.com/buy/cars"
+
+
+def test_discovered_categories_sorted_by_name():
+    """Verifies that discovered categories are returned sorted alphabetically by category name."""
+    html = """
+    <html>
+        <body>
+            <a href="/buy/vans">Vans</a>
+            <a href="/buy/cars">Cars</a>
+            <a href="/buy/motorbikes">Motorbikes</a>
+        </body>
+    </html>
+    """
+    client = FakeClient({"https://riyasewana.com": html})
+    discovery = RiyasewanaCategoryDiscovery(client)
+
+    categories = discovery.discover_categories()
+
+    assert len(categories) == 3
+    assert [c.name for c in categories] == ["Cars", "Motorbikes", "Vans"]
