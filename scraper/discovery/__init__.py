@@ -3,11 +3,15 @@ from scraper.discovery.category_discovery import (
     DiscoveredPage,
     RiyasewanaCategoryDiscovery,
 )
-from scraper.discovery.listing_discovery import RiyasewanaListingDiscovery
+from scraper.discovery.listing_discovery import (
+    DiscoveredListing,
+    RiyasewanaListingDiscovery,
+)
 
 __all__ = [
     "DiscoveredCategory",
     "DiscoveredPage",
+    "DiscoveredListing",
     "RiyasewanaCategoryDiscovery",
     "RiyasewanaListingDiscovery",
 ]

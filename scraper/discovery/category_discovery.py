@@ -1,6 +1,7 @@
 import logging
 import re
 from dataclasses import dataclass
+from typing import Optional
 from urllib.parse import parse_qs, urljoin, urlparse
 
 from bs4 import BeautifulSoup
@@ -182,6 +183,8 @@ class RiyasewanaCategoryDiscovery:
     def discover_pages(
         self,
         category_url: str,
+        max_pages: Optional[int] = None,
+        request_delay: float = 0.0,
     ) -> list[DiscoveredPage]:
         """
         Discover all accessible pagination pages for a single category.
@@ -192,6 +195,9 @@ class RiyasewanaCategoryDiscovery:
         current_url = self._normalize_url(category_url)
 
         while current_url and current_url not in visited_urls:
+            if max_pages is not None and len(pages) >= max_pages:
+                break
+
             visited_urls.add(current_url)
 
             try:
@@ -211,6 +217,9 @@ class RiyasewanaCategoryDiscovery:
                 )
             )
 
+            if max_pages is not None and len(pages) >= max_pages:
+                break
+
             next_url = self._find_next_page(
                 html=html,
                 current_url=current_url,
@@ -222,6 +231,11 @@ class RiyasewanaCategoryDiscovery:
             next_url = self._normalize_url(next_url)
             if next_url in visited_urls:
                 break
+
+            if request_delay > 0:
+                import time
+
+                time.sleep(request_delay)
 
             current_url = next_url
 
