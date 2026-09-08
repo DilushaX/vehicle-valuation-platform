@@ -7,6 +7,8 @@ try:
 except ImportError:
     HAS_CURL_CFFI = False
 
+from config import settings
+
 logger = logging.getLogger(__name__)
 
 
@@ -18,7 +20,7 @@ class RiyasewanaClient:
     """
     BASE_URL = "https://riyasewana.com"
 
-    def __init__(self, timeout: float = 20.0):
+    def __init__(self, timeout: float = settings.REQUEST_TIMEOUT):
         self.timeout = timeout
         self.headers = {
             "User-Agent": (

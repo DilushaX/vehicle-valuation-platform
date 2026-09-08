@@ -30,8 +30,16 @@ class RiyasewanaCategoryDiscovery:
 
     BASE_URL = "https://riyasewana.com"
 
-    def __init__(self, client):
-        self.client = client
+    def __init__(self, client=None):
+        self._client = client
+
+    @property
+    def client(self):
+        if self._client is None:
+            from scraper.client import RiyasewanaClient
+
+            self._client = RiyasewanaClient()
+        return self._client
 
     # --------------------------------------------------
     # CATEGORY DISCOVERY
