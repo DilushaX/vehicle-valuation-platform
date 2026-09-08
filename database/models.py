@@ -90,6 +90,7 @@ class Listing(Base):
 
     location: Mapped[str | None] = mapped_column(String(150))
     district: Mapped[str | None] = mapped_column(String(100))
+    ad_date: Mapped[str | None] = mapped_column(String(100))
 
     source: Mapped[str] = mapped_column(
         String(50),

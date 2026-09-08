@@ -80,6 +80,7 @@ class VehicleRepository:
             description=data.get("description"),
             location=data.get("location"),
             district=data.get("district"),
+            ad_date=data.get("ad_date"),
             source=data.get("source", "riyasewana"),
             current_status="ACTIVE",
             first_seen_at=ts,
@@ -195,6 +196,8 @@ class VehicleRepository:
                 listing.location = data.get("location")
             if data.get("district"):
                 listing.district = data.get("district")
+            if data.get("ad_date") and not listing.ad_date:
+                listing.ad_date = data.get("ad_date")
             if "is_valid" in data:
                 listing.ml_eligible = data.get("is_valid", False)
             if "validation_issues" in data:

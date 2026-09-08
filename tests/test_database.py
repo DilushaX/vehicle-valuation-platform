@@ -68,6 +68,36 @@ def test_condition_is_saved_and_retrieved(vehicle_repo: VehicleRepository):
     assert retrieved.vehicle.condition == "Reconditioned"
 
 
+def test_ad_date_is_saved_and_retrieved(vehicle_repo: VehicleRepository):
+    """
+    Verifies that the original ad_date is preserved in PostgreSQL and retrieved accurately.
+    """
+    data = {
+        "listing_id": "test_ad_date_01",
+        "listing_url": "https://riyasewana.com/buy/test-ad-date-01",
+        "title": "Nissan Leaf 2017",
+        "category": "Cars",
+        "brand": "Nissan",
+        "model": "Leaf",
+        "ad_date": "2026 Sep 07, 3:10 pm",
+        "manufacture_year": 2017,
+        "price": 5500000,
+        "mileage": 60000,
+    }
+
+    listing, is_new = vehicle_repo.sync_listing(data)
+    vehicle_repo.commit()
+
+    assert is_new is True
+    assert listing.ad_date == "2026 Sep 07, 3:10 pm"
+
+    # Query afresh from database
+    retrieved = vehicle_repo.find_listing("test_ad_date_01")
+    assert retrieved is not None
+    assert retrieved.ad_date == "2026 Sep 07, 3:10 pm"
+
+
+
 def test_first_listing_creates_one_listing_and_observation(vehicle_repo: VehicleRepository):
     """
     FIX 2: First observation creates exactly one Vehicle, one Listing,
