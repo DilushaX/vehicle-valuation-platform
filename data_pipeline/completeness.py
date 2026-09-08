@@ -30,7 +30,9 @@ class CategoryCompleteness:
     @property
     def listing_completeness_pct(self) -> float:
         if self.listings_attempted == 0 or self.listings_scraped == 0:
-            return 0.0 if self.unique_listing_urls > 0 else 100.0
+            if self.pages_scraped > 0 and self.unique_listing_urls == 0 and len(self.failed_pages) == 0:
+                return 100.0
+            return 0.0
         return round((self.listings_scraped / self.listings_attempted) * 100.0, 2)
 
     @property

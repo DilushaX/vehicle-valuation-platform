@@ -440,3 +440,42 @@ def test_pipeline_runner_category_isolation(db_session):
     assert report["category_results"][1]["category_name"] == "Vans"
     assert report["category_results"][1]["status"] == "COMPLETED"
     assert report["overall_status"] == "INCOMPLETE"
+
+
+def test_retry_after_respects_rate_limit_and_aborts_excessive_waits():
+    """Verifies that HTTP 429 with large Retry-After aborts retries instead of aggressively looping."""
+    import httpx
+    from scraper.utils.retry import execute_with_retry, get_retry_after
+
+    mock_resp = MagicMock()
+    mock_resp.headers = {"Retry-After": "120"}
+    mock_err = httpx.HTTPStatusError("429 Too Many Requests", request=MagicMock(), response=mock_resp)
+    assert get_retry_after(mock_err) == 120.0
+
+    call_count = 0
+    def rate_limited_call():
+        nonlocal call_count
+        call_count += 1
+        raise mock_err
+
+    with pytest.raises(httpx.HTTPStatusError):
+        execute_with_retry(rate_limited_call, max_retries=3)
+
+    # Must abort after 1 attempt rather than retrying aggressively
+    assert call_count == 1
+
+
+def test_completeness_calculation_edge_cases_zero_pages():
+    """Verifies that 0 pages scraped correctly results in 0.0% completeness and not fully complete."""
+    comp = CategoryCompleteness(
+        category_name="Motorbikes",
+        pages_discovered=3,
+        pages_attempted=3,
+        pages_scraped=0,
+        failed_pages=[{"url": "https://riyasewana.com/search/motorbikes", "error": "rate limit"}],
+        status="FAILED",
+    )
+    assert comp.page_completeness_pct == 0.0
+    assert comp.listing_completeness_pct == 0.0
+    assert comp.is_fully_complete is False
+

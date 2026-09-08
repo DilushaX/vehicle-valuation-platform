@@ -7,6 +7,20 @@ logger = logging.getLogger(__name__)
 T = TypeVar("T")
 
 
+def get_retry_after(exc: Exception) -> float | None:
+    """Extracts Retry-After header in seconds if present on an HTTP exception."""
+    resp = getattr(exc, "response", None)
+    if resp is not None:
+        headers = getattr(resp, "headers", {})
+        val = headers.get("retry-after") or headers.get("Retry-After")
+        if val is not None:
+            try:
+                return float(val)
+            except (ValueError, TypeError):
+                pass
+    return None
+
+
 def execute_with_retry(
     func: Callable[[], T],
     max_retries: int = 3,
@@ -17,7 +31,7 @@ def execute_with_retry(
 ) -> T:
     """
     Executes a callable with exponential backoff on specified transient exceptions.
-    Limits retries to max_retries.
+    Limits retries to max_retries. Respects Retry-After header when present.
     """
     delay = initial_delay
     for attempt in range(1, max_retries + 1):
@@ -29,6 +43,17 @@ def execute_with_retry(
                     f"Operation failed after {attempt} attempts: {exc}"
                 )
                 raise
+
+            retry_after = get_retry_after(exc)
+            if retry_after is not None:
+                if retry_after > 30.0:
+                    logger.warning(
+                        f"Server rate limit: Retry-After is {retry_after}s. "
+                        f"Aborting retries to respect upstream rate limit."
+                    )
+                    raise
+                delay = retry_after
+
             if on_retry:
                 on_retry(exc, attempt, delay)
             else:

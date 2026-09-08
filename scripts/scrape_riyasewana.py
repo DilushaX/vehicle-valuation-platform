@@ -74,6 +74,13 @@ def main():
     if args.output_dir:
         csv_exporter = CSVExporter(output_dir=Path(args.output_dir))
 
+    if not args.dry_run:
+        try:
+            from database.connection import Base, get_engine
+            Base.metadata.create_all(bind=get_engine())
+        except Exception as schema_err:
+            logger.warning(f"Database schema initialization warning: {schema_err}")
+
     runner = PipelineRunner(csv_exporter=csv_exporter)
 
     try:
