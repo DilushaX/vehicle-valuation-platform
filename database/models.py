@@ -1,8 +1,9 @@
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from decimal import Decimal
 
 from sqlalchemy import (
+    Boolean,
     DateTime,
     ForeignKey,
     Index,
@@ -10,11 +11,15 @@ from sqlalchemy import (
     Numeric,
     String,
     Text,
-    Boolean,
+    UniqueConstraint,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from database.connection import Base
+
+
+def utc_now() -> datetime:
+    return datetime.now(timezone.utc)
 
 
 class Vehicle(Base):
@@ -36,16 +41,17 @@ class Vehicle(Base):
     fuel_type: Mapped[str | None] = mapped_column(String(50))
     transmission: Mapped[str | None] = mapped_column(String(50))
     engine_cc: Mapped[int | None] = mapped_column(Integer)
+    condition: Mapped[str | None] = mapped_column(String(50))
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime,
-        default=datetime.utcnow,
+        default=utc_now,
     )
 
     updated_at: Mapped[datetime] = mapped_column(
         DateTime,
-        default=datetime.utcnow,
-        onupdate=datetime.utcnow,
+        default=utc_now,
+        onupdate=utc_now,
     )
 
     listings: Mapped[list["Listing"]] = relationship(
@@ -65,7 +71,6 @@ class Listing(Base):
 
     listing_id: Mapped[str] = mapped_column(
         String(100),
-        unique=True,
         nullable=False,
     )
 
@@ -98,12 +103,12 @@ class Listing(Base):
 
     first_seen_at: Mapped[datetime] = mapped_column(
         DateTime,
-        default=datetime.utcnow,
+        default=utc_now,
     )
 
     last_seen_at: Mapped[datetime] = mapped_column(
         DateTime,
-        default=datetime.utcnow,
+        default=utc_now,
     )
 
     validation_issues: Mapped[str | None] = mapped_column(Text)
@@ -131,6 +136,10 @@ class Listing(Base):
         cascade="all, delete-orphan",
     )
 
+    @property
+    def condition(self) -> str | None:
+        return self.vehicle.condition if self.vehicle else None
+
     def get_validation_issues(self) -> list:
         if not self.validation_issues:
             return []
@@ -140,8 +149,10 @@ class Listing(Base):
             return []
 
     __table_args__ = (
+        UniqueConstraint("source", "listing_id", name="uq_source_listing_id"),
         Index("idx_listing_status", "current_status"),
         Index("idx_listing_source", "source"),
+        Index("idx_listing_vehicle", "vehicle_id"),
     )
 
 
@@ -163,7 +174,7 @@ class PriceHistory(Base):
 
     observed_at: Mapped[datetime] = mapped_column(
         DateTime,
-        default=datetime.utcnow,
+        default=utc_now,
     )
 
     listing: Mapped["Listing"] = relationship(
@@ -194,7 +205,7 @@ class ScrapeRun(Base):
 
     started_at: Mapped[datetime] = mapped_column(
         DateTime,
-        default=datetime.utcnow,
+        default=utc_now,
     )
 
     completed_at: Mapped[datetime | None] = mapped_column(
@@ -265,7 +276,7 @@ class ListingObservation(Base):
 
     observed_at: Mapped[datetime] = mapped_column(
         DateTime,
-        default=datetime.utcnow,
+        default=utc_now,
     )
 
     observed_price: Mapped[int | None] = mapped_column(Integer)

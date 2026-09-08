@@ -8,13 +8,14 @@ CREATE TABLE IF NOT EXISTS vehicles (
     fuel_type VARCHAR(50),
     transmission VARCHAR(50),
     engine_cc INTEGER,
+    condition VARCHAR(50),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS listings (
     id SERIAL PRIMARY KEY,
-    listing_id VARCHAR(100) NOT NULL UNIQUE,
+    listing_id VARCHAR(100) NOT NULL,
     vehicle_id INTEGER NOT NULL REFERENCES vehicles(id),
     listing_url TEXT NOT NULL,
     title TEXT,
@@ -27,7 +28,8 @@ CREATE TABLE IF NOT EXISTS listings (
     last_seen_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     validation_issues TEXT,
     quality_score NUMERIC(5,2),
-    ml_eligible BOOLEAN NOT NULL DEFAULT FALSE
+    ml_eligible BOOLEAN NOT NULL DEFAULT FALSE,
+    CONSTRAINT uq_source_listing_id UNIQUE (source, listing_id)
 );
 
 CREATE TABLE IF NOT EXISTS price_history (
@@ -68,6 +70,9 @@ ON listings(current_status);
 
 CREATE INDEX IF NOT EXISTS idx_listing_source
 ON listings(source);
+
+CREATE INDEX IF NOT EXISTS idx_listing_vehicle
+ON listings(vehicle_id);
 
 CREATE INDEX IF NOT EXISTS idx_price_history_listing
 ON price_history(listing_id);
