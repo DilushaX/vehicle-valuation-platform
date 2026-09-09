@@ -764,3 +764,168 @@ def test_step4_historical_data_integrity_preservation(vehicle_repo: VehicleRepos
     assert ph2.price == 2700000
     assert to_utc(ph2.observed_at) == to_utc(t2)
 
+
+def test_phase4_listing_category_property(vehicle_repo: VehicleRepository):
+    """
+    PHASE 4 STEP 1: Verifies Listing.category property cleanly delegates
+    to vehicle.category for all discovered vehicle types.
+    """
+    categories = ["Car", "Heavy-Duty", "Lorry", "Motorbike", "Pickup", "SUV", "Three Wheel", "Van"]
+    for cat in categories:
+        data = {
+            "listing_id": f"p4_cat_{cat.lower().replace('-', '_').replace(' ', '_')}",
+            "listing_url": f"https://riyasewana.com/buy/{cat.lower()}",
+            "title": f"Test {cat}",
+            "category": cat,
+            "brand": "SampleBrand",
+            "model": "SampleModel",
+            "price": 1000000,
+        }
+        listing, is_new = vehicle_repo.sync_listing(data)
+        assert is_new is True
+        assert listing.category == cat
+        assert listing.vehicle.category == cat
+
+
+def test_phase4_historical_rules_1_to_11(vehicle_repo: VehicleRepository):
+    """
+    PHASE 4 STEP 1: Exhaustive verification of Rules 1 through 11:
+    - Rule 1: first_seen_at immutable after first observation.
+    - Rule 2: last_seen_at updates whenever listing is observed.
+    - Rule 3: Every observation creates a ListingObservation.
+    - Rule 4: Old ListingObservations are NEVER overwritten.
+    - Rule 5: Unchanged asking price does NOT create duplicate PriceHistory.
+    - Rule 6: Changed asking price creates a new PriceHistory.
+    - Rule 7: Missing listing does NOT mean SOLD.
+    - Rule 8: Missing listings become NO_LONGER_OBSERVED.
+    - Rule 9: Reappearing listing becomes ACTIVE.
+    - Rule 10: Historical records are never deleted automatically.
+    - Rule 11: Asking price remains explicitly an asking price.
+    """
+    t1 = datetime(2026, 9, 1, 8, 0, tzinfo=timezone.utc)
+    t2 = datetime(2026, 9, 2, 8, 0, tzinfo=timezone.utc)
+    t3 = datetime(2026, 9, 3, 8, 0, tzinfo=timezone.utc)
+    t4 = datetime(2026, 9, 4, 8, 0, tzinfo=timezone.utc)
+
+    base = {
+        "listing_id": "rule_test_suv",
+        "listing_url": "https://riyasewana.com/buy/rule-test-suv",
+        "title": "Toyota Fortuner 2020 SUV",
+        "category": "SUV",
+        "brand": "Toyota",
+        "model": "Fortuner",
+        "price": 28000000,
+        "mileage": 45000,
+        "ad_date": "2026 Sep 01, 7:00 am",
+    }
+
+    # Step 1: Observation 1
+    run1 = vehicle_repo.create_scrape_run(category="SUVs")
+    listing, is_new1 = vehicle_repo.sync_listing(base, scrape_run=run1, observed_at=t1)
+    vehicle_repo.commit()
+
+    assert is_new1 is True
+    # RULE 1 & 2
+    assert to_utc(listing.first_seen_at) == to_utc(t1)
+    assert to_utc(listing.last_seen_at) == to_utc(t1)
+    # RULE 3
+    assert len(listing.observations) == 1
+    # RULE 11
+    assert listing.observations[0].observed_price == 28000000
+    assert len(listing.price_history) == 1
+    assert listing.price_history[0].price == 28000000
+
+    # Step 2: Observation 2 (Same price, advanced last_seen)
+    run2 = vehicle_repo.create_scrape_run(category="SUVs")
+    listing, is_new2 = vehicle_repo.sync_listing(base, scrape_run=run2, observed_at=t2)
+    vehicle_repo.commit()
+
+    assert is_new2 is False
+    # RULE 1: first_seen_at remains unchanged
+    assert to_utc(listing.first_seen_at) == to_utc(t1)
+    # RULE 2: last_seen_at updated to t2
+    assert to_utc(listing.last_seen_at) == to_utc(t2)
+    # RULE 3 & 4: new observation appended, old preserved
+    assert len(listing.observations) == 2
+    assert to_utc(listing.observations[0].observed_at) == to_utc(t1)
+    assert to_utc(listing.observations[1].observed_at) == to_utc(t2)
+    # RULE 5: Unchanged price -> 0 duplicate PriceHistory records
+    assert len(listing.price_history) == 1
+
+    # Step 3: Observation 3 with price change (price drop to 27,500,000)
+    run3 = vehicle_repo.create_scrape_run(category="SUVs")
+    d3 = dict(base, price=27500000)
+    listing, is_new3 = vehicle_repo.sync_listing(d3, scrape_run=run3, observed_at=t3)
+    vehicle_repo.commit()
+
+    # RULE 6: Changed price -> new PriceHistory record
+    assert len(listing.price_history) == 2
+    assert listing.price_history[1].price == 27500000
+    assert len(listing.observations) == 3
+
+    # Step 4: Listing absent in next scrape
+    marked = vehicle_repo.mark_unobserved_listings(["other_id"], source="riyasewana", category="SUV")
+    vehicle_repo.commit()
+
+    # RULE 7 & 8: Becomes NO_LONGER_OBSERVED, NOT SOLD
+    assert len(marked) == 1
+    assert marked[0].current_status == "NO_LONGER_OBSERVED"
+    assert "SOLD" not in marked[0].current_status
+
+    # Step 5: Listing reappears in scrape 4
+    run4 = vehicle_repo.create_scrape_run(category="SUVs")
+    listing_ret, is_new4 = vehicle_repo.sync_listing(d3, scrape_run=run4, observed_at=t4)
+    vehicle_repo.commit()
+
+    # RULE 9: Reappearing becomes ACTIVE
+    assert is_new4 is False
+    assert listing_ret.current_status == "ACTIVE"
+    assert to_utc(listing_ret.first_seen_at) == to_utc(t1)
+    assert to_utc(listing_ret.last_seen_at) == to_utc(t4)
+    # RULE 10: Historical records never deleted
+    assert len(listing_ret.observations) == 4
+    assert len(listing_ret.price_history) == 2
+
+
+def test_phase4_time_series_indexes_and_ordering(vehicle_repo: VehicleRepository):
+    """
+    PHASE 4 STEP 1: Verifies time-series queries on (listing_id, observed_at)
+    return properly ordered observations and price history.
+    """
+    data = {
+        "listing_id": "ts_query_bike",
+        "listing_url": "https://riyasewana.com/buy/ts-query-bike",
+        "title": "Yamaha FZ 2021 Motorbike",
+        "category": "Motorbike",
+        "brand": "Yamaha",
+        "model": "FZ",
+        "price": 750000,
+    }
+    t_start = datetime(2026, 9, 1, 10, 0, tzinfo=timezone.utc)
+    listing, _ = vehicle_repo.sync_listing(data, scrape_run=vehicle_repo.create_scrape_run(), observed_at=t_start)
+
+    # 3 price adjustments over time
+    t_step2 = datetime(2026, 9, 5, 10, 0, tzinfo=timezone.utc)
+    d2 = dict(data, price=720000)
+    vehicle_repo.sync_listing(d2, scrape_run=vehicle_repo.create_scrape_run(), observed_at=t_step2)
+
+    t_step3 = datetime(2026, 9, 8, 10, 0, tzinfo=timezone.utc)
+    d3 = dict(data, price=690000)
+    vehicle_repo.sync_listing(d3, scrape_run=vehicle_repo.create_scrape_run(), observed_at=t_step3)
+    vehicle_repo.commit()
+
+    # Query chronological price history via (listing_id, observed_at)
+    query_ph = (
+        select(PriceHistory)
+        .where(PriceHistory.listing_id == listing.id)
+        .order_by(PriceHistory.observed_at.asc())
+    )
+    history = vehicle_repo.db.scalars(query_ph).all()
+    assert len(history) == 3
+    assert [h.price for h in history] == [750000, 720000, 690000]
+
+    # Query latest price
+    latest_p = vehicle_repo.get_latest_price(listing)
+    assert latest_p == 690000
+
+

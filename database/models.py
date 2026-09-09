@@ -146,6 +146,10 @@ class Listing(Base):
     def condition(self) -> str | None:
         return self.vehicle.condition if self.vehicle else None
 
+    @property
+    def category(self) -> str | None:
+        return self.vehicle.category if self.vehicle else None
+
     def get_validation_issues(self) -> list:
         if not self.validation_issues:
             return []
@@ -159,6 +163,8 @@ class Listing(Base):
         Index("idx_listing_status", "current_status"),
         Index("idx_listing_source", "source"),
         Index("idx_listing_vehicle", "vehicle_id"),
+        Index("idx_listing_district", "district"),
+        Index("idx_listing_first_seen", "first_seen_at"),
     )
 
 
@@ -190,6 +196,7 @@ class PriceHistory(Base):
     __table_args__ = (
         Index("idx_price_history_listing", "listing_id"),
         Index("idx_price_history_date", "observed_at"),
+        Index("idx_price_history_listing_date", "listing_id", "observed_at"),
     )
 
 
@@ -260,6 +267,11 @@ class ScrapeRun(Base):
         cascade="all, delete-orphan",
     )
 
+    __table_args__ = (
+        Index("idx_scrape_run_category", "category"),
+        Index("idx_scrape_run_started", "started_at"),
+    )
+
 
 class ListingObservation(Base):
     __tablename__ = "listing_observations"
@@ -306,4 +318,5 @@ class ListingObservation(Base):
         Index("idx_observation_listing", "listing_id"),
         Index("idx_observation_scrape", "scrape_run_id"),
         Index("idx_observation_date", "observed_at"),
+        Index("idx_observation_listing_date", "listing_id", "observed_at"),
     )
