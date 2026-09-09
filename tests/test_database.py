@@ -580,3 +580,187 @@ def test_existing_relationships_intact(vehicle_repo: VehicleRepository):
     assert len(listing.observations) == 1
     assert listing.observations[0].observed_price == 5100000
     assert listing.observations[0].listing.listing_id == "test_rel_301"
+
+
+def test_step4_price_history_deduplication_and_transition(vehicle_repo: VehicleRepository):
+    """
+    STEP 4 PART 2 REGRESSION TEST:
+    Simulates:
+    Observation 1: price = 4,200,000 -> 1 observation, 1 price-history record
+    Observation 2: price = 4,200,000 -> 2 observations, 1 price-history record (no duplicate)
+    Observation 3: price = 4,000,000 -> 3 observations, 2 price-history records
+    """
+    base_data = {
+        "listing_id": "step4_price_test",
+        "listing_url": "https://riyasewana.com/buy/step4-price-test",
+        "title": "Toyota Hiace Van",
+        "category": "Vans",
+        "brand": "Toyota",
+        "model": "Hiace",
+        "mileage": 120000,
+    }
+
+    # Observation 1: price = 4,200,000
+    run1 = vehicle_repo.create_scrape_run(category="Vans")
+    d1 = dict(base_data, price=4200000)
+    listing, is_new1 = vehicle_repo.sync_listing(d1, scrape_run=run1)
+    vehicle_repo.commit()
+
+    assert is_new1 is True
+    assert len(listing.observations) == 1
+    assert len(listing.price_history) == 1
+    assert listing.price_history[0].price == 4200000
+
+    # Observation 2: price = 4,200,000 (unchanged)
+    run2 = vehicle_repo.create_scrape_run(category="Vans")
+    d2 = dict(base_data, price=4200000)
+    listing, is_new2 = vehicle_repo.sync_listing(d2, scrape_run=run2)
+    vehicle_repo.commit()
+
+    assert is_new2 is False
+    assert len(listing.observations) == 2
+    assert len(listing.price_history) == 1
+    assert listing.price_history[0].price == 4200000
+
+    # Observation 3: price = 4,000,000 (price drop)
+    run3 = vehicle_repo.create_scrape_run(category="Vans")
+    d3 = dict(base_data, price=4000000)
+    listing, is_new3 = vehicle_repo.sync_listing(d3, scrape_run=run3)
+    vehicle_repo.commit()
+
+    assert is_new3 is False
+    assert len(listing.observations) == 3
+    assert len(listing.price_history) == 2
+    assert listing.price_history[0].price == 4200000
+    assert listing.price_history[1].price == 4000000
+
+
+def test_step4_listing_disappearance_and_reactivation_lifecycle(vehicle_repo: VehicleRepository):
+    """
+    STEP 4 PART 3 REGRESSION TEST:
+    Simulates:
+    Run 1: Listing A observed -> status = ACTIVE
+    Run 2: Listing A absent from observed set -> status = NO_LONGER_OBSERVED (never SOLD)
+    Run 3: Listing A appears again -> status = ACTIVE (first_seen_at preserved, last_seen_at updated)
+    """
+    t1 = datetime(2026, 9, 1, 9, 0, 0, tzinfo=timezone.utc)
+    t3 = datetime(2026, 9, 3, 14, 30, 0, tzinfo=timezone.utc)
+
+    data_a = {
+        "listing_id": "step4_lifecycle_van",
+        "listing_url": "https://riyasewana.com/buy/step4-lifecycle-van",
+        "title": "Nissan Caravan Van",
+        "category": "Vans",
+        "brand": "Nissan",
+        "model": "Caravan",
+        "price": 3800000,
+        "mileage": 140000,
+        "ad_date": "2026 Sep 01, 8:00 am",
+    }
+
+    # Run 1: Listing observed
+    run1 = vehicle_repo.create_scrape_run(category="Vans")
+    listing, is_new1 = vehicle_repo.sync_listing(data_a, scrape_run=run1, observed_at=t1)
+    vehicle_repo.commit()
+
+    assert is_new1 is True
+    assert listing.current_status == "ACTIVE"
+
+    # Run 2: Listing A absent from observed set
+    marked = vehicle_repo.mark_unobserved_listings(
+        observed_listing_ids=["different_listing_id"],
+        source="riyasewana",
+        category="Vans",
+    )
+    vehicle_repo.commit()
+
+    assert len(marked) == 1
+    assert marked[0].listing_id == "step4_lifecycle_van"
+    assert marked[0].current_status == "NO_LONGER_OBSERVED"
+    assert marked[0].current_status != "SOLD"
+    assert "SOLD" not in marked[0].current_status
+
+    # Historical data preserved during absence
+    reloaded = vehicle_repo.find_listing("step4_lifecycle_van")
+    assert reloaded.current_status == "NO_LONGER_OBSERVED"
+    assert len(reloaded.observations) == 1
+    assert len(reloaded.price_history) == 1
+
+    # Run 3: Listing A appears again
+    run3 = vehicle_repo.create_scrape_run(category="Vans")
+    listing_ret, is_new3 = vehicle_repo.sync_listing(data_a, scrape_run=run3, observed_at=t3)
+    vehicle_repo.commit()
+
+    assert is_new3 is False
+    assert listing_ret.current_status == "ACTIVE"
+    assert to_utc(listing_ret.first_seen_at) == to_utc(t1)
+    assert to_utc(listing_ret.last_seen_at) == to_utc(t3)
+    assert len(listing_ret.observations) == 2
+    assert len(listing_ret.price_history) == 1
+
+
+def test_step4_historical_data_integrity_preservation(vehicle_repo: VehicleRepository):
+    """
+    STEP 4 PART 4 REGRESSION TEST:
+    Verifies that across repeated scrapes, the system strictly preserves:
+    - first_seen_at, last_seen_at, ad_date, observed_at, observed_price, observed_mileage
+    - price history, listing status, source listing ID, listing URL
+    - old observations are NOT overwritten
+    - old price history is NOT deleted
+    """
+    t1 = datetime(2026, 9, 5, 8, 0, 0, tzinfo=timezone.utc)
+    t2 = datetime(2026, 9, 6, 9, 0, 0, tzinfo=timezone.utc)
+
+    data = {
+        "listing_id": "step4_integrity_van",
+        "listing_url": "https://riyasewana.com/buy/step4-integrity-van",
+        "title": "Mazda Bongo Van",
+        "category": "Vans",
+        "brand": "Mazda",
+        "model": "Bongo",
+        "price": 2800000,
+        "mileage": 160000,
+        "ad_date": "2026 Sep 05, 7:30 am",
+        "source": "riyasewana",
+    }
+
+    # Initial observation
+    run1 = vehicle_repo.create_scrape_run(category="Vans")
+    listing, _ = vehicle_repo.sync_listing(data, scrape_run=run1, observed_at=t1)
+    vehicle_repo.commit()
+
+    # Second observation with price drop
+    run2 = vehicle_repo.create_scrape_run(category="Vans")
+    data_day2 = dict(data, price=2700000, mileage=160500)
+    listing, _ = vehicle_repo.sync_listing(data_day2, scrape_run=run2, observed_at=t2)
+    vehicle_repo.commit()
+
+    # Query afresh from DB
+    retrieved = vehicle_repo.find_listing("step4_integrity_van")
+    assert retrieved is not None
+    assert retrieved.listing_id == "step4_integrity_van"
+    assert retrieved.source == "riyasewana"
+    assert retrieved.listing_url == "https://riyasewana.com/buy/step4-integrity-van"
+    assert retrieved.current_status == "ACTIVE"
+    assert retrieved.ad_date == "2026 Sep 05, 7:30 am"
+    assert to_utc(retrieved.first_seen_at) == to_utc(t1)
+    assert to_utc(retrieved.last_seen_at) == to_utc(t2)
+
+    # Observations preserved and not overwritten
+    assert len(retrieved.observations) == 2
+    obs1, obs2 = retrieved.observations[0], retrieved.observations[1]
+    assert obs1.observed_price == 2800000
+    assert obs1.observed_mileage == 160000
+    assert to_utc(obs1.observed_at) == to_utc(t1)
+    assert obs2.observed_price == 2700000
+    assert obs2.observed_mileage == 160500
+    assert to_utc(obs2.observed_at) == to_utc(t2)
+
+    # Price history preserved and not deleted
+    assert len(retrieved.price_history) == 2
+    ph1, ph2 = retrieved.price_history[0], retrieved.price_history[1]
+    assert ph1.price == 2800000
+    assert to_utc(ph1.observed_at) == to_utc(t1)
+    assert ph2.price == 2700000
+    assert to_utc(ph2.observed_at) == to_utc(t2)
+
