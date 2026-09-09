@@ -109,7 +109,7 @@ class RiyasewanaCategorySpider:
                 "status": "FAILED",
             }
 
-        pages_attempted = len(target_pages)
+        pages_attempted = 0
         pages_scraped = 0
         failed_pages: List[Dict[str, Any]] = []
 
@@ -118,6 +118,7 @@ class RiyasewanaCategorySpider:
 
         # 2. Scrape each pagination page to extract listing URLs
         for index, page in enumerate(target_pages):
+            pages_attempted += 1
             retries = 0
 
             def _fetch_page_html() -> str:
@@ -132,13 +133,16 @@ class RiyasewanaCategorySpider:
                 )
 
             try:
-                html = execute_with_retry(
-                    _fetch_page_html,
-                    max_retries=self.max_retries,
-                    initial_delay=self.retry_delay,
-                    backoff_factor=self.retry_backoff,
-                    on_retry=_on_retry,
-                )
+                if page.html:
+                    html = page.html
+                else:
+                    html = execute_with_retry(
+                        _fetch_page_html,
+                        max_retries=self.max_retries,
+                        initial_delay=self.retry_delay,
+                        backoff_factor=self.retry_backoff,
+                        on_retry=_on_retry,
+                    )
 
                 page_listing_urls = self.listing_discovery.discover_listing_urls(
                     html=html,
@@ -148,6 +152,14 @@ class RiyasewanaCategorySpider:
                 all_listing_urls_discovered.extend(page_listing_urls)
                 unique_listing_urls.update(page_listing_urls)
                 pages_scraped += 1
+
+                # Stop inspecting further pagination pages if max_listings is satisfied
+                if max_listings is not None and len(unique_listing_urls) >= max_listings:
+                    logger.info(
+                        f"Found {len(unique_listing_urls)} listing URLs, satisfying requested max_listings={max_listings}. "
+                        "Stopping pagination inspection early."
+                    )
+                    break
 
             except Exception as exc:
                 logger.error(
@@ -162,8 +174,8 @@ class RiyasewanaCategorySpider:
                     }
                 )
 
-            # Politeness delay between page requests
-            if self.request_delay > 0 and index < len(target_pages) - 1:
+            # Politeness delay between page requests if live request was made
+            if not page.html and self.request_delay > 0 and index < len(target_pages) - 1:
                 time.sleep(self.request_delay)
 
         sorted_unique_urls = sorted(unique_listing_urls)
@@ -177,8 +189,10 @@ class RiyasewanaCategorySpider:
         # Determine status
         if pages_scraped == 0 and pages_attempted > 0:
             status = "FAILED"
-        elif len(failed_pages) > 0 or (
-            pages_attempted > 0 and pages_scraped < pages_attempted
+        elif (
+            len(failed_pages) > 0
+            or (pages_attempted > 0 and pages_scraped < pages_attempted)
+            or len(bulk_results.get("failed", [])) > 0
         ):
             status = "INCOMPLETE"
         else:

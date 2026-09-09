@@ -19,6 +19,7 @@ class DiscoveredCategory:
 class DiscoveredPage:
     url: str
     page_number: int
+    html: Optional[str] = None
 
 
 class RiyasewanaCategoryDiscovery:
@@ -222,6 +223,7 @@ class RiyasewanaCategoryDiscovery:
                 DiscoveredPage(
                     url=current_url,
                     page_number=page_number,
+                    html=html,
                 )
             )
 

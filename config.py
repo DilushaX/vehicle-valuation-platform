@@ -23,6 +23,7 @@ class Settings(BaseSettings):
     RETRY_DELAY: float = 1.0
     RETRY_BACKOFF: float = 2.0
     REQUEST_DELAY: float = 1.5
+    MAX_RETRY_AFTER: float = 30.0
     RAW_DATA_DIR: Path = Path("data/raw")
     SOURCE_NAME: str = "riyasewana"
 
