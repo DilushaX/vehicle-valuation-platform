@@ -96,6 +96,51 @@ The system continuously tracks vehicle listings (primarily from **Riyasewana**),
 
 ---
 
+## 🛡️ Production Market Data Collection (Phase 4)
+
+The platform includes a robust, polite, and production-ready data collection engine designed for long-term historical tracking of the Sri Lankan automotive market (primarily **Riyasewana**).
+
+### Collection Commands
+
+```bash
+# Dry run: Inspect discovery and parse without modifying PostgreSQL or exporting CSV
+python scripts/scrape_riyasewana.py --category Cars --max-pages 1 --max-listings 5 --dry-run
+
+# Controlled live collection for specific categories:
+python scripts/scrape_riyasewana.py --category Cars --max-pages 5 --max-listings 100
+
+# Multi-category collection (space or comma-separated):
+python scripts/scrape_riyasewana.py --category Cars SUVs Vans --max-pages 2 --max-listings 20
+python scripts/scrape_riyasewana.py --category Cars,SUVs,Vans --max-pages 2 --max-listings 20
+
+# Run all 8 discovered categories with polite rate-limiting:
+python scripts/scrape_riyasewana.py --max-pages 2 --max-listings 50 --request-delay 1.5
+```
+
+### Volume Controls & Safeguards
+
+- **`--max-pages <N>`**: Caps the maximum number of pagination pages inspected per category. Pagination traversal automatically tracks visited URLs and stops cleanly if cyclical pagination or missing links are encountered.
+- **`--max-listings <N>`**: Caps the maximum number of unique listing detail pages fetched per category. If early pagination pages satisfy the requested listing volume, subsequent pagination discovery terminates early to prevent redundant HTTP requests.
+- **`--dry-run`**: Performs complete category discovery and detail parsing in memory, displaying a full audit report while guaranteeing **zero mutations** to PostgreSQL tables, observations, or price histories.
+
+### Request Rate & Retry Policy
+
+- **Rate-Limiting**: Strictly sequential requests with a default polite delay of **`1.5 seconds`** (`--request-delay 1.5`). Bursts, aggressive concurrency, and parallel scraping are prohibited.
+- **Retry Logic & Backoff**: Transient errors (connection resets, read timeouts, HTTP 5xx, HTTP 429) are retried with exponential backoff (default: 3 retries, 2.0x backoff). Non-transient errors (HTTP 400, 403, 404, 410) fail immediately without retrying.
+- **HTTP 429 & `Retry-After`**: If upstream signals `Retry-After <= 30.0s`, the crawler respects the requested wait time. If `Retry-After > 30.0s`, retries safely abort to prevent blocking execution.
+
+### Historical Lifecycle & Idempotency
+
+- **Observation Tracking**: Every scrape creates an immutable point-in-time record in `listing_observations`.
+- **Price History**: New rows in `price_history` are created **only** when an asking price changes. Identical prices are deduplicated.
+- **Disappearance Handling**: Listings missing from subsequent runs transition to **`NO_LONGER_OBSERVED`**. Listings are **never** inferred as `SOLD`.
+- **First Seen Preservation**: `first_seen_at` is strictly immutable from the moment of initial discovery. Re-appearing listings retain their original historical identity.
+
+> [!WARNING]
+> **Scoped Completeness vs. Website Completeness**: Scrape reports and metrics reflect completeness **within the requested collection scope** (`max_pages`, `max_listings`). A status of `COMPLETED` confirms that all requested pages and attempted listings succeeded without errors; it does **not** claim to have scraped the entirety of Riyasewana.
+
+---
+
 ## 🚀 Quickstart Guide
 
 ### 1. Installation & Environment Setup

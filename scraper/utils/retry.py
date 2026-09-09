@@ -33,11 +33,14 @@ def is_transient_error(exc: Exception) -> bool:
     try:
         import httpx
         if isinstance(exc, httpx.HTTPStatusError):
-            code = exc.response.status_code
-            if code in (429, 500, 502, 503, 504):
+            code = getattr(exc.response, "status_code", None)
+            if isinstance(code, int):
+                if code in (429, 500, 502, 503, 504):
+                    return True
+                if 400 <= code < 500:
+                    return False
+            elif "429" in str(exc):
                 return True
-            if 400 <= code < 500:
-                return False
         if isinstance(exc, (httpx.TimeoutException, httpx.NetworkError, TimeoutError, ConnectionError, OSError)):
             return True
     except ImportError:

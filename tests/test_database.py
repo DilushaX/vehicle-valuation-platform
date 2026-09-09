@@ -929,3 +929,122 @@ def test_phase4_time_series_indexes_and_ordering(vehicle_repo: VehicleRepository
     assert latest_p == 690000
 
 
+def test_phase4_step2_five_run_historical_lifecycle(vehicle_repo: VehicleRepository):
+    """
+    Validates the exact 5-run historical lifecycle specified in Phase 4 Step 2:
+    - Run 1: listing A -> ACTIVE
+    - Run 2: listing A still present with same price -> same listing, first_seen_at unchanged,
+             last_seen_at updated, new observation, no duplicate price history
+    - Run 3: listing A appears with changed price -> new observation, new PriceHistory, previous preserved
+    - Run 4: listing A is not observed -> NO_LONGER_OBSERVED, historical records preserved
+    - Run 5: listing A appears again -> ACTIVE, same historical identity, first_seen_at preserved,
+             new observation, no duplicate listing
+    """
+    listing_id = "lifecycle_car_001"
+    url = f"https://riyasewana.com/buy/toyota-vitz-{listing_id}"
+    base_data = {
+        "listing_id": listing_id,
+        "listing_url": url,
+        "title": "Toyota Vitz 2018",
+        "category": "Cars",
+        "brand": "Toyota",
+        "model": "Vitz",
+        "manufacture_year": 2018,
+        "price": 6500000,
+        "mileage": 42000,
+        "condition": "Used",
+        "district": "Colombo",
+        "source": "riyasewana",
+    }
+
+    # ----------------------------------------------------
+    # RUN 1: First appearance
+    # ----------------------------------------------------
+    t1 = datetime(2026, 9, 1, 9, 0, tzinfo=timezone.utc)
+    sr1 = vehicle_repo.create_scrape_run(category="Cars")
+    listing_r1, is_new_r1 = vehicle_repo.sync_listing(base_data, scrape_run=sr1, observed_at=t1)
+    vehicle_repo.commit()
+
+    assert is_new_r1 is True
+    assert listing_r1.current_status == "ACTIVE"
+    assert to_utc(listing_r1.first_seen_at) == t1
+    assert to_utc(listing_r1.last_seen_at) == t1
+    assert len(listing_r1.price_history) == 1
+    assert listing_r1.price_history[0].price == 6500000
+    assert len(listing_r1.observations) == 1
+
+    # ----------------------------------------------------
+    # RUN 2: Same listing, same price
+    # ----------------------------------------------------
+    t2 = datetime(2026, 9, 2, 9, 0, tzinfo=timezone.utc)
+    sr2 = vehicle_repo.create_scrape_run(category="Cars")
+    listing_r2, is_new_r2 = vehicle_repo.sync_listing(base_data, scrape_run=sr2, observed_at=t2)
+    vehicle_repo.commit()
+
+    assert is_new_r2 is False
+    assert listing_r2.id == listing_r1.id
+    assert to_utc(listing_r2.first_seen_at) == t1  # Immutable
+    assert to_utc(listing_r2.last_seen_at) == t2  # Updated
+    assert listing_r2.current_status == "ACTIVE"
+    assert len(listing_r2.price_history) == 1     # No duplicate price history
+    assert len(listing_r2.observations) == 2      # New observation created
+
+    # ----------------------------------------------------
+    # RUN 3: Same listing, changed price (price drop)
+    # ----------------------------------------------------
+    t3 = datetime(2026, 9, 3, 9, 0, tzinfo=timezone.utc)
+    sr3 = vehicle_repo.create_scrape_run(category="Cars")
+    data_r3 = dict(base_data, price=6300000)
+    listing_r3, is_new_r3 = vehicle_repo.sync_listing(data_r3, scrape_run=sr3, observed_at=t3)
+    vehicle_repo.commit()
+
+    assert is_new_r3 is False
+    assert listing_r3.id == listing_r1.id
+    assert to_utc(listing_r3.first_seen_at) == t1
+    assert to_utc(listing_r3.last_seen_at) == t3
+    assert len(listing_r3.price_history) == 2     # New PriceHistory appended
+    assert [ph.price for ph in sorted(listing_r3.price_history, key=lambda x: x.observed_at)] == [6500000, 6300000]
+    assert len(listing_r3.observations) == 3      # 3rd observation logged
+
+    # ----------------------------------------------------
+    # RUN 4: Listing is not observed in scrape
+    # ----------------------------------------------------
+    sr4 = vehicle_repo.create_scrape_run(category="Cars")
+    # Active scrape run observes other listings, but NOT lifecycle_car_001
+    vehicle_repo.mark_unobserved_listings(observed_listing_ids=["other_car_999"], category="Cars")
+    vehicle_repo.commit()
+
+    listing_r4 = vehicle_repo.find_listing(listing_id)
+    assert listing_r4.current_status == "NO_LONGER_OBSERVED"
+    assert listing_r4.current_status != "SOLD"
+    # Historical data fully preserved
+    assert len(listing_r4.price_history) == 2
+    assert len(listing_r4.observations) == 3
+    assert to_utc(listing_r4.first_seen_at) == t1
+    assert to_utc(listing_r4.last_seen_at) == t3
+
+    # ----------------------------------------------------
+    # RUN 5: Listing reappears on marketplace
+    # ----------------------------------------------------
+    t5 = datetime(2026, 9, 7, 9, 0, tzinfo=timezone.utc)
+    sr5 = vehicle_repo.create_scrape_run(category="Cars")
+    # Reappears with same price as run 3 (6300000)
+    listing_r5, is_new_r5 = vehicle_repo.sync_listing(data_r3, scrape_run=sr5, observed_at=t5)
+    vehicle_repo.commit()
+
+    assert is_new_r5 is False
+    assert listing_r5.id == listing_r1.id
+    assert listing_r5.current_status == "ACTIVE"
+    assert to_utc(listing_r5.first_seen_at) == t1  # Permanently preserved
+    assert to_utc(listing_r5.last_seen_at) == t5  # Updated
+    assert len(listing_r5.price_history) == 2     # Price was 6300000, no duplicate added
+    assert len(listing_r5.observations) == 4      # 4th observation recorded
+
+    # Verify zero duplicate rows exist in database
+    all_with_id = vehicle_repo.db.scalars(
+        select(Listing).where(Listing.listing_id == listing_id)
+    ).all()
+    assert len(all_with_id) == 1
+
+
+

@@ -287,6 +287,7 @@ class VehicleRepository:
         new_listings: int = 0,
         updated_listings: int = 0,
         errors: str | None = None,
+        failed_listings: int = 0,
     ) -> ScrapeRun:
         scrape_run.completed_at = datetime.now(timezone.utc)
         if pages_requested is not None:
@@ -302,7 +303,9 @@ class VehicleRepository:
 
         req = scrape_run.pages_requested
         scr = scrape_run.pages_scraped
-        if failed_pages > 0 or (req > 0 and scr < req):
+        if scr == 0 and req > 0:
+            scrape_run.status = "FAILED"
+        elif failed_pages > 0 or failed_listings > 0 or (req > 0 and scr < req):
             scrape_run.status = "INCOMPLETE"
         else:
             scrape_run.status = "COMPLETED"

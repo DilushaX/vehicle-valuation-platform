@@ -52,13 +52,20 @@ class PipelineRunner:
         dry_run: bool = False,
         export_csv: bool = True,
         db_session: Optional[Session] = None,
+        request_delay: Optional[float] = None,
     ) -> Dict[str, Any]:
         """
         Executes the data collection pipeline across one or multiple categories.
         Ensures category isolation: failure in one category does not abort remaining categories.
         """
+        delay = request_delay if request_delay is not None else settings.REQUEST_DELAY
+        if request_delay is not None:
+            self.category_spider.request_delay = delay
+            self.category_spider.bulk_spider.request_delay = delay
+
         logger.info(
-            f"Starting Phase 3 Pipeline (dry_run={dry_run}, max_pages={max_pages}, max_listings={max_listings})"
+            f"Starting Phase 4 Pipeline (dry_run={dry_run}, max_pages={max_pages}, "
+            f"max_listings={max_listings}, request_delay={delay}s)"
         )
 
         # 1. Determine categories to process
@@ -68,7 +75,7 @@ class PipelineRunner:
         category_results: List[Dict[str, Any]] = []
         completeness_reports: List[CategoryCompleteness] = []
 
-        for cat in target_categories:
+        for cat_idx, cat in enumerate(target_categories):
             cat_name = cat.name
             logger.info(f"--- Processing Category: {cat_name} ---")
 
@@ -140,12 +147,13 @@ class PipelineRunner:
                         new_listings=new_listings_count,
                         updated_listings=updated_listings_count,
                         errors=error_msg,
+                        failed_listings=len(cat_scrape_res["failed_listings"]),
                     )
                     repo.commit()
 
-                # 4. CSV export (optional snapshot)
+                # 4. CSV export (optional snapshot, skipped on dry_run)
                 csv_path = None
-                if export_csv and records:
+                if export_csv and not dry_run and records:
                     csv_path = self.csv_exporter.export_category_records(
                         category=cat_name,
                         records=records,
@@ -164,6 +172,8 @@ class PipelineRunner:
                     listings_scraped=cat_scrape_res["listings_scraped"],
                     failed_listings=cat_scrape_res["failed_listings"],
                     status=cat_scrape_res["status"],
+                    max_pages_requested=max_pages,
+                    max_listings_requested=max_listings,
                 )
                 completeness_reports.append(completeness)
 
@@ -192,6 +202,8 @@ class PipelineRunner:
                     CategoryCompleteness(
                         category_name=cat_name,
                         status="FAILED",
+                        max_pages_requested=max_pages,
+                        max_listings_requested=max_listings,
                     )
                 )
                 category_results.append(
@@ -207,6 +219,11 @@ class PipelineRunner:
                 if should_close_session and session is not None:
                     session.close()
 
+            # Polite delay between categories
+            if delay > 0 and cat_idx < len(target_categories) - 1:
+                import time
+                time.sleep(delay)
+
         # Overall pipeline status
         all_completed = (
             all(cr["status"] == "COMPLETED" for cr in category_results)
@@ -218,6 +235,10 @@ class PipelineRunner:
         return {
             "overall_status": overall_status,
             "dry_run": dry_run,
+            "scope": {
+                "max_pages": max_pages,
+                "max_listings": max_listings,
+            },
             "categories_processed": len(category_results),
             "category_results": category_results,
             "completeness_reports": [cr.to_dict() for cr in completeness_reports],
@@ -251,13 +272,20 @@ class PipelineRunner:
             ]
 
         resolved: List[DiscoveredCategory] = []
+        raw_list: List[str] = []
         for cat in categories:
-            cat_clean = cat.strip()
+            for part in cat.split(","):
+                part_clean = part.strip()
+                if part_clean:
+                    raw_list.append(part_clean)
+
+        for cat_clean in raw_list:
             if cat_clean.startswith("http"):
-                name = cat_clean.rstrip("/").split("/")[-1].capitalize()
+                name = cat_clean.rstrip("/").split("/")[-1]
+                name = name if any(c.isupper() for c in name) else name.capitalize()
                 url = cat_clean
             else:
-                name = cat_clean.capitalize()
+                name = cat_clean if any(c.isupper() for c in cat_clean) else cat_clean.capitalize()
                 url = f"https://riyasewana.com/search/{cat_clean.lower()}"
             resolved.append(DiscoveredCategory(name=name, url=url))
 

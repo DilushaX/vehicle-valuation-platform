@@ -6,8 +6,11 @@ from pathlib import Path
 # Ensure project root is on sys.path for direct script execution
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from config import settings
 from data_pipeline.export.csv_exporter import CSVExporter
 from data_pipeline.pipeline_runner import PipelineRunner
+from scraper.client import RiyasewanaClient
+from scraper.spiders.riyasewana_category_spider import RiyasewanaCategorySpider
 
 logging.basicConfig(
     level=logging.INFO,
@@ -18,7 +21,7 @@ logger = logging.getLogger("scrape_riyasewana")
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="Riyasewana Vehicle Market Data Collection Pipeline (Phase 3)"
+        description="Riyasewana Vehicle Market Data Collection Pipeline (Phase 4)"
     )
     parser.add_argument(
         "--dry-run",
@@ -42,7 +45,31 @@ def parse_args():
         "--category",
         nargs="+",
         default=None,
-        help="Specific categories to scrape (e.g. --category Cars SUVs).",
+        help="Specific categories to scrape (e.g. --category Cars SUVs or --category Cars,SUVs).",
+    )
+    parser.add_argument(
+        "--request-delay",
+        type=float,
+        default=settings.REQUEST_DELAY,
+        help=f"Politeness delay between outbound requests in seconds (default: {settings.REQUEST_DELAY}s).",
+    )
+    parser.add_argument(
+        "--request-timeout",
+        type=float,
+        default=settings.REQUEST_TIMEOUT,
+        help=f"HTTP request timeout in seconds (default: {settings.REQUEST_TIMEOUT}s).",
+    )
+    parser.add_argument(
+        "--max-retries",
+        type=int,
+        default=settings.MAX_RETRIES,
+        help=f"Maximum retries for transient errors (default: {settings.MAX_RETRIES}).",
+    )
+    parser.add_argument(
+        "--retry-backoff",
+        type=float,
+        default=settings.RETRY_BACKOFF,
+        help=f"Exponential retry backoff multiplier (default: {settings.RETRY_BACKOFF}).",
     )
     parser.add_argument(
         "--no-csv",
@@ -66,10 +93,13 @@ def main():
     print("=" * 70)
     print(f" RIYASEWANA DATA COLLECTION PIPELINE — {mode_label}")
     print("=" * 70)
-    print(f"Categories  : {args.category or 'Auto-discover public categories'}")
-    print(f"Max Pages   : {args.max_pages or 'All accessible'}")
-    print(f"Max Listings: {args.max_listings or 'All accessible'}")
-    print(f"CSV Export  : {'Disabled' if args.no_csv else 'Enabled'}")
+    print(f"Categories     : {args.category or 'Auto-discover public categories'}")
+    print(f"Max Pages      : {args.max_pages or 'All accessible'}")
+    print(f"Max Listings   : {args.max_listings or 'All accessible'}")
+    print(f"Request Delay  : {args.request_delay}s")
+    print(f"Request Timeout: {args.request_timeout}s")
+    print(f"Max Retries    : {args.max_retries} (Backoff: {args.retry_backoff}x)")
+    print(f"CSV Export     : {'Disabled' if args.no_csv else 'Enabled'}")
     print("=" * 70)
 
     csv_exporter = None
@@ -83,7 +113,17 @@ def main():
         except Exception as schema_err:
             logger.warning(f"Database schema initialization warning: {schema_err}")
 
-    runner = PipelineRunner(csv_exporter=csv_exporter)
+    client = RiyasewanaClient(timeout=args.request_timeout)
+    category_spider = RiyasewanaCategorySpider(
+        client=client,
+        max_retries=args.max_retries,
+        retry_backoff=args.retry_backoff,
+        request_delay=args.request_delay,
+    )
+    runner = PipelineRunner(
+        category_spider=category_spider,
+        csv_exporter=csv_exporter,
+    )
 
     try:
         report = runner.run_pipeline(
@@ -92,6 +132,7 @@ def main():
             max_listings=args.max_listings,
             dry_run=args.dry_run,
             export_csv=not args.no_csv,
+            request_delay=args.request_delay,
         )
 
         print("\n" + "=" * 70)

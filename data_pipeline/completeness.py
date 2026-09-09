@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 
 @dataclass
@@ -7,6 +7,8 @@ class CategoryCompleteness:
     """
     Tracks and verifies completeness metrics for a single category scrape run.
     Ensures that status is never marked 100% complete unless all attempted scope succeeded.
+    Note: Completeness is evaluated relative to the requested scope (max_pages, max_listings),
+    never claiming whole-website completeness unless exhaustive scraping was conducted.
     """
 
     category_name: str
@@ -20,6 +22,8 @@ class CategoryCompleteness:
     listings_scraped: int = 0
     failed_listings: List[Dict[str, Any]] = field(default_factory=list)
     status: str = "COMPLETED"
+    max_pages_requested: Optional[int] = None
+    max_listings_requested: Optional[int] = None
 
     @property
     def page_completeness_pct(self) -> float:
@@ -48,6 +52,12 @@ class CategoryCompleteness:
     def to_dict(self) -> Dict[str, Any]:
         return {
             "category_name": self.category_name,
+            "max_pages_requested": self.max_pages_requested,
+            "max_listings_requested": self.max_listings_requested,
+            "is_scoped": (
+                self.max_pages_requested is not None
+                or self.max_listings_requested is not None
+            ),
             "pages_discovered": self.pages_discovered,
             "pages_attempted": self.pages_attempted,
             "pages_scraped": self.pages_scraped,
@@ -66,6 +76,7 @@ class CategoryCompleteness:
     def format_summary(self) -> str:
         lines = [
             f"Category: {self.category_name}",
+            f"  Scope:            max_pages={self.max_pages_requested or 'All'}, max_listings={self.max_listings_requested or 'All'}",
             f"  Pages discovered: {self.pages_discovered}",
             f"  Pages attempted:  {self.pages_attempted}",
             f"  Pages scraped:    {self.pages_scraped}",
@@ -75,6 +86,8 @@ class CategoryCompleteness:
             f"  Listings scraped: {self.listings_scraped}/{self.listings_attempted}",
             f"  Failed listings:  {len(self.failed_listings)}",
             f"  Listing Comp:     {self.listing_completeness_pct}%",
+            f"  Scope Complete:   {'YES' if self.is_fully_complete else 'NO'}",
             f"  Status:           {self.status}",
+            "  (Note: Completeness is evaluated within the requested collection scope, not entire website)",
         ]
         return "\n".join(lines)
