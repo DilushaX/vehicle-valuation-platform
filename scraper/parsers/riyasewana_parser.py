@@ -68,17 +68,37 @@ class RiyasewanaParser:
         return None
 
     def _extract_category(self, soup: BeautifulSoup, url: str) -> Optional[str]:
-        # Try breadcrumb links first
-        for a in soup.find_all("a", href=True):
-            href = a["href"].lower()
-            for cat_key, cat_name in self.KNOWN_CATEGORIES.items():
-                if f"/search/{cat_key}" in href:
+        # 1. Infer from H1 listing title (standard pattern: "{Brand} {Model} {Year} {Category} ({Condition})")
+        title = self._extract_title(soup)
+        if title:
+            title_lower = title.lower()
+            for key, cat_name in [
+                ("heavy-duty", "Heavy-Duty"),
+                ("three wheel", "Three Wheel"),
+                ("motorbike", "Motorbike"),
+                ("motorcycle", "Motorbike"),
+                ("lorry", "Lorry"),
+                ("pickup", "Pickup"),
+                ("suv", "SUV"),
+                ("van", "Van"),
+                ("car", "Car"),
+                ("bus", "Bus"),
+            ]:
+                if key in title_lower:
                     return cat_name
 
-        # Try to infer from title or URL
+        # 2. Try breadcrumb/search links within content area (avoiding global navigation header)
+        content_area = soup.find("div", id="content") or soup
+        for a in content_area.find_all("a", href=True):
+            href = a["href"].lower()
+            for cat_key, cat_name in self.KNOWN_CATEGORIES.items():
+                if f"/search/{cat_key}/" in href:
+                    return cat_name
+
+        # 3. Try to infer from URL path
         url_lower = url.lower()
         for cat_key, cat_name in self.KNOWN_CATEGORIES.items():
-            if cat_key in url_lower:
+            if f"-{cat_key}-" in url_lower or f"/{cat_key}/" in url_lower:
                 return cat_name
 
         return "Vehicle"

@@ -59,6 +59,11 @@ class Vehicle(Base):
         cascade="all, delete-orphan",
     )
 
+    __table_args__ = (
+        Index("idx_vehicle_category", "category"),
+        Index("idx_vehicle_brand_model", "brand", "model"),
+    )
+
 
 class Listing(Base):
     __tablename__ = "listings"
