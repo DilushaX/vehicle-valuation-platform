@@ -121,6 +121,7 @@ class PipelineRunner:
                             logger.error(
                                 f"Failed to sync listing {record.get('listing_id')}: {sync_err}"
                             )
+                            repo.rollback()
 
                     # Update ScrapeRun completion
                     error_msg = None
@@ -180,8 +181,12 @@ class PipelineRunner:
             except Exception as cat_err:
                 logger.error(f"Category {cat_name} encountered an error: {cat_err}")
                 if not dry_run and repo is not None and scrape_run is not None:
-                    repo.fail_scrape_run(scrape_run, str(cat_err))
-                    repo.commit()
+                    try:
+                        repo.rollback()
+                        repo.fail_scrape_run(scrape_run, str(cat_err))
+                        repo.commit()
+                    except Exception as fail_err:
+                        logger.error(f"Could not record scrape run failure: {fail_err}")
 
                 completeness_reports.append(
                     CategoryCompleteness(

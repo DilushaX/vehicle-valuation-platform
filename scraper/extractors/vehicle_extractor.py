@@ -108,21 +108,21 @@ class VehicleExtractor:
             "listing_id": str(raw_data.get("listing_id")).strip() if raw_data.get("listing_id") else None,
             "listing_url": raw_data.get("listing_url"),
             "title": self._clean_string(raw_data.get("title")),
-            "category": self._clean_string(raw_data.get("category")),
-            "brand": self._clean_string(raw_data.get("brand")),
-            "model": self._clean_string(raw_data.get("model")),
+            "category": self._clean_string(raw_data.get("category"), max_len=50),
+            "brand": self._clean_string(raw_data.get("brand"), max_len=100),
+            "model": self._clean_string(raw_data.get("model"), max_len=150),
             "year": manufacture_year or registration_year,
             "manufacture_year": manufacture_year,
             "registration_year": registration_year,
             "mileage": self.parse_mileage(raw_data.get("mileage")),
             "price": self.parse_price(raw_data.get("price")),
-            "fuel_type": self._clean_string(raw_data.get("fuel_type")),
-            "transmission": self._clean_string(raw_data.get("gear")),
+            "fuel_type": self._clean_string(raw_data.get("fuel_type"), max_len=50),
+            "transmission": self._clean_string(raw_data.get("gear"), max_len=50),
             "engine_cc": self.parse_engine_cc(raw_data.get("engine_cc")),
-            "condition": self._clean_string(raw_data.get("condition")),
-            "location": self._clean_string(location_raw),
-            "district": self.determine_district(district_raw or location_raw),
-            "ad_date": self._clean_string(raw_data.get("ad_date")),
+            "condition": self._clean_string(raw_data.get("condition"), max_len=50),
+            "location": self._clean_string(location_raw, max_len=150),
+            "district": self._clean_string(self.determine_district(district_raw or location_raw), max_len=100),
+            "ad_date": self._clean_string(raw_data.get("ad_date"), max_len=100),
             "description": raw_data.get("description"),
             "source": raw_data.get("source", "riyasewana"),
             "scraped_at": datetime.now(timezone.utc).isoformat(),
@@ -132,10 +132,14 @@ class VehicleExtractor:
         return record
 
     @staticmethod
-    def _clean_string(val: Optional[str]) -> Optional[str]:
+    def _clean_string(val: Optional[str], max_len: Optional[int] = None) -> Optional[str]:
         if not val:
             return None
         cleaned = " ".join(str(val).split())
+        if not cleaned:
+            return None
+        if max_len and len(cleaned) > max_len:
+            cleaned = cleaned[:max_len].strip()
         return cleaned if cleaned else None
 
     @classmethod

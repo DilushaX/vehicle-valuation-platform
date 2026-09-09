@@ -2,6 +2,7 @@ import logging
 import httpx
 
 try:
+    # pyrefly: ignore [missing-import]
     from curl_cffi import requests as curl_requests
     HAS_CURL_CFFI = True
 except ImportError:

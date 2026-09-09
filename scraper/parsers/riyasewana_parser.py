@@ -100,34 +100,52 @@ class RiyasewanaParser:
         if isinstance(field_names, str):
             field_names = [field_names]
 
-        field_names_lower = [f.lower() for f in field_names]
+        field_names_lower = [f.lower().strip().rstrip(":") for f in field_names]
 
         # 1. Search in modern div.detail-row
         for row in soup.find_all(class_="detail-row"):
+            label_el = row.find(class_="detail-label")
+            val_el = row.find(class_="detail-value")
+            if label_el and val_el:
+                label = label_el.get_text(strip=True).lower().rstrip(":")
+                if any(lbl == label for lbl in field_names_lower) or any(lbl in label for lbl in field_names_lower):
+                    val = val_el.get_text(" ", strip=True)
+                    if val and len(val) <= 150:
+                        return val
+
             text = row.get_text(" ", strip=True)
             parts = [p.strip() for p in text.split("|") if p.strip()]
             if len(parts) >= 2:
-                label = parts[0].lower()
-                if any(lbl in label for lbl in field_names_lower):
-                    return " ".join(parts[1:])
+                label = parts[0].lower().rstrip(":")
+                if any(lbl == label or lbl in label for lbl in field_names_lower):
+                    val = " ".join(parts[1:])
+                    if val and len(val) <= 150:
+                        return val
 
         # 2. Search in table rows (legacy layout)
         for tr in soup.find_all("tr"):
             cols = tr.find_all(["td", "th"])
             if len(cols) >= 2:
-                label = cols[0].get_text(strip=True).lower().replace(":", "")
+                label = cols[0].get_text(strip=True).lower().replace(":", "").strip()
                 if any(lbl == label for lbl in field_names_lower):
-                    return cols[1].get_text(" ", strip=True)
+                    val = cols[1].get_text(" ", strip=True)
+                    if val and len(val) <= 150:
+                        return val
 
-        # 3. Fallback: text search near label
+        # 3. Fallback: text search near label (strictly bounded to prevent capturing page wrapper containers)
         for fn in field_names:
-            element = soup.find(string=lambda value: value and fn.lower() in value.strip().lower())
+            element = soup.find(string=lambda value: value and fn.lower() == value.strip().lower().rstrip(":"))
             if element:
                 parent = element.parent
+                next_sib = parent.find_next_sibling()
+                if next_sib:
+                    val = next_sib.get_text(" ", strip=True)
+                    if val and val.lower() != fn.lower() and len(val) <= 100:
+                        return val
                 next_el = parent.find_next()
                 if next_el:
                     val = next_el.get_text(" ", strip=True)
-                    if val and val.lower() != fn.lower():
+                    if val and val.lower() != fn.lower() and len(val) <= 100:
                         return val
 
         return None

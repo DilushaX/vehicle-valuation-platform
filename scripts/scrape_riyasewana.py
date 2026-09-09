@@ -2,7 +2,9 @@ import argparse
 import logging
 import sys
 from pathlib import Path
-from typing import List, Optional
+
+# Ensure project root is on sys.path for direct script execution
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from data_pipeline.export.csv_exporter import CSVExporter
 from data_pipeline.pipeline_runner import PipelineRunner
