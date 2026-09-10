@@ -15,6 +15,10 @@ class DiscoveredListing:
     url: str
     listing_id: Optional[str] = None
     source: str = "riyasewana"
+    title: Optional[str] = None
+    price: Optional[int] = None
+    mileage: Optional[int] = None
+    location: Optional[str] = None
 
 
 class RiyasewanaListingDiscovery:
@@ -69,6 +73,91 @@ class RiyasewanaListingDiscovery:
             )
             for u in urls
         ]
+
+    def extract_listing_cards(
+        self,
+        html: str,
+        page_url: str,
+    ) -> list[DiscoveredListing]:
+        """
+        Extracts rich DiscoveredListing objects containing available card-level signals
+        (title, price, mileage, location) from pagination page HTML.
+        Deduplicates multiple cards or links for the same listing on a single page.
+        Falls back cleanly to discover_listings if structured card markup is not present.
+        """
+        soup = BeautifulSoup(html, "html.parser")
+        cards = soup.find_all(
+            ["li", "div"],
+            class_=lambda c: c and any(cls in c for cls in ["v-card", "item"]),
+        )
+
+        if not cards:
+            return self.discover_listings(html, page_url)
+
+        discovered: dict[str, DiscoveredListing] = {}
+
+        for card in cards:
+            # Find the primary listing link
+            link = card.find("a", href=True)
+            if not link:
+                continue
+
+            href = link.get("href")
+            absolute_url = urljoin(page_url, href)
+            if not self.is_valid_listing_url(absolute_url):
+                continue
+
+            norm_url = self._normalize_url(absolute_url)
+            listing_id = self.extract_listing_id(norm_url)
+            if not listing_id or listing_id in discovered:
+                continue
+
+            # Extract basic signals if available
+            title = None
+            title_el = card.find(class_=lambda c: c and "title" in c)
+            if title_el:
+                title = title_el.get_text(" ", strip=True)
+
+            price = None
+            price_el = card.find(class_=lambda c: c and "price" in c)
+            if price_el:
+                price_match = re.search(r"[\d,]+", price_el.get_text())
+                if price_match:
+                    try:
+                        price = int(price_match.group().replace(",", ""))
+                    except ValueError:
+                        price = None
+
+            mileage = None
+            location = None
+            meta_el = card.find(class_=lambda c: c and ("meta" in c or "detail" in c))
+            if meta_el:
+                meta_text = meta_el.get_text(" ", strip=True)
+                km_match = re.search(r"([\d,]+)\s*km", meta_text, re.IGNORECASE)
+                if km_match:
+                    try:
+                        mileage = int(km_match.group(1).replace(",", ""))
+                    except ValueError:
+                        mileage = None
+
+                # Location is typically before separator or pin icon
+                loc_parts = [p.strip() for p in meta_text.split("·") if p.strip()]
+                if loc_parts:
+                    candidate_loc = re.sub(r"[\d,]+\s*km", "", loc_parts[0], flags=re.IGNORECASE).strip()
+                    if candidate_loc:
+                        location = candidate_loc
+
+            discovered[listing_id] = DiscoveredListing(
+                url=norm_url,
+                listing_id=listing_id,
+                source="riyasewana",
+                title=title,
+                price=price,
+                mileage=mileage,
+                location=location,
+            )
+
+        return list(discovered.values())
 
     @classmethod
     def is_valid_listing_url(cls, url: str) -> bool:

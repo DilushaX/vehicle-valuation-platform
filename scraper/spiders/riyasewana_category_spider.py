@@ -115,6 +115,7 @@ class RiyasewanaCategorySpider:
 
         all_listing_urls_discovered: List[str] = []
         unique_listing_urls: set[str] = set()
+        stopped_early_for_max_listings = False
 
         # 2. Scrape each pagination page to extract listing URLs
         for index, page in enumerate(target_pages):
@@ -155,6 +156,7 @@ class RiyasewanaCategorySpider:
 
                 # Stop inspecting further pagination pages if max_listings is satisfied
                 if max_listings is not None and len(unique_listing_urls) >= max_listings:
+                    stopped_early_for_max_listings = True
                     logger.info(
                         f"Found {len(unique_listing_urls)} listing URLs, satisfying requested max_listings={max_listings}. "
                         "Stopping pagination inspection early."
@@ -179,6 +181,24 @@ class RiyasewanaCategorySpider:
                 time.sleep(self.request_delay)
 
         sorted_unique_urls = sorted(unique_listing_urls)
+
+        # Check if pagination naturally reached the end of the category
+        natural_pagination_exhausted = True
+        if max_pages is not None and len(discovered_pages) >= max_pages:
+            last_page = discovered_pages[-1]
+            if last_page.html:
+                has_next = bool(self.category_discovery._find_next_page(last_page.html, last_page.url))
+                if has_next:
+                    natural_pagination_exhausted = False
+            else:
+                natural_pagination_exhausted = False
+
+        pagination_exhausted = (
+            natural_pagination_exhausted
+            and not stopped_early_for_max_listings
+            and pages_scraped == len(target_pages)
+            and len(failed_pages) == 0
+        )
 
         # 3. Bulk scrape individual vehicle listings
         bulk_results = self.bulk_spider.scrape_listings(
@@ -211,6 +231,7 @@ class RiyasewanaCategorySpider:
             "listings_scraped": bulk_results["total_successful"],
             "failed_listings": bulk_results["failed"],
             "records": bulk_results["successful"],
+            "pagination_exhausted": pagination_exhausted,
             "status": status,
         }
 
