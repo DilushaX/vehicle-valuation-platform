@@ -176,6 +176,8 @@ class VehicleRepository:
             # First observation
             vehicle = self.create_vehicle(data)
             listing = self.create_listing(vehicle, data, observed_at=ts)
+            listing._was_reactivated = False
+            listing._price_changed = False
             if price is not None:
                 self.add_price_history(listing, price, observed_at=ts)
             if scrape_run is not None:
@@ -185,6 +187,8 @@ class VehicleRepository:
             return listing, True
         else:
             # Subsequent observation
+            was_no_longer_observed = (listing.current_status == "NO_LONGER_OBSERVED")
+            listing._was_reactivated = was_no_longer_observed
             listing.last_seen_at = ts
             listing.current_status = "ACTIVE"
 
@@ -212,10 +216,13 @@ class VehicleRepository:
                 listing.vehicle.condition = data.get("condition")
 
             # Update price history only if price changed
+            price_changed = False
             if price is not None:
                 latest_price = self.get_latest_price(listing)
                 if latest_price is None or price != latest_price:
                     self.add_price_history(listing, price, observed_at=ts)
+                    price_changed = True
+            listing._price_changed = price_changed
 
             # Record daily observation
             if scrape_run is not None:
@@ -235,6 +242,7 @@ class VehicleRepository:
         """
         Identifies previously active listings not observed in the current scrape run,
         and marks them as NO_LONGER_OBSERVED without deleting historical data.
+        Never marks listings as SOLD.
         """
         observed_set = {str(lid).strip() for lid in observed_listing_ids}
         statement = select(Listing).where(
@@ -242,7 +250,13 @@ class VehicleRepository:
             Listing.current_status == "ACTIVE",
         )
         if category:
-            statement = statement.join(Vehicle).where(Vehicle.category == category)
+            cat_clean = category.strip()
+            cat_singular = cat_clean.rstrip("s")
+            statement = statement.join(Vehicle).where(
+                (Vehicle.category == cat_clean)
+                | (Vehicle.category == cat_singular)
+                | (Vehicle.category.ilike(f"{cat_singular}%"))
+            )
 
         active_listings = self.db.scalars(statement).all()
         marked = []
@@ -288,6 +302,10 @@ class VehicleRepository:
         updated_listings: int = 0,
         errors: str | None = None,
         failed_listings: int = 0,
+        price_changes: int = 0,
+        disappeared_listings: int = 0,
+        reactivated_listings: int = 0,
+        observations_created: int = 0,
     ) -> ScrapeRun:
         scrape_run.completed_at = datetime.now(timezone.utc)
         if pages_requested is not None:
