@@ -129,12 +129,43 @@ python scripts/scrape_riyasewana.py --max-pages 2 --max-listings 50 --request-de
 - **Retry Logic & Backoff**: Transient errors (connection resets, read timeouts, HTTP 5xx, HTTP 429) are retried with exponential backoff (default: 3 retries, 2.0x backoff). Non-transient errors (HTTP 400, 403, 404, 410) fail immediately without retrying.
 - **HTTP 429 & `Retry-After`**: If upstream signals `Retry-After <= 30.0s`, the crawler respects the requested wait time. If `Retry-After > 30.0s`, retries safely abort to prevent blocking execution.
 
-### Historical Lifecycle & Idempotency
+### Incremental Collection & Listing Lifecycle (Phase 4 Step 3)
 
-- **Observation Tracking**: Every scrape creates an immutable point-in-time record in `listing_observations`.
-- **Price History**: New rows in `price_history` are created **only** when an asking price changes. Identical prices are deduplicated.
-- **Disappearance Handling**: Listings missing from subsequent runs transition to **`NO_LONGER_OBSERVED`**. Listings are **never** inferred as `SOLD`.
-- **First Seen Preservation**: `first_seen_at` is strictly immutable from the moment of initial discovery. Re-appearing listings retain their original historical identity.
+The platform implements an audit-safe, incremental lifecycle engine that manages listing states while strictly preserving historical integrity in PostgreSQL:
+
+#### 1. NEW vs. EXISTING Listing Detection
+Every discovered listing is evaluated against PostgreSQL by `(source, listing_id)`:
+- **NEW Listing**: Full detail scrape is executed. Creates new `Vehicle`, `Listing`, initial `PriceHistory` (if price present), and initial `ListingObservation`.
+- **EXISTING Listing**: Full detail scrape is executed. Preserves original primary key and `first_seen_at`, updates `last_seen_at`, refreshes vehicle attributes, and records a new point-in-time `ListingObservation`.
+
+#### 2. Price History & Observation Behavior
+- **Point-in-Time Observations**: Every successful observation across runs records a row in `listing_observations` linked to the active `ScrapeRun`.
+- **Price Change Audit**: If the seller's asking price has not changed, **no duplicate row** is created in `price_history`. A new `PriceHistory` row is recorded **only** when the price changes, chronologically preserving all previous price points.
+
+#### 3. Scope-Aware Disappearance Protection
+> [!IMPORTANT]
+> **Definitive Disappearance Rule**:
+> **"Listing disappearance is only inferred from a sufficiently complete collection scope. A listing missing from a limited/partial scrape is not considered disappeared."**
+
+- A collection run is considered **complete scope** for a category **only** if:
+  1. The crawl was not constrained by `--max-pages` or `--max-listings` before pagination reached its natural end (`pagination_exhausted == True`).
+  2. All pagination pages were scraped with zero failures (`failed_pages == 0`).
+  3. All listing detail pages were scraped with zero failures (`failed_listings == 0`).
+  4. Spider run status is `COMPLETED`.
+- **Why a partial scrape cannot determine disappearance**: If a user runs `--category Cars --max-pages 1 --max-listings 5`, only 5 listings are observed out of thousands. Missing from those 5 listings is **not** evidence of disappearance. In all partial/scoped runs, disappearance detection is **automatically skipped**, preserving all active listings in `ACTIVE` status without false transitions.
+- **Never Infer Sold**: When a genuinely complete collection confirms a listing is missing, it is transitioned to **`NO_LONGER_OBSERVED`**, never `SOLD`.
+
+#### 4. Reappearance Handling
+- If a listing previously marked `NO_LONGER_OBSERVED` is observed again on Riyasewana:
+  - Status transitions back: `NO_LONGER_OBSERVED` → `ACTIVE`.
+  - The original listing identity, database primary key, and immutable `first_seen_at` are preserved.
+  - `last_seen_at` is updated to the new observation timestamp.
+  - A new `ListingObservation` is recorded.
+  - A new `PriceHistory` row is recorded only if the price changed since its last observation.
+  - Exactly **one** `Listing` record exists—no duplicates are ever created.
+
+#### 5. Multi-Category Isolation
+- Lifecycle updates and disappearance transitions are strictly scoped per category. A collection for `Cars` will never affect listings belonging to `Vans`, `SUVs`, or other categories.
 
 > [!WARNING]
 > **Scoped Completeness vs. Website Completeness**: Scrape reports and metrics reflect completeness **within the requested collection scope** (`max_pages`, `max_listings`). A status of `COMPLETED` confirms that all requested pages and attempted listings succeeded without errors; it does **not** claim to have scraped the entirety of Riyasewana.
