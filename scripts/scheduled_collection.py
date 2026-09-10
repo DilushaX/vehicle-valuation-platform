@@ -18,6 +18,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from config import settings
 from data_pipeline.export.csv_exporter import CSVExporter
 from data_pipeline.pipeline_runner import PipelineRunner
+from data_pipeline.scheduler.lock import CollectionLock
 from scraper.client import RiyasewanaClient
 from scraper.spiders.riyasewana_category_spider import RiyasewanaCategorySpider
 
@@ -103,6 +104,18 @@ def parse_args():
         type=str,
         default=None,
         help="Custom output directory for CSV snapshots (default: data/raw).",
+    )
+    parser.add_argument(
+        "--lock-file",
+        type=str,
+        default=None,
+        help="Custom lock file path (default: data/.collection.lock).",
+    )
+    parser.add_argument(
+        "--no-lock",
+        action="store_true",
+        default=False,
+        help="Bypass lock check (caution: may cause overlapping runs).",
     )
     return parser.parse_args()
 
@@ -232,6 +245,20 @@ def print_completion_report(report: dict, dry_run: bool):
 
 def main():
     args = parse_args()
+
+    lock = None
+    if not args.no_lock:
+        lock_path = Path(args.lock_file) if args.lock_file else None
+        lock = CollectionLock(lock_file_path=lock_path)
+        if not lock.acquire():
+            msg = (
+                "Another collection run is currently active. "
+                "Exiting safely to prevent overlapping collection runs."
+            )
+            logger.warning(msg)
+            print(f"\n[LOCK NOTICE] {msg}")
+            return 0
+
     try:
         report = run_scheduled_collection(
             categories=args.category,
@@ -253,6 +280,10 @@ def main():
         logger.error(f"Fatal error during scheduled collection: {exc}", exc_info=True)
         print(f"\n[FATAL ERROR] Scheduled collection failed: {exc}")
         return 1
+
+    finally:
+        if lock and lock.is_locked:
+            lock.release()
 
 
 if __name__ == "__main__":
