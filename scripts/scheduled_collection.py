@@ -18,6 +18,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from config import settings
 from data_pipeline.export.csv_exporter import CSVExporter
 from data_pipeline.pipeline_runner import PipelineRunner
+from data_pipeline.scheduler.launchd import (
+    generate_launchd_plist,
+    get_launchd_status,
+    install_launchd_agent,
+    uninstall_launchd_agent,
+)
 from data_pipeline.scheduler.lock import CollectionLock
 from scraper.client import RiyasewanaClient
 from scraper.spiders.riyasewana_category_spider import RiyasewanaCategorySpider
@@ -116,6 +122,36 @@ def parse_args():
         action="store_true",
         default=False,
         help="Bypass lock check (caution: may cause overlapping runs).",
+    )
+    parser.add_argument(
+        "--time",
+        type=str,
+        default=None,
+        help=f"Daily collection time in 24-hour HH:MM format (default: {settings.COLLECTION_TIME}).",
+    )
+    parser.add_argument(
+        "--generate-plist",
+        action="store_true",
+        default=False,
+        help="Generate and print macOS LaunchAgent property list XML to stdout and exit.",
+    )
+    parser.add_argument(
+        "--install-launchd",
+        action="store_true",
+        default=False,
+        help="Install and load macOS LaunchAgent into ~/Library/LaunchAgents.",
+    )
+    parser.add_argument(
+        "--uninstall-launchd",
+        action="store_true",
+        default=False,
+        help="Unload and delete macOS LaunchAgent from ~/Library/LaunchAgents.",
+    )
+    parser.add_argument(
+        "--status-launchd",
+        action="store_true",
+        default=False,
+        help="Check and display macOS LaunchAgent status and exit.",
     )
     return parser.parse_args()
 
@@ -245,6 +281,43 @@ def print_completion_report(report: dict, dry_run: bool):
 
 def main():
     args = parse_args()
+
+    # Handle LaunchAgent inspection and management commands early
+    if args.generate_plist:
+        plist_xml = generate_launchd_plist(collection_time=args.time)
+        print(plist_xml)
+        return 0
+
+    if args.status_launchd:
+        status = get_launchd_status()
+        print("=" * 60)
+        print(" macOS LaunchAgent Status (com.vehicle_valuation.collection)")
+        print("=" * 60)
+        print(f"  Plist Path      : {status['plist_path']}")
+        print(f"  Installed       : {'YES' if status['is_installed'] else 'NO'}")
+        print(f"  Loaded (Active) : {'YES' if status['is_loaded'] else 'NO'}")
+        print(f"  Configured Time : {status['configured_time']}")
+        print(f"  Schedule        : {status['schedule']}")
+        print("=" * 60)
+        return 0
+
+    if args.install_launchd:
+        try:
+            plist_p = install_launchd_agent(collection_time=args.time)
+            print(f"[OK] Successfully installed and loaded LaunchAgent at: {plist_p}")
+            print(f"[OK] Scheduled collection configured for daily at: {args.time or settings.COLLECTION_TIME}")
+            return 0
+        except Exception as e:
+            print(f"[ERROR] Failed to install LaunchAgent: {e}")
+            return 1
+
+    if args.uninstall_launchd:
+        removed = uninstall_launchd_agent()
+        if removed:
+            print("[OK] Successfully unloaded and removed macOS LaunchAgent.")
+        else:
+            print("[NOTICE] LaunchAgent was not installed.")
+        return 0
 
     lock = None
     if not args.no_lock:

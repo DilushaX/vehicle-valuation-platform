@@ -27,5 +27,20 @@ class Settings(BaseSettings):
     RAW_DATA_DIR: Path = Path("data/raw")
     SOURCE_NAME: str = "riyasewana"
 
+    # Scheduling settings (Phase 4 Step 4)
+    COLLECTION_SCHEDULE: str = "daily"
+    COLLECTION_TIME: str = "02:00"  # 24-hour HH:MM format (default: 02:00 AM)
+    LOCK_FILE_PATH: Path = Path("data/.collection.lock")
+    SUPPORTED_CATEGORIES: list[str] = [
+        "Cars",
+        "Heavy-Duty",
+        "Lorries",
+        "Motorbikes",
+        "Pickups",
+        "SUVs",
+        "Three Wheelers",
+        "Vans",
+    ]
+
 
 settings = Settings()
