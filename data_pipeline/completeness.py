@@ -24,6 +24,7 @@ class CategoryCompleteness:
     status: str = "COMPLETED"
     max_pages_requested: Optional[int] = None
     max_listings_requested: Optional[int] = None
+    is_complete_scope: bool = False
 
     @property
     def page_completeness_pct(self) -> float:
@@ -58,6 +59,7 @@ class CategoryCompleteness:
                 self.max_pages_requested is not None
                 or self.max_listings_requested is not None
             ),
+            "is_complete_scope": self.is_complete_scope,
             "pages_discovered": self.pages_discovered,
             "pages_attempted": self.pages_attempted,
             "pages_scraped": self.pages_scraped,
@@ -77,6 +79,7 @@ class CategoryCompleteness:
         lines = [
             f"Category: {self.category_name}",
             f"  Scope:            max_pages={self.max_pages_requested or 'All'}, max_listings={self.max_listings_requested or 'All'}",
+            f"  Category Scope:   {'COMPLETE (Exhaustive; definitive for disappearance)' if self.is_complete_scope else 'PARTIAL / SCOPED (Disappearance skipped to protect active listings)'}",
             f"  Pages discovered: {self.pages_discovered}",
             f"  Pages attempted:  {self.pages_attempted}",
             f"  Pages scraped:    {self.pages_scraped}",

@@ -151,18 +151,27 @@ def main():
             print(f"  Pages (Discovered/Attempted/Scraped/Failed): "
                   f"{comp.get('pages_discovered')}/{comp.get('pages_attempted')}/"
                   f"{comp.get('pages_scraped')}/{comp.get('failed_pages_count')}")
-            print(f"  Page Completeness: {comp.get('page_completeness_pct')}%")
-            print(f"  Listings Found   : {comp.get('unique_listing_urls')} unique")
-            print(f"  Listings Scraped : {comp.get('listings_scraped')}/{comp.get('listings_attempted')} "
+            print(f"  Page Completeness    : {comp.get('page_completeness_pct')}%")
+            print(f"  Listing URLs (Found) : {comp.get('unique_listing_urls')} unique "
+                  f"({comp.get('listing_urls_discovered')} discovered)")
+            print(f"  Listings Scraped     : {comp.get('listings_scraped')}/{comp.get('listings_attempted')} "
                   f"(Failed: {comp.get('failed_listings_count')})")
-            print(f"  Listing Completeness: {comp.get('listing_completeness_pct')}%")
+            print(f"  Listing Completeness : {comp.get('listing_completeness_pct')}%")
 
             if not args.dry_run:
-                print(f"  Database Sync    : {res.get('new_listings', 0)} new, {res.get('updated_listings', 0)} updated")
+                print(f"  New Listings         : {res.get('new_listings', 0)}")
+                print(f"  Existing Listings    : {res.get('updated_listings', 0)}")
+                print(f"  Observations Created : {res.get('observations_created', 0)}")
+                print(f"  Price Changes        : {res.get('price_changes', 0)}")
+                print(f"  Reactivated Listings : {res.get('reactivated_listings', 0)}")
+                if res.get("disappearance_definitive"):
+                    print(f"  Disappeared Listings : {res.get('disappeared_listings', 0)} (NO_LONGER_OBSERVED)")
+                else:
+                    print(f"  Disappearance Check  : SKIPPED (Partial/scoped collection; active listings preserved)")
             if res.get("csv_path"):
-                print(f"  CSV Snapshot     : {res['csv_path']}")
+                print(f"  CSV Snapshot         : {res['csv_path']}")
             if res.get("error"):
-                print(f"  Error            : {res['error']}")
+                print(f"  Error                : {res['error']}")
 
         print("\n" + "=" * 70)
         return 0

@@ -111,6 +111,12 @@ class PipelineRunner:
                 records = cat_scrape_res["records"]
                 new_listings_count = 0
                 updated_listings_count = 0
+                reactivated_listings_count = 0
+                price_changes_count = 0
+                observations_count = 0
+                disappeared_listings_count = 0
+                disappearance_definitive = False
+                observed_listing_ids: set[str] = set()
 
                 # 3. Database synchronization (skipped if dry_run)
                 if not dry_run and repo is not None and scrape_run is not None:
@@ -120,15 +126,54 @@ class PipelineRunner:
                                 data=record,
                                 scrape_run=scrape_run,
                             )
+                            observed_listing_ids.add(listing.listing_id)
+                            observations_count += 1
                             if is_new:
                                 new_listings_count += 1
                             else:
                                 updated_listings_count += 1
+                                if getattr(listing, "_was_reactivated", False):
+                                    reactivated_listings_count += 1
+                            if getattr(listing, "_price_changed", False):
+                                price_changes_count += 1
                         except Exception as sync_err:
                             logger.error(
                                 f"Failed to sync listing {record.get('listing_id')}: {sync_err}"
                             )
                             repo.rollback()
+
+                    # 3b. Scope-aware disappearance safety
+                    # Enforce strict safety: Partial/scoped runs must NEVER mark unobserved listings as NO_LONGER_OBSERVED.
+                    # Only a genuinely complete category-scope run can perform disappearance detection.
+                    # Never infer SOLD.
+                    is_complete_scope = (
+                        cat_scrape_res["status"] == "COMPLETED"
+                        and len(cat_scrape_res["failed_pages"]) == 0
+                        and len(cat_scrape_res["failed_listings"]) == 0
+                        and cat_scrape_res.get("pagination_exhausted", False)
+                        and max_pages is None
+                        and max_listings is None
+                    )
+
+                    if is_complete_scope:
+                        marked = repo.mark_unobserved_listings(
+                            observed_listing_ids=observed_listing_ids,
+                            source=settings.SOURCE_NAME,
+                            category=cat_name,
+                        )
+                        disappeared_listings_count = len(marked)
+                        disappearance_definitive = True
+                        logger.info(
+                            f"Complete category scope confirmed for {cat_name}: "
+                            f"{disappeared_listings_count} unobserved active listings transitioned to NO_LONGER_OBSERVED."
+                        )
+                    else:
+                        logger.info(
+                            f"Disappearance detection skipped for {cat_name}: collection scope was partial/scoped "
+                            f"(max_pages={max_pages}, max_listings={max_listings}, "
+                            f"pagination_exhausted={cat_scrape_res.get('pagination_exhausted')}). "
+                            f"Existing ACTIVE listings remain unchanged."
+                        )
 
                     # Update ScrapeRun completion
                     error_msg = None
@@ -148,6 +193,10 @@ class PipelineRunner:
                         updated_listings=updated_listings_count,
                         errors=error_msg,
                         failed_listings=len(cat_scrape_res["failed_listings"]),
+                        price_changes=price_changes_count,
+                        disappeared_listings=disappeared_listings_count,
+                        reactivated_listings=reactivated_listings_count,
+                        observations_created=observations_count,
                     )
                     repo.commit()
 
@@ -160,6 +209,14 @@ class PipelineRunner:
                     )
 
                 # 5. Completeness report
+                is_complete_scope = (
+                    cat_scrape_res["status"] == "COMPLETED"
+                    and len(cat_scrape_res["failed_pages"]) == 0
+                    and len(cat_scrape_res["failed_listings"]) == 0
+                    and cat_scrape_res.get("pagination_exhausted", False)
+                    and max_pages is None
+                    and max_listings is None
+                )
                 completeness = CategoryCompleteness(
                     category_name=cat_name,
                     pages_discovered=cat_scrape_res["pages_discovered"],
@@ -174,6 +231,7 @@ class PipelineRunner:
                     status=cat_scrape_res["status"],
                     max_pages_requested=max_pages,
                     max_listings_requested=max_listings,
+                    is_complete_scope=is_complete_scope,
                 )
                 completeness_reports.append(completeness)
 
@@ -185,6 +243,11 @@ class PipelineRunner:
                     "csv_path": str(csv_path) if csv_path else None,
                     "new_listings": new_listings_count,
                     "updated_listings": updated_listings_count,
+                    "observations_created": observations_count,
+                    "price_changes": price_changes_count,
+                    "reactivated_listings": reactivated_listings_count,
+                    "disappeared_listings": disappeared_listings_count,
+                    "disappearance_definitive": disappearance_definitive,
                 }
                 category_results.append(cat_summary)
 
