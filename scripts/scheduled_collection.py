@@ -228,6 +228,44 @@ def run_scheduled_collection(
         report["elapsed_seconds"] = elapsed
         report["started_at"] = started_at_str
 
+        # Compute aggregate operational metrics
+        total_new = sum(r.get("new_listings", 0) for r in report.get("category_results", []))
+        total_updated = sum(r.get("updated_listings", 0) for r in report.get("category_results", []))
+        total_obs = sum(r.get("observations_created", 0) for r in report.get("category_results", []))
+        total_prices = sum(r.get("price_changes", 0) for r in report.get("category_results", []))
+        total_reactivated = sum(r.get("reactivated_listings", 0) for r in report.get("category_results", []))
+        total_disappeared = sum(r.get("disappeared_listings", 0) for r in report.get("category_results", []))
+        failed_categories = [
+            r["category_name"] for r in report.get("category_results", []) if r.get("status") == "FAILED"
+        ]
+
+        report["aggregate_metrics"] = {
+            "total_new_listings": total_new,
+            "total_updated_listings": total_updated,
+            "total_observations": total_obs,
+            "total_price_changes": total_prices,
+            "total_reactivated": total_reactivated,
+            "total_disappeared": total_disappeared,
+            "failed_categories_count": len(failed_categories),
+            "failed_categories": failed_categories,
+        }
+
+        logger.info("=" * 70)
+        logger.info("SCHEDULED DATA COLLECTION SUMMARY")
+        logger.info(f"Overall Status       : {report.get('overall_status')}")
+        logger.info(f"Duration             : {elapsed}s")
+        logger.info(f"Categories Processed : {report.get('categories_processed')}/{len(target_categories)}")
+        if failed_categories:
+            logger.warning(f"Failed Categories    : {failed_categories}")
+        if not dry_run:
+            logger.info(f"New Listings Created : {total_new}")
+            logger.info(f"Existing Observed    : {total_updated}")
+            logger.info(f"Total Observations   : {total_obs}")
+            logger.info(f"Price Changes        : {total_prices}")
+            logger.info(f"Reactivated Listings : {total_reactivated}")
+            logger.info(f"Disappeared Listings : {total_disappeared}")
+        logger.info("=" * 70)
+
         return report
 
     finally:
@@ -250,15 +288,16 @@ def print_completion_report(report: dict, dry_run: bool):
         comp = res.get("completeness", {})
 
         print(f"\nCategory: {cat_name} [{status}]")
-        print(f"  Pages (Discovered/Attempted/Scraped/Failed): "
-              f"{comp.get('pages_discovered')}/{comp.get('pages_attempted')}/"
-              f"{comp.get('pages_scraped')}/{comp.get('failed_pages_count')}")
-        print(f"  Page Completeness    : {comp.get('page_completeness_pct')}%")
-        print(f"  Listing URLs (Found) : {comp.get('unique_listing_urls')} unique "
-              f"({comp.get('listing_urls_discovered')} discovered)")
-        print(f"  Listings Scraped     : {comp.get('listings_scraped')}/{comp.get('listings_attempted')} "
-              f"(Failed: {comp.get('failed_listings_count')})")
-        print(f"  Listing Completeness : {comp.get('listing_completeness_pct')}%")
+        if comp:
+            print(f"  Pages (Discovered/Attempted/Scraped/Failed): "
+                  f"{comp.get('pages_discovered')}/{comp.get('pages_attempted')}/"
+                  f"{comp.get('pages_scraped')}/{comp.get('failed_pages_count')}")
+            print(f"  Page Completeness    : {comp.get('page_completeness_pct')}%")
+            print(f"  Listing URLs (Found) : {comp.get('unique_listing_urls')} unique "
+                  f"({comp.get('listing_urls_discovered')} discovered)")
+            print(f"  Listings Scraped     : {comp.get('listings_scraped')}/{comp.get('listings_attempted')} "
+                  f"(Failed: {comp.get('failed_listings_count')})")
+            print(f"  Listing Completeness : {comp.get('listing_completeness_pct')}%")
 
         if not dry_run:
             print(f"  New Listings         : {res.get('new_listings', 0)}")
@@ -274,7 +313,21 @@ def print_completion_report(report: dict, dry_run: bool):
         if res.get("csv_path"):
             print(f"  CSV Snapshot         : {res['csv_path']}")
         if res.get("error"):
-            print(f"  Error                : {res['error']}")
+            print(f"  Failure Reason       : {res['error']}")
+
+    agg = report.get("aggregate_metrics", {})
+    if agg and not dry_run:
+        print("\n" + "-" * 70)
+        print(" AGGREGATE COLLECTION METRICS")
+        print("-" * 70)
+        print(f"  Total New Listings Inserted   : {agg.get('total_new_listings', 0)}")
+        print(f"  Total Existing Observed       : {agg.get('total_updated_listings', 0)}")
+        print(f"  Total Observations Created    : {agg.get('total_observations', 0)}")
+        print(f"  Total Price Changes Detected  : {agg.get('total_price_changes', 0)}")
+        print(f"  Total Reactivated Listings    : {agg.get('total_reactivated', 0)}")
+        print(f"  Total Disappeared Listings    : {agg.get('total_disappeared', 0)}")
+        if agg.get("failed_categories_count", 0) > 0:
+            print(f"  Failed Categories ({agg['failed_categories_count']})       : {agg.get('failed_categories')}")
 
     print("\n" + "=" * 70)
 
