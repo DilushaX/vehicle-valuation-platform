@@ -170,6 +170,93 @@ Every discovered listing is evaluated against PostgreSQL by `(source, listing_id
 > [!WARNING]
 > **Scoped Completeness vs. Website Completeness**: Scrape reports and metrics reflect completeness **within the requested collection scope** (`max_pages`, `max_listings`). A status of `COMPLETED` confirms that all requested pages and attempted listings succeeded without errors; it does **not** claim to have scraped the entirety of Riyasewana.
 
+### Automated Scheduling & Long-Term Operational Pipeline (Phase 4 Step 4)
+
+To transition from ad-hoc manual runs into a repeatable, automated system that continuously builds the historical Sri Lankan vehicle market dataset, the platform includes a dedicated scheduled collection pipeline.
+
+> [!IMPORTANT]
+> **Long-Term Market Dataset Rule**:
+> **"Scheduled collection is designed to continuously accumulate historical market data. A listing disappearing from a failed or partial run is not considered disappeared."**
+
+#### 1. Scheduling Mechanism & Platform Selection
+- **macOS Native LaunchAgent (`launchd`)**:
+  - The primary scheduling mechanism on macOS is a LaunchAgent property list installed at `~/Library/LaunchAgents/com.vehicle_valuation.collection.plist`.
+  - *Rationale*: Unlike legacy `cron`, `launchd` operates seamlessly under modern macOS security (TCC privacy controls), handles system sleep/wake calendar intervals reliably (`StartCalendarInterval`), and redirects stdout/stderr into dedicated log files (`logs/scheduled_collection.log` and `logs/scheduled_collection_error.log`).
+- **Standard POSIX Crontab Alternative**:
+  - For standard Linux servers or environments preferring cron, standard 5-field cron entries are fully supported:
+    ```bash
+    # Run daily at 02:00 AM Sri Lanka / local time
+    0 2 * * * cd /path/to/vehicle-valuation-platform && PYTHONPATH=. .venv/bin/python scripts/scheduled_collection.py >> logs/scheduled_collection.log 2>&1
+    ```
+
+#### 2. Configuration & Schedule Time
+Configure daily collection timing in your `.env` file or environment variables:
+```env
+COLLECTION_SCHEDULE=daily
+COLLECTION_TIME=02:00
+```
+- `COLLECTION_SCHEDULE`: Execution frequency (default: `daily`).
+- `COLLECTION_TIME`: 24-hour time format `HH:MM` (default: `02:00` AM).
+
+#### 3. Management CLI Commands
+The scheduled collection pipeline provides dedicated CLI commands for complete lifecycle management:
+
+```bash
+# Check current LaunchAgent installation and active daemon status
+python scripts/scheduled_collection.py --status-launchd
+
+# Install and activate the LaunchAgent plist (runs daily at configured COLLECTION_TIME)
+python scripts/scheduled_collection.py --install-launchd
+
+# Install with a custom time override (e.g., 03:30 AM)
+python scripts/scheduled_collection.py --install-launchd --time 03:30
+
+# Generate and view LaunchAgent XML plist without installing
+python scripts/scheduled_collection.py --generate-plist
+
+# Unload and remove the LaunchAgent from ~/Library/LaunchAgents
+python scripts/scheduled_collection.py --uninstall-launchd
+```
+
+#### 4. Manual Execution & Verification
+Operators can trigger on-demand runs using the same entry point:
+
+```bash
+# Test run in Dry-Run mode across Cars (no PostgreSQL mutations, no CSV export)
+python scripts/scheduled_collection.py --dry-run --category Cars --max-pages 1 --max-listings 5
+
+# Test run across all 8 canonical categories in dry-run mode
+python scripts/scheduled_collection.py --dry-run --max-pages 1 --max-listings 5
+
+# Execute live collection across all 8 categories sequentially
+python scripts/scheduled_collection.py
+```
+
+#### 5. Non-Overlapping Process Locking
+To eliminate race conditions and avoid double-scraping if a scheduled run exceeds 24 hours or overlaps with a manual run:
+- A non-blocking filesystem lock (`data/.collection.lock`) is acquired via `fcntl.flock(LOCK_EX | LOCK_NB)`.
+- If another collection process is already running, the new process detects the lock, logs a safe notice displaying the holding process PID and start time, and exits cleanly with return code `0` (preventing scheduler error cascades).
+- The lock file is atomically unlinked upon process termination or unhandled exceptions, and the OS kernel automatically releases the `flock` descriptor if a process terminates unexpectedly.
+
+#### 6. Category Failure Isolation
+- The 8 canonical categories (`Cars`, `Heavy-Duty`, `Lorries`, `Motorbikes`, `Pickups`, `SUVs`, `Three Wheelers`, `Vans`) are processed **strictly sequentially**.
+- If one category experiences an upstream network glitch, parsing error, or HTTP failure, it is marked as `FAILED` and recorded in `ScrapeRun`.
+- The pipeline **isolates the failure and continues processing the remaining categories**, ensuring that temporary issues in one vehicle class do not prevent data collection for others.
+
+#### 7. Operational Logging & Telemetry
+Every scheduled run logs comprehensive metrics to stdout, `logs/scheduled_collection.log`, and PostgreSQL `scrape_runs`:
+- Start timestamp and duration
+- Per-category outcome (`COMPLETED`, `FAILED`, or `INCOMPLETE`)
+- Discovered and scraped pagination pages
+- Discovered and scraped listing URLs
+- Inserted `new_listings` and updated `existing_listings`
+- Created `listing_observations`
+- Detected `price_changes`
+- `reactivated_listings` (`NO_LONGER_OBSERVED` → `ACTIVE`)
+- `disappeared_listings` (`ACTIVE` → `NO_LONGER_OBSERVED` — only when scope is complete)
+- Failure reasons and stack traces if any
+- **Zero credential leaks**: Database connection strings, passwords, and sensitive environment variables are strictly withheld from logs.
+
 ---
 
 ## 🚀 Quickstart Guide
