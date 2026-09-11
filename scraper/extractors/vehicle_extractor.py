@@ -2,6 +2,7 @@ import re
 import logging
 from datetime import datetime, timezone
 from typing import Dict, Any, Optional
+from data_pipeline.cleaning.cleaners import VehicleCleaner
 
 logger = logging.getLogger(__name__)
 
@@ -116,8 +117,8 @@ class VehicleExtractor:
             "registration_year": registration_year,
             "mileage": self.parse_mileage(raw_data.get("mileage")),
             "price": self.parse_price(raw_data.get("price")),
-            "fuel_type": self._clean_string(raw_data.get("fuel_type"), max_len=50),
-            "transmission": self._clean_string(raw_data.get("gear"), max_len=50),
+            "fuel_type": VehicleCleaner.normalize_fuel_type(raw_data.get("fuel_type")),
+            "transmission": VehicleCleaner.normalize_transmission(raw_data.get("gear") or raw_data.get("transmission")),
             "engine_cc": self.parse_engine_cc(raw_data.get("engine_cc")),
             "condition": self._clean_string(raw_data.get("condition"), max_len=50),
             "location": self._clean_string(location_raw, max_len=150),
