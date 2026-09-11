@@ -1,7 +1,7 @@
 import json
 from datetime import datetime, timezone
 
-from sqlalchemy import select
+from sqlalchemy import select, or_
 from sqlalchemy.orm import Session
 
 from database.models import (
@@ -86,7 +86,7 @@ class VehicleRepository:
             first_seen_at=ts,
             last_seen_at=ts,
             validation_issues=validation_issues_json,
-            ml_eligible=data.get("is_valid", False),
+            ml_eligible=data.get("ml_eligible", data.get("is_valid", False)),
         )
         self.db.add(listing)
         self.db.flush()
@@ -202,8 +202,10 @@ class VehicleRepository:
                 listing.district = data.get("district")
             if data.get("ad_date") and not listing.ad_date:
                 listing.ad_date = data.get("ad_date")
-            if "is_valid" in data:
-                listing.ml_eligible = data.get("is_valid", False)
+            if "ml_eligible" in data:
+                listing.ml_eligible = bool(data["ml_eligible"])
+            elif "is_valid" in data:
+                listing.ml_eligible = bool(data["is_valid"])
             if "validation_issues" in data:
                 issues_val = data.get("validation_issues", [])
                 if isinstance(issues_val, (list, dict)):
@@ -347,3 +349,65 @@ class VehicleRepository:
 
     def rollback(self):
         self.db.rollback()
+
+    def get_ml_eligible_listings(self, category: str | None = None) -> list[Listing]:
+        statement = select(Listing).where(Listing.ml_eligible.is_(True))
+        if category:
+            from data_pipeline.cleaning.cleaners import VehicleCleaner
+            can_cat = VehicleCleaner.canonicalize_category(category) or category
+            singular = can_cat.rstrip("s")
+            statement = statement.join(Vehicle).where(
+                or_(
+                    Vehicle.category == can_cat,
+                    Vehicle.category == singular,
+                    Vehicle.category.ilike(f"%{can_cat}%"),
+                )
+            )
+        return list(self.db.scalars(statement).all())
+
+    def get_ml_ineligible_listings(self, category: str | None = None) -> list[Listing]:
+        statement = select(Listing).where(Listing.ml_eligible.is_(False))
+        if category:
+            from data_pipeline.cleaning.cleaners import VehicleCleaner
+            can_cat = VehicleCleaner.canonicalize_category(category) or category
+            singular = can_cat.rstrip("s")
+            statement = statement.join(Vehicle).where(
+                or_(
+                    Vehicle.category == can_cat,
+                    Vehicle.category == singular,
+                    Vehicle.category.ilike(f"%{can_cat}%"),
+                )
+            )
+        return list(self.db.scalars(statement).all())
+
+    def recalculate_ml_eligibility(self, listing: Listing) -> bool:
+        """
+        Re-evaluates a listing using ListingValidator and updates its ml_eligible
+        and validation_issues attributes.
+        """
+        from scraper.validators.listing_validator import ListingValidator
+        validator = ListingValidator()
+
+        vehicle = listing.vehicle
+        latest_price = self.get_latest_price(listing)
+
+        record_data = {
+            "listing_id": listing.listing_id,
+            "category": vehicle.category if vehicle else None,
+            "brand": vehicle.brand if vehicle else None,
+            "model": vehicle.model if vehicle else None,
+            "year": vehicle.manufacture_year if vehicle else None,
+            "manufacture_year": vehicle.manufacture_year if vehicle else None,
+            "registration_year": vehicle.registration_year if vehicle else None,
+            "price": latest_price,
+            "mileage": listing.observations[-1].observed_mileage if listing.observations else None,
+            "fuel_type": vehicle.fuel_type if vehicle else None,
+            "engine_cc": vehicle.engine_cc if vehicle else None,
+        }
+
+        res = validator.validate(record_data, require_category=True)
+        listing.validation_issues = json.dumps(res["validation_issues"])
+        listing.ml_eligible = res["ml_eligible"]
+        self.db.flush()
+        return listing.ml_eligible
+

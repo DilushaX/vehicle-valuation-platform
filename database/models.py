@@ -158,6 +158,16 @@ class Listing(Base):
         except (json.JSONDecodeError, TypeError):
             return []
 
+    def get_critical_issues(self) -> list:
+        from scraper.validators.listing_validator import ListingValidator
+        all_issues = self.get_validation_issues()
+        return [i for i in all_issues if i in ListingValidator.CRITICAL_ISSUE_CODES]
+
+    def get_non_critical_issues(self) -> list:
+        from scraper.validators.listing_validator import ListingValidator
+        all_issues = self.get_validation_issues()
+        return [i for i in all_issues if i not in ListingValidator.CRITICAL_ISSUE_CODES]
+
     __table_args__ = (
         UniqueConstraint("source", "listing_id", name="uq_source_listing_id"),
         Index("idx_listing_status", "current_status"),
