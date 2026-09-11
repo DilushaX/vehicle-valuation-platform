@@ -257,6 +257,156 @@ Every scheduled run logs comprehensive metrics to stdout, `logs/scheduled_collec
 - Failure reasons and stack traces if any
 - **Zero credential leaks**: Database connection strings, passwords, and sensitive environment variables are strictly withheld from logs.
 
+### Data Quality & Historical Dataset Readiness (Phase 4 Step 5)
+
+To prepare the accumulated historical vehicle dataset for future Exploratory Data Analysis (EDA) and Machine Learning (ML) valuation modeling, the platform includes a comprehensive data quality assurance and dataset readiness framework.
+
+> [!IMPORTANT]
+> **Fundamental Market Valuation Rule**:
+> **"Listing prices observed on Riyasewana are seller asking prices, NOT confirmed transaction or settlement prices. The ML system estimates market asking value and range. Asking price must never be described as actual transaction or sold price."**
+
+#### 1. Data Quality Rules & Issue Codes
+Every listing is evaluated against a structured data quality rulebook without destructive deletion:
+
+| Dimension | Issue Code | Severity | Description |
+| :--- | :--- | :--- | :--- |
+| **Price** | `missing_price` | **CRITICAL** | Asking price is absent or empty. |
+| | `invalid_price` | **CRITICAL** | Price is zero or negative. |
+| | `price_out_of_range` | **CRITICAL** | Price is outside plausible category boundaries (e.g. Motorbike > 25M, Car > 350M). |
+| | `suspicious_price_pattern` | **CRITICAL** | Obvious dummy sequence (e.g. `111111`, `123456`, `999999`). |
+| **Mileage** | `missing_mileage` | **CRITICAL** | Odometer mileage is absent for motorized road vehicles. |
+| | `invalid_mileage` | **CRITICAL** | Odometer mileage is negative. |
+| | `mileage_out_of_range` | **CRITICAL** | Mileage exceeds physical plausible limit (> 1,500,000 km). |
+| | `suspicious_mileage_pattern` | **CRITICAL** | Obvious dummy sequence (e.g. `111111`, `123456`, `222222`). |
+| **Year (YOM)** | `missing_yom` | **CRITICAL** | Year of manufacture is missing (unanchored depreciation). |
+| | `invalid_yom` | **CRITICAL** | Year of manufacture is prior to 1950 historical threshold. |
+| | `future_yom` | **CRITICAL** | Year of manufacture is in the future (> current calendar year). |
+| **Year (YOR)** | `missing_yor` | NON-CRITICAL | Registration year absent (brand new / unregistered vehicles). |
+| | `invalid_yor` | NON-CRITICAL | Registration year prior to 1950. |
+| | `future_yor` | NON-CRITICAL | Registration year in the future. |
+| **Relationship** | `registration_before_manufacture` | NON-CRITICAL | Clerical paperwork anomaly (`YOR < YOM`). Flagged, not deleted. |
+| **Engine CC** | `invalid_engine_cc` | NON-CRITICAL | Engine CC is negative or zero on non-EV vehicle. |
+| | `implausible_engine_cc` | NON-CRITICAL | Engine CC < 25 cc (unless Electric) or > 16,000 cc. |
+| **Category** | `missing_category` | **CRITICAL** | Category is missing. |
+| | `invalid_category` | **CRITICAL** | Category not in the 8 canonical vehicle classes. |
+| **Identity** | `missing_brand` / `missing_model` | **CRITICAL** | Vehicle make or model is absent. |
+
+#### 2. ML Training Eligibility (`ml_eligible` vs `is_valid`)
+The platform explicitly decouples **data cleanliness** from **valuation model usability**:
+- **`is_valid`**: `True` only when a listing has **zero** validation issues of any kind.
+- **`ml_eligible`**: `True` when a listing has **zero CRITICAL** issues.
+  - Non-critical issues (e.g. missing optional `engine_cc`, unlisted `registration_year`, or `registration_before_manufacture` paperwork anomalies) do **not** disqualify a listing from valuation training, provided its core valuation features (asking price, YOM, mileage, brand, model, category) are reliable.
+  - Ineligible listings are preserved in PostgreSQL with human-readable `ml_exclusion_reasons` for auditing.
+
+#### 3. Attribute Normalization & Canonicalization
+- **Fuel Type**: Standardizes variations (`gasoline` → `Petrol`, `super diesel` → `Diesel`, `phev` → `Hybrid`, `ev` → `Electric`) while preserving the exact raw text in `raw_data`.
+- **Transmission**: Standardizes variations (`auto`, `cvt`, `tiptronic` → `Automatic`; `mt` → `Manual`).
+- **Category**: Canonicalizes plural and singular variants to the 8 canonical classes (`Cars`, `Heavy-Duty`, `Lorries`, `Motorbikes`, `Pickups`, `SUVs`, `Three Wheelers`, `Vans`).
+
+#### 4. Historical Dataset Consistency Auditing
+The `DatasetQualityEngine` automatically audits 11 historical integrity invariants:
+1. **Duplicate Listings**: Identical `(source, listing_id)`.
+2. **Duplicate URLs**: Repeated listing URLs.
+3. **Duplicate Observations**: Multiple observations for the same listing within the same `ScrapeRun`.
+4. **Consecutive Duplicate Prices**: Redundant identical price points in `PriceHistory`.
+5. **Observation Timestamps**: `observed_at >= first_seen_at`.
+6. **Timestamp Ordering**: `first_seen_at <= last_seen_at`.
+7. **Invalid Lifecycle Statuses**: Status values outside `ACTIVE` or `NO_LONGER_OBSERVED`.
+8. **Orphan Price History**: Price records referencing missing listing IDs.
+9. **Orphan Observations**: Observations referencing missing listings or scrape runs.
+10. **Orphan Vehicles**: Vehicle rows without any associated listings.
+11. **Broken Vehicle References**: Listing rows with non-existent `vehicle_id`.
+
+#### 5. Data Quality Reporting CLI
+Execute quality audits and consistency checks directly from the command line:
+
+```bash
+# Run full data quality & consistency report against live PostgreSQL
+python scripts/data_quality_report.py
+
+# Run report as a module with consistency check validation
+python -m scripts.data_quality_report --check-consistency
+
+# Filter quality report to a specific category
+python scripts/data_quality_report.py --category Cars
+
+# Export machine-readable JSON quality audit
+python scripts/data_quality_report.py --json
+
+# Fail with non-zero exit code if any consistency errors exist (CI/CD pipeline check)
+python scripts/data_quality_report.py --fail-on-inconsistency
+```
+
+#### Example Output:
+```
+============================================================================
+ VEHICLE VALUATION PLATFORM — DATA QUALITY & READINESS REPORT
+ Phase 4 Step 5: Historical Dataset Quality & Integrity Audit
+============================================================================
+
+1. GLOBAL DATASET INVENTORY
+----------------------------------------------------------------------------
+  Total Vehicle Entities    : 94
+  Total Market Listings     : 94
+  Total Price History Events: 75
+  Total Observations        : 108
+  Total Scrape Runs Tracked : 15
+  Status Breakdown          : ACTIVE=94, NO_LONGER_OBSERVED=0
+
+2. ML VALUATION TRAINING ELIGIBILITY
+----------------------------------------------------------------------------
+  ML Eligible Listings      : 63 (67.02%)
+  ML Ineligible Listings    : 31
+  * Note: Ineligible listings are preserved with flags and excluded from training.
+
+3. CATEGORY ELIGIBILITY BREAKDOWN
+----------------------------------------------------------------------------
+  Category         Total    Eligible   Ineligible   Rate %   Active  
+  ---------------- -------- ---------- ------------ -------- --------
+  Cars             19       15         4            78.95%   19      
+  Heavy-Duty       10       8          2            80.0%    10      
+  Lorries          10       7          3            70.0%    10      
+  Motorbikes       10       6          4            60.0%    10      
+  Pickups          10       7          3            70.0%    10      
+  SUVs             10       7          3            70.0%    10      
+  Three Wheelers   10       4          6            40.0%    10      
+  Vans             15       9          6            60.0%    15      
+
+4. DATA QUALITY ISSUES AUDIT
+----------------------------------------------------------------------------
+  [CRITICAL ISSUES — Excludes from ML Training]
+    - missing_price                   : 19 listings
+    - suspicious_mileage_pattern      : 7 listings
+    - missing_mileage                 : 6 listings
+    - suspicious_mileage              : 1 listings
+
+  [NON-CRITICAL ISSUES — Audited & Preserved, Training Eligible]
+    None detected.
+
+5. HISTORICAL LIFECYCLE CONSISTENCY AUDIT
+----------------------------------------------------------------------------
+  Overall Consistency Status: PASSED (Zero Anomalies)
+    [OK]           Duplicate Listings
+    [OK]           Duplicate Listing Urls
+    [OK]           Duplicate Observations Same Run
+    [OK]           Consecutive Duplicate Prices
+    [OK]           First Seen After Last Seen
+    [OK]           Observation Before First Seen
+    [OK]           Invalid Lifecycle Statuses
+    [OK]           Orphan Price Histories
+    [OK]           Orphan Observations
+    [OK]           Orphan Vehicles
+    [OK]           Broken Vehicle References
+
+============================================================================
+ BUSINESS & LEGAL NOTICE:
+ - Asking prices observed on Riyasewana are seller asking prices, NOT confirmed
+   transaction or sold prices.
+ - Inactive listings are classified as NO_LONGER_OBSERVED and never marked as SOLD.
+ - Quality analysis performs auditing and classification without destructive deletion.
+============================================================================
+```
+
 ---
 
 ## 🚀 Quickstart Guide
