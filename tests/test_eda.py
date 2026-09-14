@@ -349,3 +349,84 @@ def test_brand_and_model_empty():
     empty = pd.DataFrame()
     assert len(CategoricalAnalyzer.analyze_brands(empty)) == 0
     assert len(CategoricalAnalyzer.analyze_models(empty)) == 0
+
+
+# ==============================================================================
+# 4. DISTRIBUTION ANALYSIS & VISUALIZATION TESTS
+# ==============================================================================
+
+def test_analyze_distributions():
+    from eda.distributions import DistributionAnalyzer
+
+    data = {
+        "listing_id": ["1", "2", "3", "4", "5"],
+        "canonical_category": ["Cars", "Cars", "Motorbikes", "Motorbikes", "Vans"],
+        "asking_price": [4000000, 6000000, 300000, 500000, None],
+        "mileage": [30000, 60000, 15000, 25000, 123456],
+        "manufacture_year": [2018, 2015, 2020, 2019, 2005],
+        "vehicle_age": [8, 11, 6, 7, 21],
+        "engine_cc": [1500, 1800, 150, 200, 2500],
+        "validation_issues": [[], [], [], [], ["suspicious_mileage_pattern"]],
+    }
+    df = pd.DataFrame(data)
+
+    # Price distribution
+    p_dist = DistributionAnalyzer.analyze_price_distribution(df)
+    assert p_dist["count"] == 4
+    assert p_dist["missing_count"] == 1
+    assert p_dist["min"] == 300000.0
+    assert p_dist["max"] == 6000000.0
+    assert p_dist["median"] == 2250000.0
+    assert p_dist["iqr"] == p_dist["q3"] - p_dist["q1"]
+
+    # YOM and age distribution
+    yom_dist = DistributionAnalyzer.analyze_yom_and_age_distribution(df)
+    assert yom_dist["count"] == 5
+    assert yom_dist["yom_median"] == 2018
+    assert yom_dist["age_median"] == 8.0
+
+    # Mileage distribution
+    m_dist = DistributionAnalyzer.analyze_mileage_distribution(df)
+    assert m_dist["count"] == 5
+    assert m_dist["suspicious_count"] == 1
+    assert m_dist["min"] == 15000.0
+    assert m_dist["brackets"]["< 25,000 km"] == 1
+    assert m_dist["brackets"]["25,000 - 50,000 km"] == 2
+
+    # Engine CC distribution
+    cc_dist = DistributionAnalyzer.analyze_engine_cc_distribution(df)
+    assert cc_dist["count"] == 5
+    assert cc_dist["min"] == 150.0
+    assert cc_dist["max"] == 2500.0
+    assert "Motorbikes" in cc_dist["by_category"]
+    assert cc_dist["by_category"]["Motorbikes"]["median"] == 175.0
+
+
+def test_plot_generators(tmp_path):
+    from eda.distributions import DistributionAnalyzer
+
+    data = {
+        "listing_id": ["1", "2", "3"],
+        "canonical_category": ["Cars", "Cars", "Vans"],
+        "asking_price": [5000000, 6000000, 4500000],
+        "mileage": [50000, 60000, 100000],
+        "manufacture_year": [2015, 2017, 2012],
+        "vehicle_age": [11, 9, 14],
+        "engine_cc": [1500, 1500, 2500],
+    }
+    df = pd.DataFrame(data)
+
+    p1 = tmp_path / "price.png"
+    p2 = tmp_path / "cat_price.png"
+    p3 = tmp_path / "yom.png"
+    p4 = tmp_path / "mileage.png"
+
+    fig1 = DistributionAnalyzer.plot_price_distribution(df, output_path=p1)
+    fig2 = DistributionAnalyzer.plot_category_price_comparison(df, output_path=p2)
+    fig3 = DistributionAnalyzer.plot_yom_and_age_distribution(df, output_path=p3)
+    fig4 = DistributionAnalyzer.plot_mileage_distribution(df, output_path=p4)
+
+    assert p1.exists() and p1.stat().st_size > 0
+    assert p2.exists() and p2.stat().st_size > 0
+    assert p3.exists() and p3.stat().st_size > 0
+    assert p4.exists() and p4.stat().st_size > 0

@@ -7,9 +7,11 @@ relationships, outliers, and category trends without modifying database records.
 from eda.categorical import CategoricalAnalyzer
 from eda.dataset import EDADatasetLoader
 from eda.descriptive import DescriptiveAnalyzer
+from eda.distributions import DistributionAnalyzer
 
 __all__ = [
     "EDADatasetLoader",
     "DescriptiveAnalyzer",
     "CategoricalAnalyzer",
+    "DistributionAnalyzer",
 ]
