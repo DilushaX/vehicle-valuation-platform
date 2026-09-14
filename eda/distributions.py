@@ -329,3 +329,67 @@ class DistributionAnalyzer:
             fig.savefig(output_path, dpi=300, bbox_inches="tight")
             plt.close(fig)
         return fig
+
+    @staticmethod
+    def plot_fuel_and_transmission_distribution(
+        df: pd.DataFrame,
+        output_path: Optional[Path] = None,
+    ) -> plt.Figure:
+        """Generates bar charts for fuel type and transmission distributions."""
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
+
+        fuel_counts = df["fuel_type"].dropna().value_counts() if "fuel_type" in df else pd.Series()
+        trans_counts = df["transmission"].dropna().value_counts() if "transmission" in df else pd.Series()
+
+        if not fuel_counts.empty:
+            fuel_counts.plot(kind="bar", ax=ax1, color="#00897b", edgecolor="black", alpha=0.85)
+            ax1.set_title("Fuel Type Distribution", fontsize=12, fontweight="bold")
+            ax1.set_xlabel("Fuel Type", fontsize=10)
+            ax1.set_ylabel("Listing Count", fontsize=10)
+            ax1.tick_params(axis="x", rotation=30)
+            ax1.grid(True, linestyle="--", alpha=0.5)
+
+        if not trans_counts.empty:
+            trans_counts.plot(kind="bar", ax=ax2, color="#3949ab", edgecolor="black", alpha=0.85)
+            ax2.set_title("Transmission Distribution", fontsize=12, fontweight="bold")
+            ax2.set_xlabel("Transmission", fontsize=10)
+            ax2.set_ylabel("Listing Count", fontsize=10)
+            ax2.tick_params(axis="x", rotation=0)
+            ax2.grid(True, linestyle="--", alpha=0.5)
+
+        plt.tight_layout()
+        if output_path:
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            fig.savefig(output_path, dpi=300, bbox_inches="tight")
+            plt.close(fig)
+        return fig
+
+    @staticmethod
+    def plot_district_distribution(
+        df: pd.DataFrame,
+        top_n: int = 10,
+        output_path: Optional[Path] = None,
+    ) -> plt.Figure:
+        """Generates geographic listing distribution bar chart for top districts."""
+        fig, ax = plt.subplots(figsize=(12, 6))
+
+        valid_dist = df["district"].dropna() if "district" in df else pd.Series()
+        valid_dist = valid_dist[valid_dist.astype(str).str.strip() != ""]
+
+        if not valid_dist.empty:
+            counts = valid_dist.value_counts().head(top_n)
+            counts.plot(kind="bar", ax=ax, color="#d81b60", edgecolor="black", alpha=0.85)
+            ax.set_title(f"Observed Listings by District (Top {top_n})", fontsize=13, fontweight="bold")
+            ax.set_xlabel("District", fontsize=11)
+            ax.set_ylabel("Listing Count", fontsize=11)
+            ax.tick_params(axis="x", rotation=30)
+            ax.grid(True, linestyle="--", alpha=0.5)
+        else:
+            ax.text(0.5, 0.5, "No District Data Available", ha="center", va="center")
+
+        plt.tight_layout()
+        if output_path:
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            fig.savefig(output_path, dpi=300, bbox_inches="tight")
+            plt.close(fig)
+        return fig

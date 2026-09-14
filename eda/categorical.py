@@ -260,3 +260,165 @@ class CategoricalAnalyzer:
             res_df = res_df.head(top_n)
 
         return res_df
+
+    @staticmethod
+    def analyze_fuel_types(
+        df: pd.DataFrame,
+        min_sample: int = 3,
+    ) -> pd.DataFrame:
+        """
+        Analyzes fuel types (Petrol, Diesel, Hybrid, Electric, Gas/LPG).
+        Computes counts, proportions, and central tendency of asking prices.
+        """
+        cols = [
+            "fuel_type",
+            "listing_count",
+            "pct_of_total",
+            "median_asking_price",
+            "mean_asking_price",
+            "is_low_sample",
+            "sample_flag",
+        ]
+        if df.empty or "fuel_type" not in df.columns:
+            return pd.DataFrame(columns=cols)
+
+        total_listings = len(df)
+        valid_df = df.dropna(subset=["fuel_type"]).copy()
+        if valid_df.empty:
+            return pd.DataFrame(columns=cols)
+
+        rows: List[Dict[str, Any]] = []
+        for fuel, group in valid_df.groupby("fuel_type"):
+            cnt = len(group)
+            pct_total = round((cnt / total_listings) * 100.0, 2)
+
+            prices = pd.to_numeric(group["asking_price"], errors="coerce").dropna()
+            med_price = float(prices.median()) if not prices.empty else np.nan
+            mean_price = float(prices.mean()) if not prices.empty else np.nan
+
+            is_low = cnt < min_sample
+            flag = f"Low Sample (<{min_sample})" if is_low else "Sufficient Sample"
+
+            rows.append(
+                {
+                    "fuel_type": str(fuel).strip(),
+                    "listing_count": cnt,
+                    "pct_of_total": pct_total,
+                    "median_asking_price": round(med_price, 2) if not np.isnan(med_price) else None,
+                    "mean_asking_price": round(mean_price, 2) if not np.isnan(mean_price) else None,
+                    "is_low_sample": is_low,
+                    "sample_flag": flag,
+                }
+            )
+
+        res_df = pd.DataFrame(rows)
+        return res_df.sort_values(by=["listing_count", "median_asking_price"], ascending=[False, False]).reset_index(drop=True)
+
+    @staticmethod
+    def analyze_transmissions(
+        df: pd.DataFrame,
+        min_sample: int = 3,
+    ) -> pd.DataFrame:
+        """
+        Analyzes transmission types (Automatic, Manual).
+        Computes counts, proportions, and median asking prices.
+        """
+        cols = [
+            "transmission",
+            "listing_count",
+            "pct_of_total",
+            "median_asking_price",
+            "mean_asking_price",
+            "is_low_sample",
+            "sample_flag",
+        ]
+        if df.empty or "transmission" not in df.columns:
+            return pd.DataFrame(columns=cols)
+
+        total_listings = len(df)
+        valid_df = df.dropna(subset=["transmission"]).copy()
+        if valid_df.empty:
+            return pd.DataFrame(columns=cols)
+
+        rows: List[Dict[str, Any]] = []
+        for trans, group in valid_df.groupby("transmission"):
+            cnt = len(group)
+            pct_total = round((cnt / total_listings) * 100.0, 2)
+
+            prices = pd.to_numeric(group["asking_price"], errors="coerce").dropna()
+            med_price = float(prices.median()) if not prices.empty else np.nan
+            mean_price = float(prices.mean()) if not prices.empty else np.nan
+
+            is_low = cnt < min_sample
+            flag = f"Low Sample (<{min_sample})" if is_low else "Sufficient Sample"
+
+            rows.append(
+                {
+                    "transmission": str(trans).strip(),
+                    "listing_count": cnt,
+                    "pct_of_total": pct_total,
+                    "median_asking_price": round(med_price, 2) if not np.isnan(med_price) else None,
+                    "mean_asking_price": round(mean_price, 2) if not np.isnan(mean_price) else None,
+                    "is_low_sample": is_low,
+                    "sample_flag": flag,
+                }
+            )
+
+        res_df = pd.DataFrame(rows)
+        return res_df.sort_values(by=["listing_count", "median_asking_price"], ascending=[False, False]).reset_index(drop=True)
+
+    @staticmethod
+    def analyze_districts(
+        df: pd.DataFrame,
+        min_sample: int = 3,
+    ) -> pd.DataFrame:
+        """
+        Analyzes geographic listing distribution across Sri Lankan administrative districts.
+        Reports observed price differences by district without asserting causal price claims.
+        """
+        cols = [
+            "district",
+            "listing_count",
+            "pct_of_total",
+            "median_asking_price",
+            "mean_asking_price",
+            "is_low_sample",
+            "sample_flag",
+        ]
+        if df.empty or "district" not in df.columns:
+            return pd.DataFrame(columns=cols)
+
+        total_listings = len(df)
+        valid_df = df.dropna(subset=["district"]).copy()
+        # Filter out empty or whitespace-only district strings
+        valid_df = valid_df[valid_df["district"].astype(str).str.strip() != ""]
+
+        if valid_df.empty:
+            return pd.DataFrame(columns=cols)
+
+        rows: List[Dict[str, Any]] = []
+        for dist, group in valid_df.groupby("district"):
+            cnt = len(group)
+            pct_total = round((cnt / total_listings) * 100.0, 2)
+
+            prices = pd.to_numeric(group["asking_price"], errors="coerce").dropna()
+            med_price = float(prices.median()) if not prices.empty else np.nan
+            mean_price = float(prices.mean()) if not prices.empty else np.nan
+
+            is_low = cnt < min_sample
+            flag = f"Low Sample (<{min_sample})" if is_low else "Sufficient Sample"
+
+            rows.append(
+                {
+                    "district": str(dist).strip(),
+                    "listing_count": cnt,
+                    "pct_of_total": pct_total,
+                    "median_asking_price": round(med_price, 2) if not np.isnan(med_price) else None,
+                    "mean_asking_price": round(mean_price, 2) if not np.isnan(mean_price) else None,
+                    "is_low_sample": is_low,
+                    "sample_flag": flag,
+                }
+            )
+
+        res_df = pd.DataFrame(rows)
+        return res_df.sort_values(by=["listing_count", "median_asking_price"], ascending=[False, False]).reset_index(drop=True)

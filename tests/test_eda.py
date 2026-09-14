@@ -430,3 +430,96 @@ def test_plot_generators(tmp_path):
     assert p2.exists() and p2.stat().st_size > 0
     assert p3.exists() and p3.stat().st_size > 0
     assert p4.exists() and p4.stat().st_size > 0
+
+
+# ==============================================================================
+# 5. FUEL, TRANSMISSION & DISTRICT ANALYSIS TESTS
+# ==============================================================================
+
+def test_analyze_fuel_types():
+    from eda.categorical import CategoricalAnalyzer
+
+    data = {
+        "listing_id": ["1", "2", "3", "4", "5"],
+        "fuel_type": ["Petrol", "Petrol", "Petrol", "Diesel", "Hybrid"],
+        "asking_price": [5000000, 5200000, 4800000, 7500000, 8500000],
+    }
+    df = pd.DataFrame(data)
+
+    res = CategoricalAnalyzer.analyze_fuel_types(df, min_sample=3)
+    assert len(res) == 3
+    # Petrol has 3 listings -> sufficient sample
+    petrol = res[res["fuel_type"] == "Petrol"].iloc[0]
+    assert petrol["listing_count"] == 3
+    assert petrol["pct_of_total"] == 60.0
+    assert petrol["is_low_sample"] == False
+    assert petrol["median_asking_price"] == 5000000.0
+
+    # Diesel has 1 listing -> low sample
+    diesel = res[res["fuel_type"] == "Diesel"].iloc[0]
+    assert diesel["listing_count"] == 1
+    assert diesel["is_low_sample"] == True
+
+
+def test_analyze_transmissions():
+    from eda.categorical import CategoricalAnalyzer
+
+    data = {
+        "listing_id": ["1", "2", "3", "4"],
+        "transmission": ["Automatic", "Automatic", "Automatic", "Manual"],
+        "asking_price": [6000000, 6500000, 7000000, 2500000],
+    }
+    df = pd.DataFrame(data)
+
+    res = CategoricalAnalyzer.analyze_transmissions(df, min_sample=3)
+    assert len(res) == 2
+    auto = res[res["transmission"] == "Automatic"].iloc[0]
+    assert auto["listing_count"] == 3
+    assert auto["pct_of_total"] == 75.0
+    assert auto["is_low_sample"] == False
+    assert auto["median_asking_price"] == 6500000.0
+
+
+def test_analyze_districts():
+    from eda.categorical import CategoricalAnalyzer
+
+    data = {
+        "listing_id": ["1", "2", "3", "4", "5", "6"],
+        "district": ["Colombo", "Colombo", "Colombo", "Gampaha", "Kandy", None],
+        "asking_price": [8000000, 8500000, 9000000, 5000000, 4000000, 3000000],
+    }
+    df = pd.DataFrame(data)
+
+    res = CategoricalAnalyzer.analyze_districts(df, min_sample=3)
+    assert len(res) == 3  # None is excluded from district grouping
+    colombo = res[res["district"] == "Colombo"].iloc[0]
+    assert colombo["listing_count"] == 3
+    assert colombo["pct_of_total"] == 50.0  # 3 / 6 total listings
+    assert colombo["is_low_sample"] == False
+    assert colombo["median_asking_price"] == 8500000.0
+
+    gampaha = res[res["district"] == "Gampaha"].iloc[0]
+    assert gampaha["listing_count"] == 1
+    assert gampaha["is_low_sample"] == True
+
+
+def test_fuel_trans_district_plots(tmp_path):
+    from eda.distributions import DistributionAnalyzer
+
+    data = {
+        "listing_id": ["1", "2", "3"],
+        "fuel_type": ["Petrol", "Diesel", "Hybrid"],
+        "transmission": ["Automatic", "Manual", "Automatic"],
+        "district": ["Colombo", "Gampaha", "Colombo"],
+        "asking_price": [5000000, 6000000, 7000000],
+    }
+    df = pd.DataFrame(data)
+
+    p1 = tmp_path / "fuel_trans.png"
+    p2 = tmp_path / "district.png"
+
+    fig1 = DistributionAnalyzer.plot_fuel_and_transmission_distribution(df, output_path=p1)
+    fig2 = DistributionAnalyzer.plot_district_distribution(df, output_path=p2)
+
+    assert p1.exists() and p1.stat().st_size > 0
+    assert p2.exists() and p2.stat().st_size > 0
