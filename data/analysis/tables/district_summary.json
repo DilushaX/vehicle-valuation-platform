@@ -1,0 +1,308 @@
+[
+  {
+    "district":"Colombo",
+    "listing_count":20,
+    "pct_of_total":21.28,
+    "median_asking_price":9870000.0,
+    "mean_asking_price":10552857.1400000006,
+    "is_low_sample":false,
+    "sample_flag":"Sufficient Sample"
+  },
+  {
+    "district":"Gampaha",
+    "listing_count":10,
+    "pct_of_total":10.64,
+    "median_asking_price":5012500.0,
+    "mean_asking_price":5638750.0,
+    "is_low_sample":false,
+    "sample_flag":"Sufficient Sample"
+  },
+  {
+    "district":"Kandy",
+    "listing_count":8,
+    "pct_of_total":8.51,
+    "median_asking_price":3575000.0,
+    "mean_asking_price":11560000.0,
+    "is_low_sample":false,
+    "sample_flag":"Sufficient Sample"
+  },
+  {
+    "district":"Kurunegala",
+    "listing_count":6,
+    "pct_of_total":6.38,
+    "median_asking_price":2900000.0,
+    "mean_asking_price":2681000.0,
+    "is_low_sample":false,
+    "sample_flag":"Sufficient Sample"
+  },
+  {
+    "district":"Galle",
+    "listing_count":5,
+    "pct_of_total":5.32,
+    "median_asking_price":3600000.0,
+    "mean_asking_price":3985000.0,
+    "is_low_sample":false,
+    "sample_flag":"Sufficient Sample"
+  },
+  {
+    "district":"Kalutara",
+    "listing_count":5,
+    "pct_of_total":5.32,
+    "median_asking_price":840000.0,
+    "mean_asking_price":4502000.0,
+    "is_low_sample":false,
+    "sample_flag":"Sufficient Sample"
+  },
+  {
+    "district":"Horana",
+    "listing_count":3,
+    "pct_of_total":3.19,
+    "median_asking_price":8645000.0,
+    "mean_asking_price":7595000.0,
+    "is_low_sample":false,
+    "sample_flag":"Sufficient Sample"
+  },
+  {
+    "district":"Kuliyapitiya",
+    "listing_count":3,
+    "pct_of_total":3.19,
+    "median_asking_price":3250000.0,
+    "mean_asking_price":3250000.0,
+    "is_low_sample":false,
+    "sample_flag":"Sufficient Sample"
+  },
+  {
+    "district":"Boralesgamuwa",
+    "listing_count":2,
+    "pct_of_total":2.13,
+    "median_asking_price":8095000.0,
+    "mean_asking_price":8095000.0,
+    "is_low_sample":true,
+    "sample_flag":"Low Sample (<3)"
+  },
+  {
+    "district":"Nittambuwa",
+    "listing_count":2,
+    "pct_of_total":2.13,
+    "median_asking_price":5200000.0,
+    "mean_asking_price":5200000.0,
+    "is_low_sample":true,
+    "sample_flag":"Low Sample (<3)"
+  },
+  {
+    "district":"Anuradapura",
+    "listing_count":2,
+    "pct_of_total":2.13,
+    "median_asking_price":3000000.0,
+    "mean_asking_price":3000000.0,
+    "is_low_sample":true,
+    "sample_flag":"Low Sample (<3)"
+  },
+  {
+    "district":"Bandaragama",
+    "listing_count":2,
+    "pct_of_total":2.13,
+    "median_asking_price":2507500.0,
+    "mean_asking_price":2507500.0,
+    "is_low_sample":true,
+    "sample_flag":"Low Sample (<3)"
+  },
+  {
+    "district":"Ratnapura",
+    "listing_count":2,
+    "pct_of_total":2.13,
+    "median_asking_price":1050000.0,
+    "mean_asking_price":1050000.0,
+    "is_low_sample":true,
+    "sample_flag":"Low Sample (<3)"
+  },
+  {
+    "district":"Matara",
+    "listing_count":2,
+    "pct_of_total":2.13,
+    "median_asking_price":600000.0,
+    "mean_asking_price":600000.0,
+    "is_low_sample":true,
+    "sample_flag":"Low Sample (<3)"
+  },
+  {
+    "district":"Elpitiya",
+    "listing_count":2,
+    "pct_of_total":2.13,
+    "median_asking_price":null,
+    "mean_asking_price":null,
+    "is_low_sample":true,
+    "sample_flag":"Low Sample (<3)"
+  },
+  {
+    "district":"Polonnaruwa",
+    "listing_count":2,
+    "pct_of_total":2.13,
+    "median_asking_price":null,
+    "mean_asking_price":null,
+    "is_low_sample":true,
+    "sample_flag":"Low Sample (<3)"
+  },
+  {
+    "district":"Batticaloa",
+    "listing_count":1,
+    "pct_of_total":1.06,
+    "median_asking_price":195000000.0,
+    "mean_asking_price":195000000.0,
+    "is_low_sample":true,
+    "sample_flag":"Low Sample (<3)"
+  },
+  {
+    "district":"Hanwella",
+    "listing_count":1,
+    "pct_of_total":1.06,
+    "median_asking_price":14800000.0,
+    "mean_asking_price":14800000.0,
+    "is_low_sample":true,
+    "sample_flag":"Low Sample (<3)"
+  },
+  {
+    "district":"Nuwara-Eliya",
+    "listing_count":1,
+    "pct_of_total":1.06,
+    "median_asking_price":8650000.0,
+    "mean_asking_price":8650000.0,
+    "is_low_sample":true,
+    "sample_flag":"Low Sample (<3)"
+  },
+  {
+    "district":"Jaffna",
+    "listing_count":1,
+    "pct_of_total":1.06,
+    "median_asking_price":8500000.0,
+    "mean_asking_price":8500000.0,
+    "is_low_sample":true,
+    "sample_flag":"Low Sample (<3)"
+  },
+  {
+    "district":"Chilaw",
+    "listing_count":1,
+    "pct_of_total":1.06,
+    "median_asking_price":8450000.0,
+    "mean_asking_price":8450000.0,
+    "is_low_sample":true,
+    "sample_flag":"Low Sample (<3)"
+  },
+  {
+    "district":"Bentota",
+    "listing_count":1,
+    "pct_of_total":1.06,
+    "median_asking_price":4775000.0,
+    "mean_asking_price":4775000.0,
+    "is_low_sample":true,
+    "sample_flag":"Low Sample (<3)"
+  },
+  {
+    "district":"Puttalam",
+    "listing_count":1,
+    "pct_of_total":1.06,
+    "median_asking_price":3800000.0,
+    "mean_asking_price":3800000.0,
+    "is_low_sample":true,
+    "sample_flag":"Low Sample (<3)"
+  },
+  {
+    "district":"Ruwanwella",
+    "listing_count":1,
+    "pct_of_total":1.06,
+    "median_asking_price":3675000.0,
+    "mean_asking_price":3675000.0,
+    "is_low_sample":true,
+    "sample_flag":"Low Sample (<3)"
+  },
+  {
+    "district":"Divulapitiya",
+    "listing_count":1,
+    "pct_of_total":1.06,
+    "median_asking_price":3600000.0,
+    "mean_asking_price":3600000.0,
+    "is_low_sample":true,
+    "sample_flag":"Low Sample (<3)"
+  },
+  {
+    "district":"Mirigama",
+    "listing_count":1,
+    "pct_of_total":1.06,
+    "median_asking_price":3275000.0,
+    "mean_asking_price":3275000.0,
+    "is_low_sample":true,
+    "sample_flag":"Low Sample (<3)"
+  },
+  {
+    "district":"Hambantota",
+    "listing_count":1,
+    "pct_of_total":1.06,
+    "median_asking_price":2580000.0,
+    "mean_asking_price":2580000.0,
+    "is_low_sample":true,
+    "sample_flag":"Low Sample (<3)"
+  },
+  {
+    "district":"Dankotuwa",
+    "listing_count":1,
+    "pct_of_total":1.06,
+    "median_asking_price":1950000.0,
+    "mean_asking_price":1950000.0,
+    "is_low_sample":true,
+    "sample_flag":"Low Sample (<3)"
+  },
+  {
+    "district":"Ampara",
+    "listing_count":1,
+    "pct_of_total":1.06,
+    "median_asking_price":1850000.0,
+    "mean_asking_price":1850000.0,
+    "is_low_sample":true,
+    "sample_flag":"Low Sample (<3)"
+  },
+  {
+    "district":"Matale",
+    "listing_count":1,
+    "pct_of_total":1.06,
+    "median_asking_price":1700000.0,
+    "mean_asking_price":1700000.0,
+    "is_low_sample":true,
+    "sample_flag":"Low Sample (<3)"
+  },
+  {
+    "district":"Embilipitiya",
+    "listing_count":1,
+    "pct_of_total":1.06,
+    "median_asking_price":1350000.0,
+    "mean_asking_price":1350000.0,
+    "is_low_sample":true,
+    "sample_flag":"Low Sample (<3)"
+  },
+  {
+    "district":"Dompe",
+    "listing_count":1,
+    "pct_of_total":1.06,
+    "median_asking_price":240000.0,
+    "mean_asking_price":240000.0,
+    "is_low_sample":true,
+    "sample_flag":"Low Sample (<3)"
+  },
+  {
+    "district":"Beruwala",
+    "listing_count":1,
+    "pct_of_total":1.06,
+    "median_asking_price":220000.0,
+    "mean_asking_price":220000.0,
+    "is_low_sample":true,
+    "sample_flag":"Low Sample (<3)"
+  },
+  {
+    "district":"Katunayake",
+    "listing_count":1,
+    "pct_of_total":1.06,
+    "median_asking_price":208000.0,
+    "mean_asking_price":208000.0,
+    "is_low_sample":true,
+    "sample_flag":"Low Sample (<3)"
+  }
+]

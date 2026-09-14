@@ -1,0 +1,156 @@
+{
+  "pearson": {
+    "asking_price": {
+      "asking_price": 1.0,
+      "mileage": -0.0073,
+      "manufacture_year": 0.1803,
+      "vehicle_age": -0.1803,
+      "engine_cc": 0.0924
+    },
+    "mileage": {
+      "asking_price": -0.0073,
+      "mileage": 1.0,
+      "manufacture_year": -0.117,
+      "vehicle_age": 0.117,
+      "engine_cc": 0.1167
+    },
+    "manufacture_year": {
+      "asking_price": 0.1803,
+      "mileage": -0.117,
+      "manufacture_year": 1.0,
+      "vehicle_age": -1.0,
+      "engine_cc": -0.1802
+    },
+    "vehicle_age": {
+      "asking_price": -0.1803,
+      "mileage": 0.117,
+      "manufacture_year": -1.0,
+      "vehicle_age": 1.0,
+      "engine_cc": 0.1802
+    },
+    "engine_cc": {
+      "asking_price": 0.0924,
+      "mileage": 0.1167,
+      "manufacture_year": -0.1802,
+      "vehicle_age": 0.1802,
+      "engine_cc": 1.0
+    }
+  },
+  "spearman": {
+    "asking_price": {
+      "asking_price": 1.0,
+      "mileage": 0.1107,
+      "manufacture_year": 0.5186,
+      "vehicle_age": -0.5186,
+      "engine_cc": 0.516
+    },
+    "mileage": {
+      "asking_price": 0.1107,
+      "mileage": 1.0,
+      "manufacture_year": -0.2035,
+      "vehicle_age": 0.2035,
+      "engine_cc": 0.3065
+    },
+    "manufacture_year": {
+      "asking_price": 0.5186,
+      "mileage": -0.2035,
+      "manufacture_year": 1.0,
+      "vehicle_age": -1.0,
+      "engine_cc": -0.1456
+    },
+    "vehicle_age": {
+      "asking_price": -0.5186,
+      "mileage": 0.2035,
+      "manufacture_year": -1.0,
+      "vehicle_age": 1.0,
+      "engine_cc": 0.1456
+    },
+    "engine_cc": {
+      "asking_price": 0.516,
+      "mileage": 0.3065,
+      "manufacture_year": -0.1456,
+      "vehicle_age": 0.1456,
+      "engine_cc": 1.0
+    }
+  },
+  "bivariate_relationships": {
+    "asking_price_vs_mileage": {
+      "label": "Asking Price vs Odometer Mileage",
+      "sample_size": 71,
+      "pearson_r": -0.0073,
+      "spearman_rho": 0.1107,
+      "disclaimer": "STATISTICAL NOTICE: Correlation measures observed statistical association and does not imply causality. External market factors, condition, and optional equipment influence asking prices."
+    },
+    "asking_price_vs_manufacture_year": {
+      "label": "Asking Price vs Manufacture Year (YOM)",
+      "sample_size": 75,
+      "pearson_r": 0.1803,
+      "spearman_rho": 0.5186,
+      "disclaimer": "STATISTICAL NOTICE: Correlation measures observed statistical association and does not imply causality. External market factors, condition, and optional equipment influence asking prices."
+    },
+    "asking_price_vs_vehicle_age": {
+      "label": "Asking Price vs Vehicle Age",
+      "sample_size": 75,
+      "pearson_r": -0.1803,
+      "spearman_rho": -0.5186,
+      "disclaimer": "STATISTICAL NOTICE: Correlation measures observed statistical association and does not imply causality. External market factors, condition, and optional equipment influence asking prices."
+    },
+    "asking_price_vs_engine_cc": {
+      "label": "Asking Price vs Engine Capacity (CC)",
+      "sample_size": 62,
+      "pearson_r": 0.0924,
+      "spearman_rho": 0.516,
+      "disclaimer": "STATISTICAL NOTICE: Correlation measures observed statistical association and does not imply causality. External market factors, condition, and optional equipment influence asking prices."
+    }
+  },
+  "category_correlations": {
+    "Cars": {
+      "sample_size": 17,
+      "spearman_price_mileage": -0.0368,
+      "spearman_price_age": -0.4077,
+      "spearman_price_engine_cc": 0.5283
+    },
+    "Heavy-Duty": {
+      "sample_size": 9,
+      "spearman_price_mileage": 0.3933,
+      "spearman_price_age": 0.1757,
+      "spearman_price_engine_cc": 0.3571
+    },
+    "Lorries": {
+      "sample_size": 7,
+      "spearman_price_mileage": 0.4144,
+      "spearman_price_age": -0.6847,
+      "spearman_price_engine_cc": 0.2029
+    },
+    "Motorbikes": {
+      "sample_size": 7,
+      "spearman_price_mileage": 0.4643,
+      "spearman_price_age": -0.6183,
+      "spearman_price_engine_cc": 0.4001
+    },
+    "Pickups": {
+      "sample_size": 8,
+      "spearman_price_mileage": 0.3727,
+      "spearman_price_age": -0.9878,
+      "spearman_price_engine_cc": -0.1449
+    },
+    "SUVs": {
+      "sample_size": 7,
+      "spearman_price_mileage": 0.2703,
+      "spearman_price_age": 0.1594,
+      "spearman_price_engine_cc": 0.9258
+    },
+    "Three Wheelers": {
+      "sample_size": 8,
+      "spearman_price_mileage": -0.2546,
+      "spearman_price_age": -0.994,
+      "spearman_price_engine_cc": 0.6547
+    },
+    "Vans": {
+      "sample_size": 12,
+      "spearman_price_mileage": -0.0137,
+      "spearman_price_age": -0.6502,
+      "spearman_price_engine_cc": -0.3915
+    }
+  }
+}

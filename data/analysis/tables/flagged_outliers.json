@@ -1,0 +1,172 @@
+[
+  {
+    "listing_id":"12290244",
+    "category":"Pickups",
+    "brand":"Ford",
+    "model":"Raptor Ranger F150 Modified",
+    "variable":"asking_price",
+    "value":16800000.0,
+    "outlier_type":"high_outlier",
+    "classification":"possible_genuine_market_observation",
+    "validation_issues":[
+
+    ]
+  },
+  {
+    "listing_id":"12289469",
+    "category":"Cars",
+    "brand":"BMW",
+    "model":"316i",
+    "variable":"asking_price",
+    "value":195000000.0,
+    "outlier_type":"high_outlier",
+    "classification":"possible_genuine_market_observation",
+    "validation_issues":[
+
+    ]
+  },
+  {
+    "listing_id":"12294989",
+    "category":"Cars",
+    "brand":"BYD",
+    "model":"Sealion 6",
+    "variable":"asking_price",
+    "value":23000000.0,
+    "outlier_type":"high_outlier",
+    "classification":"possible_genuine_market_observation",
+    "validation_issues":[
+
+    ]
+  },
+  {
+    "listing_id":"12286510",
+    "category":"Cars",
+    "brand":"BMW",
+    "model":"520D",
+    "variable":"asking_price",
+    "value":20800000.0,
+    "outlier_type":"high_outlier",
+    "classification":"possible_genuine_market_observation",
+    "validation_issues":[
+
+    ]
+  },
+  {
+    "listing_id":"12300561",
+    "category":"Cars",
+    "brand":"BMW",
+    "model":"740le",
+    "variable":"asking_price",
+    "value":53500000.0,
+    "outlier_type":"high_outlier",
+    "classification":"possible_genuine_market_observation",
+    "validation_issues":[
+
+    ]
+  },
+  {
+    "listing_id":"12294737",
+    "category":"SUVs",
+    "brand":"Honda",
+    "model":"Vezel Z Premium",
+    "variable":"asking_price",
+    "value":19300000.0,
+    "outlier_type":"high_outlier",
+    "classification":"possible_genuine_market_observation",
+    "validation_issues":[
+
+    ]
+  },
+  {
+    "listing_id":"12265716",
+    "category":"Lorries",
+    "brand":"Isuzu",
+    "model":"Forward CAR CARRIER",
+    "variable":"asking_price",
+    "value":21800000.0,
+    "outlier_type":"high_outlier",
+    "classification":"possible_genuine_market_observation",
+    "validation_issues":[
+
+    ]
+  },
+  {
+    "listing_id":"12294840",
+    "category":"Vans",
+    "brand":"Hyundai",
+    "model":"H100",
+    "variable":"mileage",
+    "value":4500000.0,
+    "outlier_type":"high_outlier",
+    "classification":"suspicious_data",
+    "validation_issues":[
+      "suspicious_mileage"
+    ]
+  },
+  {
+    "listing_id":"12281266",
+    "category":"Heavy-Duty",
+    "brand":"Ashok-Leyland",
+    "model":"Cincomax",
+    "variable":"engine_cc",
+    "value":6500.0,
+    "outlier_type":"high_outlier",
+    "classification":"possible_genuine_market_observation",
+    "validation_issues":[
+
+    ]
+  },
+  {
+    "listing_id":"12281811",
+    "category":"Heavy-Duty",
+    "brand":"Ashok-Leyland",
+    "model":"Prime Mover",
+    "variable":"engine_cc",
+    "value":6550.0,
+    "outlier_type":"high_outlier",
+    "classification":"possible_genuine_market_observation",
+    "validation_issues":[
+
+    ]
+  },
+  {
+    "listing_id":"12288083",
+    "category":"Heavy-Duty",
+    "brand":"Ashok-Leyland",
+    "model":"Tipper 10 Wheel",
+    "variable":"engine_cc",
+    "value":6540.0,
+    "outlier_type":"high_outlier",
+    "classification":"insufficient_information",
+    "validation_issues":[
+      "missing_price"
+    ]
+  },
+  {
+    "listing_id":"12294553",
+    "category":"Lorries",
+    "brand":"Isuzu",
+    "model":"ELF",
+    "variable":"engine_cc",
+    "value":4570.0,
+    "outlier_type":"high_outlier",
+    "classification":"insufficient_information",
+    "validation_issues":[
+      "missing_price",
+      "missing_mileage"
+    ]
+  },
+  {
+    "listing_id":"12265716",
+    "category":"Lorries",
+    "brand":"Isuzu",
+    "model":"Forward CAR CARRIER",
+    "variable":"engine_cc",
+    "value":5176.0,
+    "outlier_type":"high_outlier",
+    "classification":"possible_genuine_market_observation",
+    "validation_issues":[
+
+    ]
+  }
+]

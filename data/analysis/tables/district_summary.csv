@@ -1,0 +1,35 @@
+district,listing_count,pct_of_total,median_asking_price,mean_asking_price,is_low_sample,sample_flag
+Colombo,20,21.28,9870000.0,10552857.14,False,Sufficient Sample
+Gampaha,10,10.64,5012500.0,5638750.0,False,Sufficient Sample
+Kandy,8,8.51,3575000.0,11560000.0,False,Sufficient Sample
+Kurunegala,6,6.38,2900000.0,2681000.0,False,Sufficient Sample
+Galle,5,5.32,3600000.0,3985000.0,False,Sufficient Sample
+Kalutara,5,5.32,840000.0,4502000.0,False,Sufficient Sample
+Horana,3,3.19,8645000.0,7595000.0,False,Sufficient Sample
+Kuliyapitiya,3,3.19,3250000.0,3250000.0,False,Sufficient Sample
+Boralesgamuwa,2,2.13,8095000.0,8095000.0,True,Low Sample (<3)
+Nittambuwa,2,2.13,5200000.0,5200000.0,True,Low Sample (<3)
+Anuradapura,2,2.13,3000000.0,3000000.0,True,Low Sample (<3)
+Bandaragama,2,2.13,2507500.0,2507500.0,True,Low Sample (<3)
+Ratnapura,2,2.13,1050000.0,1050000.0,True,Low Sample (<3)
+Matara,2,2.13,600000.0,600000.0,True,Low Sample (<3)
+Elpitiya,2,2.13,,,True,Low Sample (<3)
+Polonnaruwa,2,2.13,,,True,Low Sample (<3)
+Batticaloa,1,1.06,195000000.0,195000000.0,True,Low Sample (<3)
+Hanwella,1,1.06,14800000.0,14800000.0,True,Low Sample (<3)
+Nuwara-Eliya,1,1.06,8650000.0,8650000.0,True,Low Sample (<3)
+Jaffna,1,1.06,8500000.0,8500000.0,True,Low Sample (<3)
+Chilaw,1,1.06,8450000.0,8450000.0,True,Low Sample (<3)
+Bentota,1,1.06,4775000.0,4775000.0,True,Low Sample (<3)
+Puttalam,1,1.06,3800000.0,3800000.0,True,Low Sample (<3)
+Ruwanwella,1,1.06,3675000.0,3675000.0,True,Low Sample (<3)
+Divulapitiya,1,1.06,3600000.0,3600000.0,True,Low Sample (<3)
+Mirigama,1,1.06,3275000.0,3275000.0,True,Low Sample (<3)
+Hambantota,1,1.06,2580000.0,2580000.0,True,Low Sample (<3)
+Dankotuwa,1,1.06,1950000.0,1950000.0,True,Low Sample (<3)
+Ampara,1,1.06,1850000.0,1850000.0,True,Low Sample (<3)
+Matale,1,1.06,1700000.0,1700000.0,True,Low Sample (<3)
+Embilipitiya,1,1.06,1350000.0,1350000.0,True,Low Sample (<3)
+Dompe,1,1.06,240000.0,240000.0,True,Low Sample (<3)
+Beruwala,1,1.06,220000.0,220000.0,True,Low Sample (<3)
+Katunayake,1,1.06,208000.0,208000.0,True,Low Sample (<3)

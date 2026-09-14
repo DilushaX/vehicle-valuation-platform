@@ -1,0 +1,29 @@
+[
+  {
+    "fuel_type":"Petrol",
+    "listing_count":41,
+    "pct_of_total":43.62,
+    "median_asking_price":4762500.0,
+    "mean_asking_price":10670588.2400000002,
+    "is_low_sample":false,
+    "sample_flag":"Sufficient Sample"
+  },
+  {
+    "fuel_type":"Diesel",
+    "listing_count":37,
+    "pct_of_total":39.36,
+    "median_asking_price":3600000.0,
+    "mean_asking_price":5676896.5499999998,
+    "is_low_sample":false,
+    "sample_flag":"Sufficient Sample"
+  },
+  {
+    "fuel_type":"Hybrid",
+    "listing_count":6,
+    "pct_of_total":6.38,
+    "median_asking_price":19300000.0,
+    "mean_asking_price":23639000.0,
+    "is_low_sample":false,
+    "sample_flag":"Sufficient Sample"
+  }
+]

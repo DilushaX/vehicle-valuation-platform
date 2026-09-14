@@ -1,0 +1,17 @@
+{
+  "total_listings": 94,
+  "total_vehicles": 94,
+  "ml_eligible_listings": 63,
+  "ml_ineligible_listings": 31,
+  "ml_eligibility_rate_pct": 67.02,
+  "active_listings": 94,
+  "no_longer_observed_listings": 0,
+  "total_price_history_events": 75,
+  "total_observations": 108,
+  "distinct_categories": 8,
+  "distinct_brands": 23,
+  "distinct_models": 69,
+  "distinct_fuel_types": 3,
+  "distinct_transmissions": 2,
+  "distinct_districts": 34
+}

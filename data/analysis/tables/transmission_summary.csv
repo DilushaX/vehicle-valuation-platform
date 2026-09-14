@@ -1,0 +1,3 @@
+transmission,listing_count,pct_of_total,median_asking_price,mean_asking_price,is_low_sample,sample_flag
+Manual,55,58.51,3000000.0,3471744.19,False,Sufficient Sample
+Automatic,29,30.85,8650000.0,19853600.0,False,Sufficient Sample

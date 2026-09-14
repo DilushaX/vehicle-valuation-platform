@@ -1,0 +1,4 @@
+fuel_type,listing_count,pct_of_total,median_asking_price,mean_asking_price,is_low_sample,sample_flag
+Petrol,41,43.62,4762500.0,10670588.24,False,Sufficient Sample
+Diesel,37,39.36,3600000.0,5676896.55,False,Sufficient Sample
+Hybrid,6,6.38,19300000.0,23639000.0,False,Sufficient Sample

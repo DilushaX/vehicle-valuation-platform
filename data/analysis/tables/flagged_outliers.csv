@@ -1,0 +1,14 @@
+listing_id,category,brand,model,variable,value,outlier_type,classification,validation_issues
+12290244,Pickups,Ford,Raptor Ranger F150 Modified,asking_price,16800000.0,high_outlier,possible_genuine_market_observation,[]
+12289469,Cars,BMW,316i,asking_price,195000000.0,high_outlier,possible_genuine_market_observation,[]
+12294989,Cars,BYD,Sealion 6,asking_price,23000000.0,high_outlier,possible_genuine_market_observation,[]
+12286510,Cars,BMW,520D,asking_price,20800000.0,high_outlier,possible_genuine_market_observation,[]
+12300561,Cars,BMW,740le,asking_price,53500000.0,high_outlier,possible_genuine_market_observation,[]
+12294737,SUVs,Honda,Vezel Z Premium,asking_price,19300000.0,high_outlier,possible_genuine_market_observation,[]
+12265716,Lorries,Isuzu,Forward CAR CARRIER,asking_price,21800000.0,high_outlier,possible_genuine_market_observation,[]
+12294840,Vans,Hyundai,H100,mileage,4500000.0,high_outlier,suspicious_data,['suspicious_mileage']
+12281266,Heavy-Duty,Ashok-Leyland,Cincomax,engine_cc,6500.0,high_outlier,possible_genuine_market_observation,[]
+12281811,Heavy-Duty,Ashok-Leyland,Prime Mover,engine_cc,6550.0,high_outlier,possible_genuine_market_observation,[]
+12288083,Heavy-Duty,Ashok-Leyland,Tipper 10 Wheel,engine_cc,6540.0,high_outlier,insufficient_information,['missing_price']
+12294553,Lorries,Isuzu,ELF,engine_cc,4570.0,high_outlier,insufficient_information,"['missing_price', 'missing_mileage']"
+12265716,Lorries,Isuzu,Forward CAR CARRIER,engine_cc,5176.0,high_outlier,possible_genuine_market_observation,[]

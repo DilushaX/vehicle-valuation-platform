@@ -20,4 +20,12 @@ __all__ = [
     "RelationshipAnalyzer",
     "OutlierAnalyzer",
     "HistoricalAnalyzer",
+    "EDAReporter",
 ]
+
+
+def __getattr__(name: str):
+    if name == "EDAReporter":
+        from eda.report import EDAReporter
+        return EDAReporter
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

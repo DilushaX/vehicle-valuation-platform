@@ -764,3 +764,79 @@ def test_analyze_observations_and_historical_depth():
     deep_res = HistoricalAnalyzer.evaluate_historical_depth(deep_obs, empty_ph, min_days_for_monthly_trends=60)
     assert deep_res["has_sufficient_depth"] is True
     assert "Historical depth sufficient" in deep_res["message"]
+
+
+# ==============================================================================
+# 8. REPRODUCIBLE REPORT & EXPORT TESTS
+# ==============================================================================
+
+def test_eda_reporter_end_to_end(tmp_path, db_session, vehicle_repo):
+    from eda.report import EDAReporter
+
+    # Populate 4 vehicles with various categories and status
+    sr = vehicle_repo.create_scrape_run(category="Cars")
+
+    v1 = vehicle_repo.create_vehicle({
+        "category": "Cars", "brand": "Toyota", "model": "Axio",
+        "manufacture_year": 2018, "fuel_type": "Hybrid", "transmission": "Automatic", "engine_cc": 1500
+    })
+    l1 = vehicle_repo.create_listing(v1, {
+        "listing_id": "REP_1", "listing_url": "u1", "price": 8500000, "district": "Colombo", "ml_eligible": True
+    })
+    vehicle_repo.add_price_history(l1, 8500000)
+    vehicle_repo.add_observation(l1, sr, price=8500000, mileage=45000)
+
+    v2 = vehicle_repo.create_vehicle({
+        "category": "Motorbikes", "brand": "Bajaj", "model": "Pulsar",
+        "manufacture_year": 2020, "fuel_type": "Petrol", "transmission": "Manual", "engine_cc": 150
+    })
+    l2 = vehicle_repo.create_listing(v2, {
+        "listing_id": "REP_2", "listing_url": "u2", "price": 450000, "district": "Gampaha", "ml_eligible": True
+    })
+    vehicle_repo.add_price_history(l2, 450000)
+    vehicle_repo.add_observation(l2, sr, price=450000, mileage=20000)
+
+    vehicle_repo.commit()
+
+    reporter = EDAReporter(output_dir=tmp_path)
+    res = reporter.run(session=db_session)
+
+    assert res["total_listings_analyzed"] == 2
+    assert res["figures_generated"] >= 7
+    assert res["tables_generated"] >= 8
+
+    # Verify figures exist
+    for fig_name in [
+        "price_distribution.png",
+        "category_price_comparison.png",
+        "yom_age_distribution.png",
+        "mileage_distribution.png",
+        "fuel_transmission_distribution.png",
+        "district_distribution.png",
+        "correlation_matrix.png",
+    ]:
+        fpath = tmp_path / "figures" / fig_name
+        assert fpath.exists() and fpath.stat().st_size > 0
+
+    # Verify tables exist
+    for table_name in [
+        "category_summary.csv",
+        "category_summary.json",
+        "brand_summary.csv",
+        "brand_summary.json",
+        "model_summary.csv",
+        "numerical_summary.csv",
+        "dataset_overview.json",
+        "correlations.json",
+    ]:
+        tpath = tmp_path / "tables" / table_name
+        assert tpath.exists() and tpath.stat().st_size > 0
+
+    # Verify report markdown exists and contains critical disclaimers
+    report_file = tmp_path / "reports" / "eda_market_report.md"
+    assert report_file.exists()
+    content = report_file.read_text(encoding="utf-8")
+    assert "Sri Lankan Vehicle Market" in content
+    assert "IMPORTANT DISCLAIMER" in content
+    assert "STATISTICAL NOTE" in content
+    assert "Insufficient historical depth" in content or "Historical depth" in content
