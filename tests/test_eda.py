@@ -176,3 +176,94 @@ def test_load_price_history_and_observations(db_session, vehicle_repo):
     df_obs = loader.load_observations(session=db_session, listing_id="PH_OBS_1")
     assert len(df_obs) == 2
     assert list(df_obs["observed_mileage"]) == [50000, 50050]
+
+
+# ==============================================================================
+# 2. DESCRIPTIVE & CATEGORY ANALYSIS TESTS
+# ==============================================================================
+
+def test_descriptive_and_categorical_empty():
+    from eda.descriptive import DescriptiveAnalyzer
+    from eda.categorical import CategoricalAnalyzer
+
+    empty_df = pd.DataFrame()
+    overview = DescriptiveAnalyzer.compute_dataset_overview(empty_df)
+    assert overview["total_listings"] == 0
+    assert overview["ml_eligible_listings"] == 0
+
+    num_summary = DescriptiveAnalyzer.compute_numerical_summary(empty_df)
+    assert len(num_summary) == 0
+
+    cat_summary = CategoricalAnalyzer.analyze_categories(empty_df)
+    assert len(cat_summary) == 0
+
+
+def test_compute_dataset_overview_and_numerical_summary():
+    from eda.descriptive import DescriptiveAnalyzer
+
+    data = {
+        "listing_id": ["1", "2", "3", "4"],
+        "canonical_category": ["Cars", "Cars", "Vans", "Motorbikes"],
+        "category": ["Car", "Car", "Van", "Motorbike"],
+        "brand": ["Toyota", "Toyota", "Nissan", "Bajaj"],
+        "model": ["Corolla", "Axio", "Caravan", "Pulsar"],
+        "asking_price": [5000000, 6000000, 4500000, 500000],
+        "mileage": [50000, 60000, 100000, 20000],
+        "manufacture_year": [2015, 2017, 2012, 2020],
+        "registration_year": [2016, 2018, 2014, 2021],
+        "vehicle_age": [11, 9, 14, 6],
+        "engine_cc": [1500, 1500, 2500, 150],
+        "current_status": ["ACTIVE", "ACTIVE", "ACTIVE", "NO_LONGER_OBSERVED"],
+        "ml_eligible": [True, True, True, False],
+        "district": ["Colombo", "Gampaha", "Colombo", "Kandy"],
+        "fuel_type": ["Petrol", "Hybrid", "Diesel", "Petrol"],
+        "transmission": ["Automatic", "Automatic", "Manual", "Manual"],
+        "observation_count": [1, 2, 1, 1],
+        "price_history_count": [1, 1, 1, 1],
+    }
+    df = pd.DataFrame(data)
+
+    overview = DescriptiveAnalyzer.compute_dataset_overview(df)
+    assert overview["total_listings"] == 4
+    assert overview["ml_eligible_listings"] == 3
+    assert overview["ml_ineligible_listings"] == 1
+    assert overview["ml_eligibility_rate_pct"] == 75.0
+    assert overview["active_listings"] == 3
+    assert overview["no_longer_observed_listings"] == 1
+    assert overview["distinct_categories"] == 3
+    assert overview["distinct_brands"] == 3
+    assert overview["distinct_districts"] == 3
+
+    num_summary = DescriptiveAnalyzer.compute_numerical_summary(df)
+    assert len(num_summary) == 6
+    price_row = num_summary[num_summary["variable"] == "asking_price"].iloc[0]
+    assert price_row["count"] == 4
+    assert price_row["min"] == 500000
+    assert price_row["max"] == 6000000
+    assert price_row["median"] == 4750000.0
+    assert price_row["iqr"] == price_row["q3"] - price_row["q1"]
+
+
+def test_analyze_categories():
+    from eda.categorical import CategoricalAnalyzer
+
+    data = {
+        "listing_id": ["1", "2", "3", "4", "5"],
+        "canonical_category": ["Cars", "Cars", "Vans", "Three Wheelers", "Cars"],
+        "asking_price": [5000000, 7000000, 4000000, 800000, 6000000],
+        "mileage": [50000, 40000, 120000, 30000, 60000],
+        "manufacture_year": [2015, 2018, 2010, 2012, 2016],
+        "ml_eligible": [True, True, False, True, True],
+    }
+    df = pd.DataFrame(data)
+
+    cat_df = CategoricalAnalyzer.analyze_categories(df)
+    assert len(cat_df) == 3
+    # Check Cars row
+    cars_row = cat_df[cat_df["category"] == "Cars"].iloc[0]
+    assert cars_row["listing_count"] == 3
+    assert cars_row["pct_of_total"] == 60.0
+    assert cars_row["ml_eligible_count"] == 3
+    assert cars_row["ml_eligible_pct"] == 100.0
+    assert cars_row["median_asking_price"] == 6000000.0
+    assert cars_row["median_yom"] == 2016

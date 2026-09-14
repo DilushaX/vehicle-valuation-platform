@@ -4,6 +4,12 @@ Provides modular, read-only analytical tools for understanding market distributi
 relationships, outliers, and category trends without modifying database records.
 """
 
+from eda.categorical import CategoricalAnalyzer
 from eda.dataset import EDADatasetLoader
+from eda.descriptive import DescriptiveAnalyzer
 
-__all__ = ["EDADatasetLoader"]
+__all__ = [
+    "EDADatasetLoader",
+    "DescriptiveAnalyzer",
+    "CategoricalAnalyzer",
+]
