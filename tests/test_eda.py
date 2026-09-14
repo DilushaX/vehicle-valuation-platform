@@ -634,3 +634,133 @@ def test_relationship_plots(tmp_path):
     assert p1.exists() and p1.stat().st_size > 0
     assert p2.exists() and p2.stat().st_size > 0
     assert p3.exists() and p3.stat().st_size > 0
+
+
+# ==============================================================================
+# 7. OUTLIER & HISTORICAL ANALYSIS TESTS
+# ==============================================================================
+
+def test_detect_iqr_and_percentile_outliers():
+    from eda.outliers import OutlierAnalyzer
+
+    # 10 values with 1 high outlier (100) and 1 low outlier (-50)
+    vals = [10, 11, 12, 12, 13, 13, 14, 15, 100, -50]
+    series = pd.Series(vals)
+
+    iqr_res = OutlierAnalyzer.detect_iqr_outliers(series)
+    assert iqr_res["count"] == 10
+    assert iqr_res["low_outlier_count"] >= 1
+    assert iqr_res["high_outlier_count"] >= 1
+    assert iqr_res["total_outliers"] >= 2
+
+    pct_res = OutlierAnalyzer.detect_percentile_outliers(series, low_p=0.05, high_p=0.95)
+    assert pct_res["count"] == 10
+    assert pct_res["total_outliers"] >= 2
+
+
+def test_analyze_outliers_classification():
+    from eda.outliers import OutlierAnalyzer
+
+    # Create dataset with 1 suspicious outlier (123456 dummy mileage),
+    # 1 genuine luxury market observation (high price, ML eligible, no issues),
+    # and normal points
+    data = {
+        "listing_id": ["L1", "L2", "L3", "L4", "L5", "L6"],
+        "canonical_category": ["Cars"] * 6,
+        "asking_price": [5000000, 5200000, 4800000, 5500000, 5100000, 35000000],  # 35M is high outlier
+        "mileage": [50000, 60000, 55000, 65000, 123456, 10000],  # 123456 is suspicious outlier
+        "engine_cc": [1500, 1500, 1500, 1500, 1500, 3000],
+        "ml_eligible": [True, True, True, True, False, True],
+        "validation_issues": [
+            [],
+            [],
+            [],
+            [],
+            ["suspicious_mileage_pattern"],
+            [],
+        ],
+    }
+    df = pd.DataFrame(data)
+
+    outliers = OutlierAnalyzer.analyze_outliers(df)
+    assert outliers["flagged_outliers_count"] >= 2
+
+    records = {r["variable"]: r for r in outliers["flagged_records"]}
+
+    # Mileage outlier should be classified as suspicious_data
+    m_out = [r for r in outliers["flagged_records"] if r["variable"] == "mileage" and r["value"] == 123456][0]
+    assert m_out["classification"] == "suspicious_data"
+
+    # Luxury car price should be classified as possible_genuine_market_observation
+    p_out = [r for r in outliers["flagged_records"] if r["variable"] == "asking_price" and r["value"] == 35000000][0]
+    assert p_out["classification"] == "possible_genuine_market_observation"
+
+
+def test_analyze_price_history():
+    from eda.historical import HistoricalAnalyzer
+
+    # Listing 1: reduced from 5M to 4.8M
+    # Listing 2: raised from 3M to 3.2M
+    # Listing 3: unchanged single price of 6M
+    data = {
+        "listing_id": ["L1", "L1", "L2", "L2", "L3"],
+        "price": [5000000, 4800000, 3000000, 3200000, 6000000],
+        "observed_at": [
+            datetime(2026, 9, 8, tzinfo=timezone.utc),
+            datetime(2026, 9, 9, tzinfo=timezone.utc),
+            datetime(2026, 9, 8, tzinfo=timezone.utc),
+            datetime(2026, 9, 9, tzinfo=timezone.utc),
+            datetime(2026, 9, 8, tzinfo=timezone.utc),
+        ],
+    }
+    df_ph = pd.DataFrame(data)
+
+    res = HistoricalAnalyzer.analyze_price_history(df_ph)
+    assert res["total_price_records"] == 5
+    assert res["unique_listings_tracked"] == 3
+    assert res["listings_with_price_changes"] == 2
+    assert res["price_reductions"] == 1
+    assert res["price_increases"] == 1
+    assert res["unchanged_listings"] == 1
+    # Average change: (-200,000 + 200,000) / 2 = 0.0
+    assert res["avg_price_change_lkr"] == 0.0
+
+
+def test_analyze_observations_and_historical_depth():
+    from eda.historical import HistoricalAnalyzer
+
+    # Short observation window: 3 days (Sept 8 to Sept 10)
+    data_obs = {
+        "listing_id": ["L1", "L1", "L2", "L3"],
+        "availability": ["AVAILABLE", "AVAILABLE", "AVAILABLE", "AVAILABLE"],
+        "observed_at": [
+            datetime(2026, 9, 8, tzinfo=timezone.utc),
+            datetime(2026, 9, 10, tzinfo=timezone.utc),
+            datetime(2026, 9, 8, tzinfo=timezone.utc),
+            datetime(2026, 9, 9, tzinfo=timezone.utc),
+        ],
+    }
+    df_obs = pd.DataFrame(data_obs)
+
+    obs_summary = HistoricalAnalyzer.analyze_observations(df_obs)
+    assert obs_summary["total_observations"] == 4
+    assert obs_summary["unique_listings_observed"] == 3
+    assert obs_summary["avg_observations_per_listing"] == round(4 / 3, 2)
+
+    # Historical depth evaluation on short dataset
+    empty_ph = pd.DataFrame(columns=["listing_id", "price", "observed_at"])
+    depth_res = HistoricalAnalyzer.evaluate_historical_depth(df_obs, empty_ph, min_days_for_monthly_trends=60)
+    assert depth_res["has_sufficient_depth"] is False
+    assert "Insufficient historical depth for reliable monthly market trend inference." in depth_res["message"]
+    assert depth_res["total_days_span"] == 2.0
+
+    # Test with deep dataset (e.g. 100 days)
+    deep_obs = pd.DataFrame({
+        "observed_at": [
+            datetime(2026, 1, 1, tzinfo=timezone.utc),
+            datetime(2026, 4, 15, tzinfo=timezone.utc),
+        ]
+    })
+    deep_res = HistoricalAnalyzer.evaluate_historical_depth(deep_obs, empty_ph, min_days_for_monthly_trends=60)
+    assert deep_res["has_sufficient_depth"] is True
+    assert "Historical depth sufficient" in deep_res["message"]
