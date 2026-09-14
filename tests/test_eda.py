@@ -267,3 +267,85 @@ def test_analyze_categories():
     assert cars_row["ml_eligible_pct"] == 100.0
     assert cars_row["median_asking_price"] == 6000000.0
     assert cars_row["median_yom"] == 2016
+
+
+# ==============================================================================
+# 3. BRAND & MODEL ANALYSIS TESTS
+# ==============================================================================
+
+def test_analyze_brands_with_sample_threshold():
+    from eda.categorical import CategoricalAnalyzer
+
+    # 5 Toyota, 2 Honda, 1 Suzuki -> Toyota sufficient (>=5), Honda/Suzuki low-sample (<5)
+    brands = ["Toyota"] * 5 + ["Honda"] * 2 + ["Suzuki"] * 1
+    prices = [5000000, 5200000, 4800000, 5500000, 6000000] + [4000000, 4200000] + [2500000]
+    data = {
+        "listing_id": [str(i) for i in range(len(brands))],
+        "brand": brands,
+        "asking_price": prices,
+        "ml_eligible": [True] * len(brands),
+    }
+    df = pd.DataFrame(data)
+
+    res = CategoricalAnalyzer.analyze_brands(df, min_sample=5)
+    assert len(res) == 3
+    # Top brand should be Toyota
+    toyota = res.iloc[0]
+    assert toyota["brand"] == "Toyota"
+    assert toyota["listing_count"] == 5
+    assert toyota["pct_of_total"] == 62.5
+    assert toyota["is_low_sample"] == False
+    assert toyota["sample_flag"] == "Sufficient Sample"
+    assert toyota["median_asking_price"] == 5200000.0
+
+    # Honda is low sample
+    honda = res[res["brand"] == "Honda"].iloc[0]
+    assert honda["listing_count"] == 2
+    assert honda["is_low_sample"] == True
+    assert "Low Sample" in honda["sample_flag"]
+
+
+def test_analyze_models_with_sample_threshold():
+    from eda.categorical import CategoricalAnalyzer
+
+    data = {
+        "listing_id": [str(i) for i in range(6)],
+        "brand": ["Toyota", "Toyota", "Toyota", "Toyota", "Nissan", "Nissan"],
+        "model": ["Axio", "Axio", "Axio", "Corolla", "Sunny", "Caravan"],
+        "asking_price": [6000000, 6200000, 5800000, 5000000, 2000000, 3500000],
+        "mileage": [60000, 65000, 55000, 90000, 150000, 120000],
+        "manufacture_year": [2015, 2016, 2014, 2010, 2000, 2005],
+    }
+    df = pd.DataFrame(data)
+
+    res = CategoricalAnalyzer.analyze_models(df, min_sample=3)
+    assert len(res) == 4
+    # Top model: Toyota Axio
+    axio = res.iloc[0]
+    assert axio["brand"] == "Toyota"
+    assert axio["model"] == "Axio"
+    assert axio["listing_count"] == 3
+    assert axio["is_low_sample"] == False
+    assert axio["median_asking_price"] == 6000000.0
+    assert axio["median_mileage"] == 60000.0
+    assert axio["median_yom"] == 2015
+    assert axio["min_yom"] == 2014
+    assert axio["max_yom"] == 2016
+
+    # Corolla has 1 count -> low sample
+    corolla = res[res["model"] == "Corolla"].iloc[0]
+    assert corolla["listing_count"] == 1
+    assert corolla["is_low_sample"] == True
+
+    # Filter by brand
+    toyota_only = CategoricalAnalyzer.analyze_models(df, brand="Toyota")
+    assert len(toyota_only) == 2
+    assert all(toyota_only["brand"] == "Toyota")
+
+
+def test_brand_and_model_empty():
+    from eda.categorical import CategoricalAnalyzer
+
+    empty = pd.DataFrame()
+    assert len(CategoricalAnalyzer.analyze_brands(empty)) == 0
+    assert len(CategoricalAnalyzer.analyze_models(empty)) == 0

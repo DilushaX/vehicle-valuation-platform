@@ -93,3 +93,170 @@ class CategoricalAnalyzer:
 
         res_df = pd.DataFrame(rows)
         return res_df
+
+    @staticmethod
+    def analyze_brands(
+        df: pd.DataFrame,
+        min_sample: int = 5,
+        top_n: Optional[int] = None,
+    ) -> pd.DataFrame:
+        """
+        Analyzes vehicle brands with minimum sample size protections.
+        Flags brands below min_sample as low-sample to prevent misleading rankings.
+        """
+        cols = [
+            "brand",
+            "listing_count",
+            "pct_of_total",
+            "ml_eligible_count",
+            "ml_eligible_pct",
+            "median_asking_price",
+            "mean_asking_price",
+            "min_asking_price",
+            "max_asking_price",
+            "is_low_sample",
+            "sample_flag",
+        ]
+        if df.empty or "brand" not in df.columns:
+            return pd.DataFrame(columns=cols)
+
+        total_listings = len(df)
+        valid_df = df.dropna(subset=["brand"]).copy()
+        if valid_df.empty:
+            return pd.DataFrame(columns=cols)
+
+        rows: List[Dict[str, Any]] = []
+        grouped = valid_df.groupby("brand")
+
+        for brand_name, group in grouped:
+            cnt = len(group)
+            pct_total = round((cnt / total_listings) * 100.0, 2)
+            el_count = int(group["ml_eligible"].sum()) if "ml_eligible" in group else 0
+            el_pct = round((el_count / cnt) * 100.0, 2)
+
+            prices = pd.to_numeric(group["asking_price"], errors="coerce").dropna()
+            med_price = float(prices.median()) if not prices.empty else np.nan
+            mean_price = float(prices.mean()) if not prices.empty else np.nan
+            min_price = float(prices.min()) if not prices.empty else np.nan
+            max_price = float(prices.max()) if not prices.empty else np.nan
+
+            is_low = cnt < min_sample
+            flag = f"Low Sample (<{min_sample})" if is_low else "Sufficient Sample"
+
+            rows.append(
+                {
+                    "brand": str(brand_name).strip(),
+                    "listing_count": cnt,
+                    "pct_of_total": pct_total,
+                    "ml_eligible_count": el_count,
+                    "ml_eligible_pct": el_pct,
+                    "median_asking_price": round(med_price, 2) if not np.isnan(med_price) else None,
+                    "mean_asking_price": round(mean_price, 2) if not np.isnan(mean_price) else None,
+                    "min_asking_price": round(min_price, 2) if not np.isnan(min_price) else None,
+                    "max_asking_price": round(max_price, 2) if not np.isnan(max_price) else None,
+                    "is_low_sample": is_low,
+                    "sample_flag": flag,
+                }
+            )
+
+        res_df = pd.DataFrame(rows)
+        res_df = res_df.sort_values(
+            by=["listing_count", "median_asking_price"],
+            ascending=[False, False],
+        ).reset_index(drop=True)
+
+        if top_n is not None and top_n > 0:
+            res_df = res_df.head(top_n)
+
+        return res_df
+
+    @staticmethod
+    def analyze_models(
+        df: pd.DataFrame,
+        brand: Optional[str] = None,
+        min_sample: int = 3,
+        top_n: Optional[int] = None,
+    ) -> pd.DataFrame:
+        """
+        Analyzes vehicle models with minimum sample size protections.
+        Computes price, mileage, and YOM central tendencies and spreads.
+        """
+        cols = [
+            "brand",
+            "model",
+            "listing_count",
+            "pct_of_total",
+            "median_asking_price",
+            "mean_asking_price",
+            "median_mileage",
+            "median_yom",
+            "min_yom",
+            "max_yom",
+            "is_low_sample",
+            "sample_flag",
+        ]
+        if df.empty or "model" not in df.columns:
+            return pd.DataFrame(columns=cols)
+
+        valid_df = df.dropna(subset=["model"]).copy()
+        if brand:
+            valid_df = valid_df[valid_df["brand"].astype(str).str.lower() == brand.strip().lower()]
+
+        if valid_df.empty:
+            return pd.DataFrame(columns=cols)
+
+        total_listings = len(df)
+        rows: List[Dict[str, Any]] = []
+
+        # If brand column is missing, fill with "Unknown"
+        if "brand" not in valid_df.columns:
+            valid_df["brand"] = "Unknown"
+
+        grouped = valid_df.groupby(["brand", "model"])
+
+        for (b, m), group in grouped:
+            cnt = len(group)
+            pct_total = round((cnt / total_listings) * 100.0, 2)
+
+            prices = pd.to_numeric(group["asking_price"], errors="coerce").dropna()
+            med_price = float(prices.median()) if not prices.empty else np.nan
+            mean_price = float(prices.mean()) if not prices.empty else np.nan
+
+            mileages = pd.to_numeric(group["mileage"], errors="coerce").dropna()
+            med_mileage = float(mileages.median()) if not mileages.empty else np.nan
+
+            yoms = pd.to_numeric(group["manufacture_year"], errors="coerce").dropna()
+            med_yom = float(yoms.median()) if not yoms.empty else np.nan
+            min_yom = int(yoms.min()) if not yoms.empty else None
+            max_yom = int(yoms.max()) if not yoms.empty else None
+
+            is_low = cnt < min_sample
+            flag = f"Low Sample (<{min_sample})" if is_low else "Sufficient Sample"
+
+            rows.append(
+                {
+                    "brand": str(b).strip(),
+                    "model": str(m).strip(),
+                    "listing_count": cnt,
+                    "pct_of_total": pct_total,
+                    "median_asking_price": round(med_price, 2) if not np.isnan(med_price) else None,
+                    "mean_asking_price": round(mean_price, 2) if not np.isnan(mean_price) else None,
+                    "median_mileage": round(med_mileage, 2) if not np.isnan(med_mileage) else None,
+                    "median_yom": int(med_yom) if not np.isnan(med_yom) else None,
+                    "min_yom": min_yom,
+                    "max_yom": max_yom,
+                    "is_low_sample": is_low,
+                    "sample_flag": flag,
+                }
+            )
+
+        res_df = pd.DataFrame(rows)
+        res_df = res_df.sort_values(
+            by=["listing_count", "median_asking_price"],
+            ascending=[False, False],
+        ).reset_index(drop=True)
+
+        if top_n is not None and top_n > 0:
+            res_df = res_df.head(top_n)
+
+        return res_df
