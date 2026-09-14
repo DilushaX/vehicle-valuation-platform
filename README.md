@@ -409,6 +409,80 @@ python scripts/data_quality_report.py --fail-on-inconsistency
 
 ---
 
+### 6. Exploratory Data Analysis (EDA) & Market Intelligence (Phase 4 Step 6)
+
+The **Exploratory Data Analysis (EDA)** engine provides reproducible, non-destructive analytical pipelines to understand empirical distributions, structural relationships, price spreads, category divergence, and data limitations across the collected Sri Lankan vehicle market data.
+
+> [!IMPORTANT]
+> **Asking Price Disclaimer**: Prices analyzed throughout the platform represent seller asking/listed prices observed on Riyasewana. They do **not** represent confirmed transaction prices or finalized sale contracts.
+
+> [!NOTE]
+> **Correlation vs. Causation**: Observed statistical associations (e.g. price vs. mileage or district variations) measure empirical co-movement and do **not** imply causality.
+
+#### 1. CLI Execution & Reproducible Reporting
+Execute the full EDA pipeline against the production PostgreSQL database:
+
+```bash
+# Execute standard EDA runner (loads PostgreSQL, generates figures, tables, and report)
+python scripts/run_eda.py
+
+# Alternatively, execute via module syntax
+python -m eda.report
+
+# Optional category-specific EDA
+python scripts/run_eda.py --category Cars
+
+# Run analysis restricted to verified ML-eligible listings
+python scripts/run_eda.py --ml-eligible-only
+
+# Custom output directory
+python scripts/run_eda.py --output-dir data/analysis
+```
+
+#### 2. Generated Artifacts & Directory Structure
+Generated artifacts are isolated in `data/analysis/` (never placed in `data/raw/`):
+
+```
+data/analysis/
+├── figures/
+│   ├── category_price_comparison.png       # Boxplot of asking prices across all 8 categories
+│   ├── correlation_matrix.png              # Spearman rank correlation heatmap
+│   ├── district_distribution.png           # Listing volume by administrative district
+│   ├── fuel_transmission_distribution.png  # Fuel type & transmission distribution bar charts
+│   ├── mileage_distribution.png            # Odometer histogram & dispersion boxplot
+│   ├── price_distribution.png              # Linear histogram & log-scale boxplot
+│   ├── price_vs_age.png                    # Scatter plot with OLS trend line
+│   ├── price_vs_mileage.png                # Scatter plot with OLS trend line
+│   └── yom_age_distribution.png            # Manufacture year and vehicle age histograms
+├── tables/
+│   ├── category_summary.csv / .json        # Median/mean price, mileage, YOM across 8 categories
+│   ├── brand_summary.csv / .json           # Top brands, market share, asking prices, sample flags
+│   ├── model_summary.csv / .json           # Model-level statistics, spreads, and sample reliability
+│   ├── numerical_summary.csv / .json       # Parametric & 5-number non-parametric statistics
+│   ├── fuel_summary.csv / .json            # Fuel breakdown & median prices
+│   ├── transmission_summary.csv / .json    # Automatic vs Manual proportions & prices
+│   ├── district_summary.csv / .json        # Geographic distribution (non-causal observations)
+│   ├── correlations.json                   # Pearson & Spearman matrices, bivariate diagnostics
+│   ├── flagged_outliers.csv / .json        # IQR/percentile outliers with categorization
+│   └── dataset_overview.json               # Top-level entity, listing, and attribute counts
+└── reports/
+    └── eda_market_report.md                # Comprehensive Markdown market intelligence report
+```
+
+#### 3. Analytical Populations
+The EDA pipeline explicitly distinguishes three operational populations:
+- **Full Dataset**: Total historical corpus (94 listings, 94 vehicles, 108 observations).
+- **Quality-Filtered Dataset**: Records audited for data integrity, field syntax, and plausible physical limits.
+- **ML-Eligible Dataset**: Verified listings meeting all critical valuation criteria (valid asking price, mileage, manufacture year, brand, model, and category) suitable for future valuation modeling (63 listings, 67.0% eligibility rate).
+
+#### 4. Sample Size Protections & Historical Depth Limits
+- **Sample Size Safeguards**: Configurable minimum sample thresholds (`MIN_BRAND_SAMPLE = 5`, `MIN_MODEL_SAMPLE = 3`, `MIN_DISTRICT_SAMPLE = 3`) flag low-volume groups as `Low Sample` to prevent misleading rankings.
+- **Historical Depth Enforcement**: The system strictly checks the observation time span. Because a multi-day scrape window does not constitute a long-term trend, the historical engine explicitly reports:
+  > *"Insufficient historical depth for reliable monthly market trend inference."*
+  Fabricated or extrapolated monthly trends are strictly prevented.
+
+---
+
 ## 🚀 Quickstart Guide
 
 ### 1. Installation & Environment Setup
