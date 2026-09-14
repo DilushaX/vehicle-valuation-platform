@@ -8,10 +8,12 @@ from eda.categorical import CategoricalAnalyzer
 from eda.dataset import EDADatasetLoader
 from eda.descriptive import DescriptiveAnalyzer
 from eda.distributions import DistributionAnalyzer
+from eda.relationships import RelationshipAnalyzer
 
 __all__ = [
     "EDADatasetLoader",
     "DescriptiveAnalyzer",
     "CategoricalAnalyzer",
     "DistributionAnalyzer",
+    "RelationshipAnalyzer",
 ]

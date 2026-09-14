@@ -523,3 +523,114 @@ def test_fuel_trans_district_plots(tmp_path):
 
     assert p1.exists() and p1.stat().st_size > 0
     assert p2.exists() and p2.stat().st_size > 0
+
+
+# ==============================================================================
+# 6. RELATIONSHIP & CORRELATION TESTS
+# ==============================================================================
+
+def test_compute_correlations():
+    from eda.relationships import RelationshipAnalyzer
+
+    # Create synthetic dataset with known inverse relationship between age/mileage and price
+    data = {
+        "asking_price": [10000000, 8000000, 6000000, 4000000, 2000000],
+        "mileage": [10000, 30000, 60000, 90000, 150000],
+        "manufacture_year": [2022, 2020, 2018, 2015, 2010],
+        "vehicle_age": [4, 6, 8, 11, 16],
+        "engine_cc": [2000, 1800, 1500, 1300, 1000],
+    }
+    df = pd.DataFrame(data)
+
+    corrs = RelationshipAnalyzer.compute_correlations(df)
+    assert "pearson" in corrs and "spearman" in corrs
+
+    p_mat = corrs["pearson"]
+    s_mat = corrs["spearman"]
+
+    # Price vs Mileage should be strongly negative
+    assert p_mat.loc["asking_price", "mileage"] < -0.9
+    assert s_mat.loc["asking_price", "mileage"] == -1.0
+
+    # Price vs Age should be strongly negative
+    assert s_mat.loc["asking_price", "vehicle_age"] == -1.0
+
+    # Price vs YOM should be strongly positive
+    assert s_mat.loc["asking_price", "manufacture_year"] == 1.0
+
+
+def test_compute_bivariate_relationships():
+    from eda.relationships import RelationshipAnalyzer
+
+    data = {
+        "asking_price": [8000000, 6000000, 4000000, 2000000],
+        "mileage": [20000, 50000, 80000, 120000],
+        "manufacture_year": [2020, 2018, 2016, 2012],
+        "vehicle_age": [6, 8, 10, 14],
+        "engine_cc": [1800, 1500, 1300, 1000],
+    }
+    df = pd.DataFrame(data)
+
+    rel = RelationshipAnalyzer.compute_bivariate_relationships(df)
+    assert "asking_price_vs_mileage" in rel
+    assert "asking_price_vs_vehicle_age" in rel
+    assert rel["asking_price_vs_mileage"]["sample_size"] == 4
+    assert rel["asking_price_vs_mileage"]["spearman_rho"] == -1.0
+    assert "STATISTICAL NOTICE" in rel["asking_price_vs_mileage"]["disclaimer"]
+
+
+def test_compute_category_correlations():
+    from eda.relationships import RelationshipAnalyzer
+
+    # 5 Cars, 2 Vans
+    cars_data = {
+        "canonical_category": ["Cars"] * 5,
+        "asking_price": [9000000, 8000000, 7000000, 6000000, 5000000],
+        "mileage": [20000, 40000, 60000, 80000, 100000],
+        "manufacture_year": [2021, 2019, 2017, 2015, 2013],
+        "vehicle_age": [5, 7, 9, 11, 13],
+        "engine_cc": [1500, 1500, 1500, 1500, 1500],
+    }
+    vans_data = {
+        "canonical_category": ["Vans"] * 2,
+        "asking_price": [4000000, 3500000],
+        "mileage": [120000, 150000],
+        "manufacture_year": [2010, 2008],
+        "vehicle_age": [16, 18],
+        "engine_cc": [2500, 2500],
+    }
+    df = pd.concat([pd.DataFrame(cars_data), pd.DataFrame(vans_data)], ignore_index=True)
+
+    cat_corrs = RelationshipAnalyzer.compute_category_correlations(df, min_sample=5)
+    assert "Cars" in cat_corrs
+    assert cat_corrs["Cars"]["sample_size"] == 5
+    assert cat_corrs["Cars"]["spearman_price_mileage"] == -1.0
+
+    # Vans should be tagged as below threshold (<5)
+    assert "Vans" in cat_corrs
+    assert "below threshold" in cat_corrs["Vans"]["status"].lower()
+
+
+def test_relationship_plots(tmp_path):
+    from eda.relationships import RelationshipAnalyzer
+
+    data = {
+        "asking_price": [8000000, 6000000, 4000000, 2000000, 5000000],
+        "mileage": [20000, 50000, 80000, 120000, 60000],
+        "manufacture_year": [2020, 2018, 2016, 2012, 2017],
+        "vehicle_age": [6, 8, 10, 14, 9],
+        "engine_cc": [1800, 1500, 1300, 1000, 1500],
+    }
+    df = pd.DataFrame(data)
+
+    p1 = tmp_path / "corr_matrix.png"
+    p2 = tmp_path / "price_mileage.png"
+    p3 = tmp_path / "price_age.png"
+
+    fig1 = RelationshipAnalyzer.plot_correlation_matrix(df, output_path=p1)
+    fig2 = RelationshipAnalyzer.plot_price_vs_mileage(df, output_path=p2)
+    fig3 = RelationshipAnalyzer.plot_price_vs_age(df, output_path=p3)
+
+    assert p1.exists() and p1.stat().st_size > 0
+    assert p2.exists() and p2.stat().st_size > 0
+    assert p3.exists() and p3.stat().st_size > 0
