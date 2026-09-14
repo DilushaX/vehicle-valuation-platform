@@ -1,5 +1,5 @@
 # Sri Lankan Vehicle Market — Exploratory Data Analysis (EDA) Report
-*Generated: 2026-09-14 15:27:24 UTC*
+*Generated: 2026-09-14 15:29:59 UTC*
 
 > [!IMPORTANT]
 > IMPORTANT DISCLAIMER: Listed prices represent seller asking/advertised prices extracted from publicly accessible listings on Riyasewana. They DO NOT represent completed transaction prices or confirmed market sale values. Actual finalized sales may differ due to buyer-seller negotiation.
