@@ -302,26 +302,62 @@ class DistributionAnalyzer:
         df: pd.DataFrame,
         output_path: Optional[Path] = None,
     ) -> plt.Figure:
-        """Generates mileage distribution histogram and box plot."""
+        """Generates mileage distribution histogram and box plot with extreme-value handling."""
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
 
         mileage_series = pd.to_numeric(df.get("mileage", pd.Series()), errors="coerce").dropna()
 
         if not mileage_series.empty:
             mileage_k = mileage_series / 1_000.0
+            has_extreme = (mileage_k.max() > 500.0) or (len(mileage_k) >= 10 and mileage_k.max() > mileage_k.quantile(0.95) * 3)
 
-            ax1.hist(mileage_k, bins=25, color="#5e35b1", edgecolor="black", alpha=0.75)
-            ax1.set_title("Odometer Mileage Distribution", fontsize=12, fontweight="bold")
+            # Histogram (Ax1)
+            if has_extreme:
+                cutoff_km = max(float(mileage_k.quantile(0.98)), 300.0)
+                norm_mk = mileage_k[mileage_k <= cutoff_km]
+                ax1.hist(norm_mk, bins=25, color="#5e35b1", edgecolor="black", alpha=0.75)
+                ax1.set_title(
+                    f"Odometer Mileage Distribution (<= {cutoff_km:,.0f}k km)\nExtreme Tail Retained in Dataset",
+                    fontsize=11,
+                    fontweight="bold",
+                )
+            else:
+                ax1.hist(mileage_k, bins=min(25, mileage_k.nunique() or 10), color="#5e35b1", edgecolor="black", alpha=0.75)
+                ax1.set_title("Odometer Mileage Distribution", fontsize=11, fontweight="bold")
+
             ax1.set_xlabel("Mileage ('000 km)", fontsize=10)
             ax1.set_ylabel("Listing Count", fontsize=10)
             ax1.grid(True, linestyle="--", alpha=0.5)
 
-            ax2.boxplot(mileage_k, orientation="vertical", patch_artist=True,
-                        boxprops=dict(facecolor="#7e57c2", color="black"),
-                        medianprops=dict(color="red", linewidth=2))
-            ax2.set_title("Mileage Spread & Dispersion", fontsize=12, fontweight="bold")
-            ax2.set_ylabel("Mileage ('000 km)", fontsize=10)
+            # Boxplot (Ax2) - Log scale if wide dynamic range / extreme values
+            if has_extreme or (mileage_k.max() > 0 and (mileage_k.max() / max(float(mileage_k.quantile(0.25)), 1.0) > 50)):
+                # Use log scale with clipped lower bound for zero mileage display
+                disp_mk = mileage_k.clip(lower=0.1)
+                ax2.boxplot(
+                    disp_mk,
+                    orientation="vertical",
+                    patch_artist=True,
+                    boxprops=dict(facecolor="#7e57c2", color="black"),
+                    medianprops=dict(color="red", linewidth=2),
+                )
+                ax2.set_yscale("log")
+                ax2.set_title("Mileage Spread & Dispersion (Log Scale)\nAll Observations Retained", fontsize=11, fontweight="bold")
+                ax2.set_ylabel("Mileage ('000 km, Log Scale)", fontsize=10)
+            else:
+                ax2.boxplot(
+                    mileage_k,
+                    orientation="vertical",
+                    patch_artist=True,
+                    boxprops=dict(facecolor="#7e57c2", color="black"),
+                    medianprops=dict(color="red", linewidth=2),
+                )
+                ax2.set_title("Mileage Spread & Dispersion", fontsize=11, fontweight="bold")
+                ax2.set_ylabel("Mileage ('000 km)", fontsize=10)
+
             ax2.grid(True, linestyle="--", alpha=0.5)
+        else:
+            ax1.text(0.5, 0.5, "No Mileage Data Available", ha="center", va="center")
+            ax2.text(0.5, 0.5, "No Mileage Data Available", ha="center", va="center")
 
         plt.tight_layout()
         if output_path:

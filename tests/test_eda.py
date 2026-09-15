@@ -634,6 +634,89 @@ def test_relationship_plots(tmp_path):
     assert p1.exists() and p1.stat().st_size > 0
     assert p2.exists() and p2.stat().st_size > 0
     assert p3.exists() and p3.stat().st_size > 0
+    assert len(fig2.axes) == 2  # Dual-panel architecture: Full range + Analytical view
+
+
+def test_price_vs_mileage_extreme_value_and_data_immutability(tmp_path):
+    """
+    Verifies Correction 1:
+    1. Extreme mileage observation (~4,500,000 km) is plotted without stretching or errors.
+    2. Dual-panel architecture separates full dataset view from analytical operational view.
+    3. The underlying DataFrame is completely unmodified (non-destructive plotting).
+    """
+    from eda.relationships import RelationshipAnalyzer
+
+    data = {
+        "asking_price": [8500000, 6200000, 4100000, 2300000, 5500000, 3200000, 7800000, 4900000, 9500000, 6000000, 5000000],
+        "mileage": [45000, 60000, 120000, 180000, 25000, 210000, 35000, 140000, 15000, 85000, 4500000],  # 4.5M km outlier
+        "manufacture_year": [2018, 2016, 2012, 2008, 2021, 2006, 2019, 2011, 2022, 2015, 2014],
+        "vehicle_age": [8, 10, 14, 18, 5, 20, 7, 15, 4, 11, 12],
+    }
+    df = pd.DataFrame(data)
+    orig_shape = df.shape
+    orig_mileage_values = list(df["mileage"])
+
+    out_file = tmp_path / "extreme_mileage_plot.png"
+    fig = RelationshipAnalyzer.plot_price_vs_mileage(df, output_path=out_file)
+
+    # 1. Image written and non-empty
+    assert out_file.exists() and out_file.stat().st_size > 0
+
+    # 2. Dual-panel architecture
+    assert len(fig.axes) == 2
+    ax1, ax2 = fig.axes[0], fig.axes[1]
+
+    # Ax1 (Full View) must accommodate the extreme 4,500k km observation
+    assert ax1.get_xlim()[1] >= 4500.0 or any(x >= 4500.0 for x in ax1.collections[0].get_offsets()[:, 0])
+
+    # Ax2 (Analytical View) must zoom into operational range
+    assert "Analytical View" in ax2.get_title()
+
+    # 3. Data immutability — original dataframe must NOT be modified
+    assert df.shape == orig_shape
+    assert list(df["mileage"]) == orig_mileage_values
+    assert 4500000 in list(df["mileage"])
+
+
+def test_price_vs_age_trendline_label(tmp_path):
+    """
+    Verifies Correction 2:
+    OLS line must be labeled as simple linear trend reference, not a proven depreciation model.
+    """
+    from eda.relationships import RelationshipAnalyzer
+
+    data = {
+        "asking_price": [9000000, 7000000, 5000000, 4000000, 2000000],
+        "vehicle_age": [3, 6, 9, 12, 18],
+    }
+    df = pd.DataFrame(data)
+    out_file = tmp_path / "price_vs_age.png"
+    fig = RelationshipAnalyzer.plot_price_vs_age(df, output_path=out_file)
+
+    ax = fig.axes[0]
+    legend_texts = [t.get_text() for t in ax.get_legend().get_texts()]
+    assert "Simple Linear Trend Reference" in legend_texts
+
+
+def test_mileage_distribution_extreme_value_handling(tmp_path):
+    """
+    Verifies that mileage distribution handles extreme 4.5M values gracefully
+    using operational range histogram and log-scale dispersion boxplot.
+    """
+    from eda.distributions import DistributionAnalyzer
+
+    data = {
+        "mileage": [10000, 25000, 45000, 60000, 80000, 110000, 130000, 160000, 220000, 280000, 4500000],
+    }
+    df = pd.DataFrame(data)
+    out_file = tmp_path / "mileage_distribution.png"
+    fig = DistributionAnalyzer.plot_mileage_distribution(df, output_path=out_file)
+
+    assert out_file.exists() and out_file.stat().st_size > 0
+    assert len(fig.axes) == 2
+    ax1, ax2 = fig.axes[0], fig.axes[1]
+    assert "Extreme Tail Retained" in ax1.get_title()
+    assert ax2.get_yscale() == "log"
 
 
 # ==============================================================================

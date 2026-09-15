@@ -211,29 +211,82 @@ class RelationshipAnalyzer:
         df: pd.DataFrame,
         output_path: Optional[Path] = None,
     ) -> plt.Figure:
-        """Generates Asking Price vs Mileage scatter plot with category color coding."""
-        fig, ax = plt.subplots(figsize=(10, 6))
+        """
+        Generates dual-panel Asking Price vs Mileage scatter visualization:
+        - Panel 1: Full dataset view representing all observations including extreme tails (e.g. ~4.5M km),
+                   retained in the underlying dataset without destructive removal.
+        - Panel 2: Analytical operational view (percentile-limited or operational market range)
+                   allowing granular inspection of typical market listings with simple linear trend reference.
+        """
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
 
         valid = df.dropna(subset=["asking_price", "mileage"]).copy()
         if not valid.empty:
             p_m = valid["asking_price"].astype(float) / 1_000_000.0
             m_k = valid["mileage"].astype(float) / 1_000.0
 
-            ax.scatter(m_k, p_m, color="#1976d2", alpha=0.7, edgecolors="k", s=50)
-            ax.set_title("Observed Asking Price vs Odometer Mileage", fontsize=12, fontweight="bold")
-            ax.set_xlabel("Odometer Mileage ('000 km)", fontsize=10)
-            ax.set_ylabel("Asking Price (Million LKR / Rs.)", fontsize=10)
-            ax.grid(True, linestyle="--", alpha=0.5)
+            # -------------------------------------------------------------
+            # Panel 1: Full-Data View (All observations retained)
+            # -------------------------------------------------------------
+            ax1.scatter(m_k, p_m, color="#1976d2", alpha=0.7, edgecolors="k", s=45)
+            ax1.set_title("Full Dataset View (All Observations)\nExtreme Values Retained in Dataset", fontsize=11, fontweight="bold")
+            ax1.set_xlabel("Odometer Mileage ('000 km)", fontsize=10)
+            ax1.set_ylabel("Asking Price (Million LKR / Rs.)", fontsize=10)
+            ax1.grid(True, linestyle="--", alpha=0.5)
 
-            # Fit linear trend line if enough points
-            if len(valid) >= 5:
-                z = np.polyfit(m_k, p_m, 1)
+            # Annotate extreme observation if present (e.g. > 1,000,000 km)
+            extreme_mask = valid["mileage"] > 1_000_000
+            if extreme_mask.any():
+                ext_idx = valid[extreme_mask].index[0]
+                ext_m_k = m_k.loc[ext_idx]
+                ext_p_m = p_m.loc[ext_idx]
+                ax1.annotate(
+                    f"Extreme observation ({ext_m_k:,.0f}k km)\nRetained in underlying dataset",
+                    xy=(ext_m_k, ext_p_m),
+                    xytext=(ext_m_k * 0.45, ext_p_m + max(p_m.max() * 0.1, 10)),
+                    arrowprops=dict(arrowstyle="->", color="#d32f2f", lw=1.5),
+                    fontsize=9,
+                    fontweight="bold",
+                    color="#b71c1c",
+                    bbox=dict(boxstyle="round,pad=0.3", facecolor="#ffebee", edgecolor="#d32f2f", alpha=0.85),
+                )
+
+            # -------------------------------------------------------------
+            # Panel 2: Analytical View (Operational Market Range)
+            # -------------------------------------------------------------
+            has_extreme = (m_k.max() > 500.0) or (len(valid) >= 10 and m_k.max() > m_k.quantile(0.95) * 3)
+            if has_extreme:
+                p98_km = float(valid["mileage"].quantile(0.98)) / 1_000.0
+                cutoff_km = max(p98_km, 300.0)
+                analytical_mask = m_k <= cutoff_km
+                a_mk = m_k[analytical_mask]
+                a_pm = p_m[analytical_mask]
+                view_desc = f"Operational Range (<= {cutoff_km:,.0f}k km)"
+            else:
+                a_mk = m_k
+                a_pm = p_m
+                view_desc = "Normal Analytical Range"
+
+            ax2.scatter(a_mk, a_pm, color="#0288d1", alpha=0.75, edgecolors="k", s=45)
+            ax2.set_title(
+                f"Analytical View ({view_desc})\nVisualization Zoom — Data Fully Retained",
+                fontsize=11,
+                fontweight="bold",
+            )
+            ax2.set_xlabel("Odometer Mileage ('000 km)", fontsize=10)
+            ax2.set_ylabel("Asking Price (Million LKR / Rs.)", fontsize=10)
+            ax2.grid(True, linestyle="--", alpha=0.5)
+
+            # Simple linear trend reference on analytical range
+            if len(a_mk) >= 5 and (a_mk.max() > a_mk.min()):
+                z = np.polyfit(a_mk, a_pm, 1)
                 p = np.poly1d(z)
-                x_vals = np.linspace(m_k.min(), m_k.max(), 100)
-                ax.plot(x_vals, p(x_vals), color="red", linestyle="--", label="OLS Trend")
-                ax.legend()
+                x_vals = np.linspace(a_mk.min(), a_mk.max(), 100)
+                ax2.plot(x_vals, p(x_vals), color="red", linestyle="--", label="Simple Linear Trend Reference")
+                ax2.legend(loc="upper right", fontsize=9)
         else:
-            ax.text(0.5, 0.5, "No Price vs Mileage Data Available", ha="center", va="center")
+            ax1.text(0.5, 0.5, "No Price vs Mileage Data Available", ha="center", va="center")
+            ax2.text(0.5, 0.5, "No Price vs Mileage Data Available", ha="center", va="center")
 
         plt.tight_layout()
         if output_path:
@@ -247,7 +300,7 @@ class RelationshipAnalyzer:
         df: pd.DataFrame,
         output_path: Optional[Path] = None,
     ) -> plt.Figure:
-        """Generates Asking Price vs Vehicle Age scatter plot."""
+        """Generates Asking Price vs Vehicle Age scatter plot with simple linear trend reference."""
         fig, ax = plt.subplots(figsize=(10, 6))
 
         valid = df.dropna(subset=["asking_price", "vehicle_age"]).copy()
@@ -261,12 +314,12 @@ class RelationshipAnalyzer:
             ax.set_ylabel("Asking Price (Million LKR / Rs.)", fontsize=10)
             ax.grid(True, linestyle="--", alpha=0.5)
 
-            if len(valid) >= 5:
+            if len(valid) >= 5 and (age.max() > age.min()):
                 z = np.polyfit(age, p_m, 1)
                 p = np.poly1d(z)
                 x_vals = np.linspace(age.min(), age.max(), 100)
-                ax.plot(x_vals, p(x_vals), color="red", linestyle="--", label="OLS Trend")
-                ax.legend()
+                ax.plot(x_vals, p(x_vals), color="red", linestyle="--", label="Simple Linear Trend Reference")
+                ax.legend(loc="upper right", fontsize=9)
         else:
             ax.text(0.5, 0.5, "No Price vs Age Data Available", ha="center", va="center")
 
