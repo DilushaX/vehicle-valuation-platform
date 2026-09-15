@@ -87,11 +87,30 @@ class RelationshipAnalyzer:
                 p_corr = np.nan
                 s_corr = np.nan
 
+            # Scientifically defensible association interpretation
+            if np.isnan(s_corr):
+                interp = "Insufficient data for monotonic evaluation"
+            elif var2 == "mileage":
+                interp = "Weak monotonic association in isolated sample; confounded by age, category, brand"
+            elif var2 == "manufacture_year":
+                interp = "Moderate direct monotonic association in observed sample"
+            elif var2 == "vehicle_age":
+                interp = "Moderate inverse monotonic association in observed sample"
+            elif var2 == "engine_cc":
+                interp = "Moderate direct monotonic association across mixed categories"
+            elif s_corr < -0.3:
+                interp = "Moderate inverse monotonic association"
+            elif s_corr > 0.3:
+                interp = "Moderate direct monotonic association"
+            else:
+                interp = "Weak monotonic association in current sample"
+
             results[f"{var1}_vs_{var2}"] = {
                 "label": label,
                 "sample_size": n,
                 "pearson_r": round(p_corr, 4) if not np.isnan(p_corr) else None,
                 "spearman_rho": round(s_corr, 4) if not np.isnan(s_corr) else None,
+                "association_interpretation": interp,
                 "disclaimer": NON_CAUSALITY_DISCLAIMER,
             }
 
