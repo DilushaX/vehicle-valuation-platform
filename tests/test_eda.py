@@ -923,3 +923,138 @@ def test_eda_reporter_end_to_end(tmp_path, db_session, vehicle_repo):
     assert "IMPORTANT DISCLAIMER" in content
     assert "STATISTICAL NOTE" in content
     assert "Insufficient historical depth" in content or "Historical depth" in content
+
+
+def test_eda_report_scientifically_defensible_wording(tmp_path, db_session, vehicle_repo):
+    """
+    Verifies Corrections 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14:
+    Validates report phrasing, limitations section, mathematical dependency notice,
+    non-causal language, and absence of unverified depreciation or causal claims.
+    """
+    from eda.report import EDAReporter
+
+    sr = vehicle_repo.create_scrape_run(category="Cars")
+    v1 = vehicle_repo.create_vehicle({
+        "category": "Cars", "brand": "Toyota", "model": "Axio",
+        "manufacture_year": 2018, "fuel_type": "Petrol", "transmission": "Automatic", "engine_cc": 1500
+    })
+    l1 = vehicle_repo.create_listing(v1, {
+        "listing_id": "VAL_1", "listing_url": "u_v1", "price": 8500000, "district": "Colombo", "ml_eligible": True
+    })
+    vehicle_repo.add_price_history(l1, 8500000)
+    vehicle_repo.add_observation(l1, sr, price=8500000, mileage=45000)
+
+    v2 = vehicle_repo.create_vehicle({
+        "category": "Motorbikes", "brand": "Bajaj", "model": "Pulsar",
+        "manufacture_year": 2020, "fuel_type": "Petrol", "transmission": "Manual", "engine_cc": 150
+    })
+    l2 = vehicle_repo.create_listing(v2, {
+        "listing_id": "VAL_2", "listing_url": "u_v2", "price": 450000, "district": "Gampaha", "ml_eligible": True
+    })
+    vehicle_repo.add_price_history(l2, 450000)
+    vehicle_repo.add_observation(l2, sr, price=450000, mileage=20000)
+    vehicle_repo.commit()
+
+    reporter = EDAReporter(output_dir=tmp_path)
+    res = reporter.run(session=db_session)
+
+    report_file = tmp_path / "reports" / "eda_market_report.md"
+    assert report_file.exists()
+    content = report_file.read_text(encoding="utf-8")
+
+    # Correction 14: Market-census language
+    assert "publicly accessible Riyasewana listings collected within the configured collection scope" in content
+
+    # Correction 5: Price distribution right-skewness and median central tendency
+    assert "The mean asking price is substantially higher than the median" in content
+    assert "Median asking price is often a more representative measure of central tendency" in content
+
+    # Correction 6: Category-level comparison within context
+    assert "Vehicle categories operate at substantially different price scales" in content
+    assert "Category-level comparisons should therefore be interpreted within category context" in content
+
+    # Correction 7: District non-causality
+    assert "Colombo has the largest number of observed listings in the current sample" in content
+    assert "Observed asking-price differences by district" in content
+
+    # Correction 8: Fuel and transmission distribution vs price effect
+    assert "Petrol is the most frequently observed fuel type in the current sample" in content
+    assert "manual listings are more common than automatic listings" in content
+
+    # Correction 9: Historical observation window and zero price changes
+    assert "No asking-price changes were observed during the current collection window" in content
+    assert "two-day observation window is insufficient to infer reliable monthly, seasonal, or long-term market price trends" in content
+
+    # Correction 3: YOM vs Vehicle Age mathematical identity notice
+    assert "Mathematical Dependency Notice" in content
+    assert "Manufacture year and vehicle age are mathematically derived from one another in this dataset" in content
+    assert "producing a perfect inverse correlation (-1.00)" in content
+
+    # Correction 4: Mileage correlation isolated interpretation
+    assert "The current sample does not show a strong monotonic association between mileage and asking price when considered in isolation" in content
+
+    # Correction 2: Vehicle Age monotonic association (not proven depreciation curve)
+    assert "The observed sample shows a moderate negative monotonic association between vehicle age and asking price" in content
+    assert "Non-Linear Age Decay" not in content
+
+    # Correction 11: Outlier classification categories
+    assert "Suspicious Data" in content
+    assert "Possible Genuine Market Observations" in content
+    assert "Insufficient Information" in content
+
+    # Correction 13: Section 9 EDA Interpretation & Limitations covering all 10 items
+    assert "## 9. EDA Interpretation & Limitations" in content
+    assert "Asking Price vs. Transaction Price" in content
+    assert "Small Current Sample" in content
+    assert "Short Historical Timeframe" in content
+    assert "Category Heterogeneity" in content
+    assert "Outlier Leverage" in content
+    assert "Low-Sample Strata" in content
+    assert "Correlation Does Not Imply Causation" in content
+    assert "Mathematical Identity of YOM and Age" in content
+    assert "Observed Public Listings Scope" in content
+    assert "Absence of Confirmed Sold Prices" in content
+
+    # Correction 12: Evidence-based language audit (no unjustified claims)
+    content_lower = content.lower()
+    assert " proves " not in content_lower
+    assert " guarantees " not in content_lower
+    assert "colombo causes" not in content_lower
+
+
+def test_eda_full_run_read_only_database_safety(db_session, vehicle_repo, tmp_path):
+    """
+    Verifies Correction 16:
+    Ensures complete execution of EDAReporter performs zero mutations on database tables.
+    """
+    from eda.report import EDAReporter
+
+    sr = vehicle_repo.create_scrape_run(category="Cars")
+    v = vehicle_repo.create_vehicle({"category": "Cars", "brand": "Nissan", "manufacture_year": 2017})
+    l = vehicle_repo.create_listing(v, {"listing_id": "SAFE_1", "listing_url": "u_s", "price": 4200000, "ml_eligible": True})
+    vehicle_repo.add_price_history(l, 4200000)
+    vehicle_repo.add_observation(l, sr, price=4200000, mileage=55000)
+    vehicle_repo.commit()
+
+    # Pre-run counts
+    before_v = db_session.scalar(select(func.count(Vehicle.id)))
+    before_l = db_session.scalar(select(func.count(Listing.id)))
+    before_ph = db_session.scalar(select(func.count(PriceHistory.id)))
+    before_obs = db_session.scalar(select(func.count(ListingObservation.id)))
+    before_sr = db_session.scalar(select(func.count(ScrapeRun.id)))
+
+    reporter = EDAReporter(output_dir=tmp_path)
+    reporter.run(session=db_session)
+
+    # Post-run counts
+    after_v = db_session.scalar(select(func.count(Vehicle.id)))
+    after_l = db_session.scalar(select(func.count(Listing.id)))
+    after_ph = db_session.scalar(select(func.count(PriceHistory.id)))
+    after_obs = db_session.scalar(select(func.count(ListingObservation.id)))
+    after_sr = db_session.scalar(select(func.count(ScrapeRun.id)))
+
+    assert before_v == after_v
+    assert before_l == after_l
+    assert before_ph == after_ph
+    assert before_obs == after_obs
+    assert before_sr == after_sr
