@@ -79,6 +79,7 @@
       "sample_size": 71,
       "pearson_r": -0.0073,
       "spearman_rho": 0.1107,
+      "association_interpretation": "Weak monotonic association in isolated sample; confounded by age, category, brand",
       "disclaimer": "STATISTICAL NOTICE: Correlation measures observed statistical association and does not imply causality. External market factors, condition, and optional equipment influence asking prices."
     },
     "asking_price_vs_manufacture_year": {
@@ -86,6 +87,7 @@
       "sample_size": 75,
       "pearson_r": 0.1803,
       "spearman_rho": 0.5186,
+      "association_interpretation": "Moderate direct monotonic association in observed sample",
       "disclaimer": "STATISTICAL NOTICE: Correlation measures observed statistical association and does not imply causality. External market factors, condition, and optional equipment influence asking prices."
     },
     "asking_price_vs_vehicle_age": {
@@ -93,6 +95,7 @@
       "sample_size": 75,
       "pearson_r": -0.1803,
       "spearman_rho": -0.5186,
+      "association_interpretation": "Moderate inverse monotonic association in observed sample",
       "disclaimer": "STATISTICAL NOTICE: Correlation measures observed statistical association and does not imply causality. External market factors, condition, and optional equipment influence asking prices."
     },
     "asking_price_vs_engine_cc": {
@@ -100,6 +103,7 @@
       "sample_size": 62,
       "pearson_r": 0.0924,
       "spearman_rho": 0.516,
+      "association_interpretation": "Moderate direct monotonic association across mixed categories",
       "disclaimer": "STATISTICAL NOTICE: Correlation measures observed statistical association and does not imply causality. External market factors, condition, and optional equipment influence asking prices."
     }
   },

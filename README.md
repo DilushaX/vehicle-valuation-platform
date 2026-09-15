@@ -449,10 +449,10 @@ data/analysis/
 │   ├── correlation_matrix.png              # Spearman rank correlation heatmap
 │   ├── district_distribution.png           # Listing volume by administrative district
 │   ├── fuel_transmission_distribution.png  # Fuel type & transmission distribution bar charts
-│   ├── mileage_distribution.png            # Odometer histogram & dispersion boxplot
+│   ├── mileage_distribution.png            # Operational range histogram & log-scale dispersion boxplot
 │   ├── price_distribution.png              # Linear histogram & log-scale boxplot
-│   ├── price_vs_age.png                    # Scatter plot with OLS trend line
-│   ├── price_vs_mileage.png                # Scatter plot with OLS trend line
+│   ├── price_vs_age.png                    # Scatter plot with simple linear trend reference
+│   ├── price_vs_mileage.png                # Dual-panel scatter (full dataset with extreme tail + analytical operational range)
 │   └── yom_age_distribution.png            # Manufacture year and vehicle age histograms
 ├── tables/
 │   ├── category_summary.csv / .json        # Median/mean price, mileage, YOM across 8 categories
@@ -476,7 +476,8 @@ The EDA pipeline explicitly distinguishes three operational populations:
 - **ML-Eligible Dataset**: Verified listings meeting all critical valuation criteria (valid asking price, mileage, manufacture year, brand, model, and category) suitable for future valuation modeling (63 listings, 67.0% eligibility rate).
 
 #### 4. Sample Size Protections & Historical Depth Limits
-- **Sample Size Safeguards**: Configurable minimum sample thresholds (`MIN_BRAND_SAMPLE = 5`, `MIN_MODEL_SAMPLE = 3`, `MIN_DISTRICT_SAMPLE = 3`) flag low-volume groups as `Low Sample` to prevent misleading rankings.
+- **Sample Size Safeguards**: Configurable minimum sample thresholds (`MIN_BRAND_SAMPLE = 5`, `MIN_MODEL_SAMPLE = 3`, `MIN_DISTRICT_SAMPLE = 3`) flag low-volume groups as `Low Sample` to prevent misleading rankings while retaining records.
+- **Extreme-Value Handling**: Extreme observations (such as 4.5M km mileage or high-value luxury exotics) are fully retained in the underlying registry to maintain uncompromised data integrity. Visualizations provide both full-data and analytical views.
 - **Historical Depth Enforcement**: The system strictly checks the observation time span. Because a multi-day scrape window does not constitute a long-term trend, the historical engine explicitly reports:
   > *"Insufficient historical depth for reliable monthly market trend inference."*
   Fabricated or extrapolated monthly trends are strictly prevented.
