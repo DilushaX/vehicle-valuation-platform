@@ -1,11 +1,50 @@
 [
   {
-    "listing_id":"12290244",
+    "listing_id":"12336158",
+    "category":"Cars",
+    "brand":"Mercedes-Benz",
+    "model":"C200",
+    "variable":"asking_price",
+    "value":25300000.0,
+    "outlier_type":"high_outlier",
+    "classification":"possible_genuine_market_observation",
+    "validation_issues":[
+
+    ]
+  },
+  {
+    "listing_id":"12298781",
     "category":"Pickups",
     "brand":"Ford",
-    "model":"Raptor Ranger F150 Modified",
+    "model":"Raptor",
     "variable":"asking_price",
-    "value":16800000.0,
+    "value":19800000.0,
+    "outlier_type":"high_outlier",
+    "classification":"possible_genuine_market_observation",
+    "validation_issues":[
+
+    ]
+  },
+  {
+    "listing_id":"12334450",
+    "category":"Heavy-Duty",
+    "brand":"Hitachi",
+    "model":"ZX200-5",
+    "variable":"asking_price",
+    "value":18900000.0,
+    "outlier_type":"high_outlier",
+    "classification":"possible_genuine_market_observation",
+    "validation_issues":[
+
+    ]
+  },
+  {
+    "listing_id":"12336170",
+    "category":"SUVs",
+    "brand":"BYD",
+    "model":"Sealion 6",
+    "variable":"asking_price",
+    "value":21950000.0,
     "outlier_type":"high_outlier",
     "classification":"possible_genuine_market_observation",
     "validation_issues":[
@@ -39,6 +78,19 @@
     ]
   },
   {
+    "listing_id":"12335921",
+    "category":"SUVs",
+    "brand":"Honda",
+    "model":"CR-V HIGH SPEC",
+    "variable":"asking_price",
+    "value":26200000.0,
+    "outlier_type":"high_outlier",
+    "classification":"possible_genuine_market_observation",
+    "validation_issues":[
+
+    ]
+  },
+  {
     "listing_id":"12286510",
     "category":"Cars",
     "brand":"BMW",
@@ -65,6 +117,19 @@
     ]
   },
   {
+    "listing_id":"11501053",
+    "category":"SUVs",
+    "brand":"Honda",
+    "model":"Vezel Z Play Moonroof",
+    "variable":"asking_price",
+    "value":20000000.0,
+    "outlier_type":"high_outlier",
+    "classification":"possible_genuine_market_observation",
+    "validation_issues":[
+
+    ]
+  },
+  {
     "listing_id":"12294737",
     "category":"SUVs",
     "brand":"Honda",
@@ -78,12 +143,51 @@
     ]
   },
   {
+    "listing_id":"11807796",
+    "category":"SUVs",
+    "brand":"Honda",
+    "model":"Vezel Z",
+    "variable":"asking_price",
+    "value":18690000.0,
+    "outlier_type":"high_outlier",
+    "classification":"insufficient_information",
+    "validation_issues":[
+      "missing_mileage"
+    ]
+  },
+  {
     "listing_id":"12265716",
     "category":"Lorries",
     "brand":"Isuzu",
     "model":"Forward CAR CARRIER",
     "variable":"asking_price",
     "value":21800000.0,
+    "outlier_type":"high_outlier",
+    "classification":"possible_genuine_market_observation",
+    "validation_issues":[
+
+    ]
+  },
+  {
+    "listing_id":"12336083",
+    "category":"Lorries",
+    "brand":"Eicher",
+    "model":"C",
+    "variable":"mileage",
+    "value":345258.0,
+    "outlier_type":"high_outlier",
+    "classification":"possible_genuine_market_observation",
+    "validation_issues":[
+
+    ]
+  },
+  {
+    "listing_id":"12265716",
+    "category":"Lorries",
+    "brand":"Isuzu",
+    "model":"Forward CAR CARRIER",
+    "variable":"mileage",
+    "value":300000.0,
     "outlier_type":"high_outlier",
     "classification":"possible_genuine_market_observation",
     "validation_issues":[
@@ -101,6 +205,19 @@
     "classification":"suspicious_data",
     "validation_issues":[
       "suspicious_mileage"
+    ]
+  },
+  {
+    "listing_id":"12316958",
+    "category":"Heavy-Duty",
+    "brand":"Ashok-Leyland",
+    "model":"Cincomax",
+    "variable":"engine_cc",
+    "value":6450.0,
+    "outlier_type":"high_outlier",
+    "classification":"possible_genuine_market_observation",
+    "validation_issues":[
+
     ]
   },
   {
@@ -143,17 +260,42 @@
     ]
   },
   {
-    "listing_id":"12294553",
-    "category":"Lorries",
-    "brand":"Isuzu",
-    "model":"ELF",
+    "listing_id":"12334450",
+    "category":"Heavy-Duty",
+    "brand":"Hitachi",
+    "model":"ZX200-5",
     "variable":"engine_cc",
-    "value":4570.0,
+    "value":5900.0,
     "outlier_type":"high_outlier",
-    "classification":"insufficient_information",
+    "classification":"possible_genuine_market_observation",
     "validation_issues":[
-      "missing_price",
-      "missing_mileage"
+
+    ]
+  },
+  {
+    "listing_id":"12335440",
+    "category":"Lorries",
+    "brand":"Ashok-Leyland",
+    "model":"Comet Super",
+    "variable":"engine_cc",
+    "value":6000.0,
+    "outlier_type":"high_outlier",
+    "classification":"suspicious_data",
+    "validation_issues":[
+      "suspicious_mileage_pattern"
+    ]
+  },
+  {
+    "listing_id":"12336121",
+    "category":"Lorries",
+    "brand":"Ashok-Leyland",
+    "model":"Leyland",
+    "variable":"engine_cc",
+    "value":6000.0,
+    "outlier_type":"high_outlier",
+    "classification":"possible_genuine_market_observation",
+    "validation_issues":[
+
     ]
   },
   {

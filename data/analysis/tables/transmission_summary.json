@@ -1,19 +1,19 @@
 [
   {
     "transmission":"Manual",
-    "listing_count":55,
-    "pct_of_total":58.51,
-    "median_asking_price":3000000.0,
-    "mean_asking_price":3471744.1899999999,
+    "listing_count":97,
+    "pct_of_total":56.73,
+    "median_asking_price":2600000.0,
+    "mean_asking_price":3083910.96,
     "is_low_sample":false,
     "sample_flag":"Sufficient Sample"
   },
   {
     "transmission":"Automatic",
-    "listing_count":29,
-    "pct_of_total":30.85,
-    "median_asking_price":8650000.0,
-    "mean_asking_price":19853600.0,
+    "listing_count":54,
+    "pct_of_total":31.58,
+    "median_asking_price":11975000.0,
+    "mean_asking_price":17054413.0399999991,
     "is_low_sample":false,
     "sample_flag":"Sufficient Sample"
   }

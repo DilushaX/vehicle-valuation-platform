@@ -1,35 +1,41 @@
 district,listing_count,pct_of_total,median_asking_price,mean_asking_price,is_low_sample,sample_flag
-Colombo,20,21.28,9870000.0,10552857.14,False,Sufficient Sample
-Gampaha,10,10.64,5012500.0,5638750.0,False,Sufficient Sample
-Kandy,8,8.51,3575000.0,11560000.0,False,Sufficient Sample
-Kurunegala,6,6.38,2900000.0,2681000.0,False,Sufficient Sample
-Galle,5,5.32,3600000.0,3985000.0,False,Sufficient Sample
-Kalutara,5,5.32,840000.0,4502000.0,False,Sufficient Sample
-Horana,3,3.19,8645000.0,7595000.0,False,Sufficient Sample
-Kuliyapitiya,3,3.19,3250000.0,3250000.0,False,Sufficient Sample
-Boralesgamuwa,2,2.13,8095000.0,8095000.0,True,Low Sample (<3)
-Nittambuwa,2,2.13,5200000.0,5200000.0,True,Low Sample (<3)
-Anuradapura,2,2.13,3000000.0,3000000.0,True,Low Sample (<3)
-Bandaragama,2,2.13,2507500.0,2507500.0,True,Low Sample (<3)
-Ratnapura,2,2.13,1050000.0,1050000.0,True,Low Sample (<3)
-Matara,2,2.13,600000.0,600000.0,True,Low Sample (<3)
-Elpitiya,2,2.13,,,True,Low Sample (<3)
-Polonnaruwa,2,2.13,,,True,Low Sample (<3)
-Batticaloa,1,1.06,195000000.0,195000000.0,True,Low Sample (<3)
-Hanwella,1,1.06,14800000.0,14800000.0,True,Low Sample (<3)
-Nuwara-Eliya,1,1.06,8650000.0,8650000.0,True,Low Sample (<3)
-Jaffna,1,1.06,8500000.0,8500000.0,True,Low Sample (<3)
-Chilaw,1,1.06,8450000.0,8450000.0,True,Low Sample (<3)
-Bentota,1,1.06,4775000.0,4775000.0,True,Low Sample (<3)
-Puttalam,1,1.06,3800000.0,3800000.0,True,Low Sample (<3)
-Ruwanwella,1,1.06,3675000.0,3675000.0,True,Low Sample (<3)
-Divulapitiya,1,1.06,3600000.0,3600000.0,True,Low Sample (<3)
-Mirigama,1,1.06,3275000.0,3275000.0,True,Low Sample (<3)
-Hambantota,1,1.06,2580000.0,2580000.0,True,Low Sample (<3)
-Dankotuwa,1,1.06,1950000.0,1950000.0,True,Low Sample (<3)
-Ampara,1,1.06,1850000.0,1850000.0,True,Low Sample (<3)
-Matale,1,1.06,1700000.0,1700000.0,True,Low Sample (<3)
-Embilipitiya,1,1.06,1350000.0,1350000.0,True,Low Sample (<3)
-Dompe,1,1.06,240000.0,240000.0,True,Low Sample (<3)
-Beruwala,1,1.06,220000.0,220000.0,True,Low Sample (<3)
-Katunayake,1,1.06,208000.0,208000.0,True,Low Sample (<3)
+Colombo,37,21.64,10225000.0,10466714.29,False,Sufficient Sample
+Gampaha,24,14.04,5400000.0,7135947.37,False,Sufficient Sample
+Kandy,15,8.77,2675000.0,9113500.0,False,Sufficient Sample
+Galle,14,8.19,3025000.0,4210500.0,False,Sufficient Sample
+Kurunegala,13,7.6,1975000.0,2039772.73,False,Sufficient Sample
+Matara,6,3.51,3287500.0,2962500.0,False,Sufficient Sample
+Kalutara,5,2.92,840000.0,4502000.0,False,Sufficient Sample
+Anuradapura,5,2.92,460000.0,1231666.67,False,Sufficient Sample
+Kuliyapitiya,4,2.34,3950000.0,3483333.33,False,Sufficient Sample
+Ratnapura,4,2.34,1050000.0,893333.33,False,Sufficient Sample
+Horana,3,1.75,8645000.0,7595000.0,False,Sufficient Sample
+Embilipitiya,3,1.75,759500.0,759500.0,False,Sufficient Sample
+Boralesgamuwa,2,1.17,8095000.0,8095000.0,True,Low Sample (<3)
+Nuwara-Eliya,2,1.17,6575000.0,6575000.0,True,Low Sample (<3)
+Nittambuwa,2,1.17,5200000.0,5200000.0,True,Low Sample (<3)
+Divulapitiya,2,1.17,3600000.0,3600000.0,True,Low Sample (<3)
+Hambantota,2,1.17,2565000.0,2565000.0,True,Low Sample (<3)
+Bandaragama,2,1.17,2507500.0,2507500.0,True,Low Sample (<3)
+Matugama,2,1.17,2370000.0,2370000.0,True,Low Sample (<3)
+Matale,2,1.17,2300000.0,2300000.0,True,Low Sample (<3)
+Elpitiya,2,1.17,,,True,Low Sample (<3)
+Polonnaruwa,2,1.17,,,True,Low Sample (<3)
+Batticaloa,1,0.58,195000000.0,195000000.0,True,Low Sample (<3)
+Kalmunai,1,0.58,21950000.0,21950000.0,True,Low Sample (<3)
+Hanwella,1,0.58,14800000.0,14800000.0,True,Low Sample (<3)
+Jaffna,1,0.58,8500000.0,8500000.0,True,Low Sample (<3)
+Chilaw,1,0.58,8450000.0,8450000.0,True,Low Sample (<3)
+Polgahawela,1,0.58,7850000.0,7850000.0,True,Low Sample (<3)
+Bentota,1,0.58,4775000.0,4775000.0,True,Low Sample (<3)
+Nattandiya,1,0.58,4600000.0,4600000.0,True,Low Sample (<3)
+Puttalam,1,0.58,3800000.0,3800000.0,True,Low Sample (<3)
+Ruwanwella,1,0.58,3675000.0,3675000.0,True,Low Sample (<3)
+Mirigama,1,0.58,3275000.0,3275000.0,True,Low Sample (<3)
+Minuwangoda,1,0.58,2600000.0,2600000.0,True,Low Sample (<3)
+Dankotuwa,1,0.58,1950000.0,1950000.0,True,Low Sample (<3)
+Ampara,1,0.58,1850000.0,1850000.0,True,Low Sample (<3)
+Dompe,1,0.58,240000.0,240000.0,True,Low Sample (<3)
+Beruwala,1,0.58,220000.0,220000.0,True,Low Sample (<3)
+Katunayake,1,0.58,208000.0,208000.0,True,Low Sample (<3)
+Kadugannawa,1,0.58,,,True,Low Sample (<3)
