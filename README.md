@@ -484,6 +484,66 @@ The EDA pipeline explicitly distinguishes three operational populations:
 
 ---
 
+### 7. Feature Engineering & ML-Ready Feature Preparation (Phase 5 Step 7)
+
+The **Feature Engineering and ML-Ready Feature Preparation** subsystem (`feature_engineering/`) transforms audited market listings into scikit-learn compatible, leakage-safe training features for valuation models.
+
+> [!IMPORTANT]
+> **Asking Price Limitation**: The platform predicts observed seller asking prices, not confirmed transaction prices.
+> Listing prices reflect seller advertised expectations on Riyasewana and do not account for unrecorded offline negotiation discounts or settlement concessions.
+
+> [!NOTE]
+> **Dataset Size Limitation**: The current verified dataset (63 ML-eligible listings across 8 categories) is still small for reliable production model training. It serves as an initial foundation and should continue growing through scheduled data collection.
+
+#### 1. Core Principles & Architecture
+- **Read-Only Database Guarantee**: Operates strictly via read-only queries. PostgreSQL remains the single source of truth and is never modified during dataset preparation.
+- **ML Eligibility Enforcement**: Loads listings with `ml_eligible = True` by default. Ineligible records (31 listings) remain securely stored in PostgreSQL.
+- **Target Separation**: The target variable $y$ (`asking_price`) is strictly decoupled from the feature matrix $X$. Supports both `"raw"` (default) and `"log1p"` transformations.
+- **Leakage Prevention**: An automated `LeakageValidator` actively inspects features and blocks target variables, lifecycle outcomes (`current_status`), temporal observations, and private seller contact details from entering $X$.
+- **Unfitted Preprocessor Architecture**: Preprocessing components (`ColumnTransformer`, `RareCategoryGrouper`, `OneHotEncoder`) are created unfitted. They are fitted exclusively on training splits during future model training, preventing data leakage across test splits.
+
+#### 2. Feature Policy & Derivations
+
+| Feature | Type | Source | Policy / Transformation | Default | Collinearity / Leakage Mitigation |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| `vehicle_age` | Numerical | `manufacture_year` | `reference_year (2026) - manufacture_year` | **Yes** | Replaces `manufacture_year` to eliminate exact collinearity ($\rho = -1.00$). Uses explicit reference year to prevent temporal leakage. |
+| `manufacture_year` | Numerical | `vehicles.manufacture_year` | Retained in metadata only | No | Excluded from active features due to perfect collinearity with `vehicle_age`. Preserved in metadata for full traceability. |
+| `mileage` | Numerical | `listing_observations.observed_mileage` | Median imputation (natural scale) | **Yes** | Supports optional `log1p(mileage)` transformation via `--mileage-transform log1p` for high-skewness models. |
+| `engine_cc` | Numerical | `vehicles.engine_cc` | Median imputation | **Yes** | Never imputed with zero; missing values filled with median during training fit. |
+| `registration_year` | Numerical | `vehicles.registration_year` | Optional median imputation + missing indicator | No | Excluded by default due to high missingness (~70%). Available via `--include-registration-year`. |
+| `category` | Categorical | `vehicles.category` | Canonical string → OneHotEncoder | **Yes** | Retained across all 8 canonical vehicle classes to support global and category-specific architectures. |
+| `brand` | Categorical | `vehicles.brand` | Rare grouping (`min_freq=5`) → OneHotEncoder | **Yes** | Infrequent brands mapped to `"Other"`. Rare luxury/exotic records are retained, not deleted. |
+| `model` | Categorical | `vehicles.model` | Rare grouping (`min_freq=5`) → OneHotEncoder | **Yes** | Low-frequency models mapped to `"Other"` to avoid high-cardinality overfitting. |
+| `brand_model` | Categorical | `brand + "_" + model` | Concatenation → rare grouping → OneHotEncoder | **Yes** | Captures domain hierarchy (e.g. Toyota Corolla vs Toyota Prado). |
+| `fuel_type` | Categorical | `vehicles.fuel_type` | Standardized string → OneHotEncoder | **Yes** | Normalized to Petrol, Diesel, Hybrid, Electric. |
+| `transmission` | Categorical | `vehicles.transmission` | Standardized string → OneHotEncoder | **Yes** | Normalized to Automatic, Manual, Tiptronic. |
+| `district` | Categorical | `listings.district` | String → OneHotEncoder | **Yes** | Administrative district of vehicle location. Unknown categories handled safely via `handle_unknown="ignore"`. |
+| `condition` | Categorical | `vehicles.condition` | String → OneHotEncoder | **Yes** | Registered (Used), Unregistered, Brand New. |
+
+#### 3. CLI Execution & Dataset Export
+Generate reproducible ML-ready artifacts:
+
+```bash
+# Prepare standard ML dataset with default parameters (raw target, vehicle_age, no mileage log)
+python scripts/prepare_ml_dataset.py
+
+# Prepare dataset with log1p target and log1p mileage transformation
+python scripts/prepare_ml_dataset.py --target-transform log1p --mileage-transform log1p
+
+# Include registration year and customize rare category grouping threshold
+python scripts/prepare_ml_dataset.py --include-registration-year --min-frequency 3
+
+# Specify custom artifact export directory
+python scripts/prepare_ml_dataset.py --output-dir data/analysis/ml
+```
+
+#### 4. Output Artifacts (`data/analysis/ml/`)
+- `ml_dataset.csv`: Combined ML-ready dataset containing traceability IDs (`listing_id`, `vehicle_id`, `manufacture_year`), active engineered features ($X$), and target ($y$).
+- `feature_schema.json`: Machine-readable metadata schema defining data types, sources, transformations, and leakage classifications for every feature.
+- `dataset_summary.json`: Statistical profile including record counts, category breakdown, target quantiles, and configuration parameters.
+
+---
+
 ## 🚀 Quickstart Guide
 
 ### 1. Installation & Environment Setup
