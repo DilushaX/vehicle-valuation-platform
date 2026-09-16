@@ -95,6 +95,14 @@ class RareCategoryGrouper(BaseEstimator, TransformerMixin):
 
         return X_out
 
+    def get_feature_names_out(self, input_features=None):
+        """
+        Returns output feature names (same as input features for this transformer).
+        """
+        if input_features is None:
+            raise ValueError("input_features must be provided to get_feature_names_out.")
+        return np.asarray(input_features, dtype=object)
+
 
 class CategoricalFeatureEngineer:
     """
