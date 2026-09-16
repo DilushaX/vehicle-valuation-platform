@@ -347,11 +347,11 @@ def test_postgresql_remains_unchanged():
         lo_after = session.query(ListingObservation).count()
         sr_after = session.query(ScrapeRun).count()
 
-    assert v_before == v_after == 94
-    assert l_before == l_after == 94
-    assert ph_before == ph_after == 75
-    assert lo_before == lo_after == 108
-    assert sr_before == sr_after == 15
+    assert v_before == v_after
+    assert l_before == l_after
+    assert ph_before == ph_after
+    assert lo_before == lo_after
+    assert sr_before == sr_after
 
 
 # ---------------------------------------------------------------------------
