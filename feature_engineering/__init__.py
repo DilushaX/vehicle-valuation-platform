@@ -15,6 +15,11 @@ from feature_engineering.pipeline import (
     FeaturePipeline,
     FeaturePipelineConfig,
 )
+from feature_engineering.schema import (
+    FEATURE_CATALOG,
+    FeatureMetadata,
+    FeatureSchema,
+)
 from feature_engineering.target import TargetTransformer
 from feature_engineering.validation import DataLeakageError, LeakageValidator
 
@@ -28,4 +33,7 @@ __all__ = [
     "DataLeakageError",
     "FeaturePipeline",
     "FeaturePipelineConfig",
+    "FeatureMetadata",
+    "FeatureSchema",
+    "FEATURE_CATALOG",
 ]
