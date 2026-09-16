@@ -11,7 +11,12 @@ from feature_engineering.categorical import (
 )
 from feature_engineering.dataset import MLDatasetLoader
 from feature_engineering.numerical import NumericalFeatureEngineer
+from feature_engineering.pipeline import (
+    FeaturePipeline,
+    FeaturePipelineConfig,
+)
 from feature_engineering.target import TargetTransformer
+from feature_engineering.validation import DataLeakageError, LeakageValidator
 
 __all__ = [
     "MLDatasetLoader",
@@ -19,4 +24,8 @@ __all__ = [
     "NumericalFeatureEngineer",
     "CategoricalFeatureEngineer",
     "RareCategoryGrouper",
+    "LeakageValidator",
+    "DataLeakageError",
+    "FeaturePipeline",
+    "FeaturePipelineConfig",
 ]
