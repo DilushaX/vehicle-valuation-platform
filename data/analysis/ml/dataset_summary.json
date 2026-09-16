@@ -1,0 +1,57 @@
+{
+  "generated_at": "2026-09-16T15:23:58.669396+00:00",
+  "source_of_truth": "PostgreSQL (read-only extraction)",
+  "target_definition": {
+    "name": "asking_price",
+    "transform": "raw",
+    "description": "Seller advertised/asking price in LKR (NOT confirmed transaction price)",
+    "min": 208000.0,
+    "max": 195000000.0,
+    "median": 4150000.0,
+    "mean": 9805285.714285715,
+    "q25": 2025000.0,
+    "q75": 8572500.0
+  },
+  "dataset_statistics": {
+    "total_records": 63,
+    "features_in_X": 11,
+    "active_feature_names": [
+      "vehicle_age",
+      "mileage",
+      "engine_cc",
+      "category",
+      "brand",
+      "model",
+      "fuel_type",
+      "transmission",
+      "district",
+      "condition",
+      "brand_model"
+    ],
+    "metadata_columns": [
+      "listing_id",
+      "vehicle_id",
+      "manufacture_year",
+      "first_seen_at",
+      "raw_asking_price"
+    ],
+    "categories": {
+      "Cars": 15,
+      "Vans": 9,
+      "Heavy-Duty": 8,
+      "Lorries": 7,
+      "Pickups": 7,
+      "SUVs": 7,
+      "Motorbikes": 6,
+      "Three Wheelers": 4
+    }
+  },
+  "configuration": {
+    "target_transform": "raw",
+    "age_representation": "vehicle_age",
+    "include_registration_year": false,
+    "mileage_transform": "none",
+    "min_frequency": 5,
+    "reference_year": 2026
+  }
+}

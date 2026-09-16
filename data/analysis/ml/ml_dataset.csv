@@ -1,0 +1,64 @@
+listing_id,vehicle_id,manufacture_year,first_seen_at,raw_asking_price,vehicle_age,mileage,engine_cc,category,brand,model,fuel_type,transmission,district,condition,brand_model,asking_price
+12288877,1,2000,2026-09-08 22:42:22.219202,4200000.0,26.0,268975.0,2700.0,Vans,Hyundai,H100,Diesel,Manual,Gampaha,Registered (Used),Hyundai_H100,4200000.0
+12289469,12,2015,2026-09-09 22:38:45.900932,195000000.0,11.0,132500.0,1600.0,Cars,BMW,316i,Petrol,Automatic,Batticaloa,Registered (Used),BMW_316i,195000000.0
+12294989,14,2025,2026-09-09 22:38:45.918193,23000000.0,1.0,25000.0,1500.0,Cars,BYD,Sealion 6,Hybrid,Automatic,Colombo,Registered (Used),BYD_Sealion 6,23000000.0
+12294912,15,2008,2026-09-09 22:38:45.925167,3050000.0,18.0,23450.0,1400.0,Cars,Chevrolet,Aveo,Petrol,Manual,Colombo,Registered (Used),Chevrolet_Aveo,3050000.0
+12294951,17,2003,2026-09-09 22:38:45.930593,5550000.0,23.0,228000.0,1590.0,Cars,Honda,Civic,Petrol,Automatic,Colombo,Registered (Used),Honda_Civic,5550000.0
+12294874,18,2006,2026-09-09 22:38:45.934361,4750000.0,20.0,203000.0,1300.0,Cars,Honda,Fit GD1,Petrol,Automatic,Colombo,Registered (Used),Honda_Fit GD1,4750000.0
+12294888,19,2015,2026-09-09 22:38:45.937508,8650000.0,11.0,164000.0,1500.0,Cars,Honda,Fit GP5,Petrol,Automatic,Nuwara-Eliya,Registered (Used),Honda_Fit GP5,8650000.0
+12294988,20,2016,2026-09-09 22:38:45.940659,5140000.0,10.0,140000.0,1000.0,Cars,Kia,Picanto,Petrol,Manual,Kalutara,Registered (Used),Kia_Picanto,5140000.0
+12281266,22,2006,2026-09-09 22:39:01.637131,2580000.0,20.0,1.0,6500.0,Heavy-Duty,Ashok-Leyland,Cincomax,Diesel,Manual,Hambantota,Registered (Used),Ashok-Leyland_Cincomax,2580000.0
+12281811,23,2010,2026-09-09 22:39:01.641705,3900000.0,16.0,38000.0,6550.0,Heavy-Duty,Ashok-Leyland,Prime Mover,Diesel,Manual,Boralesgamuwa,Registered (Used),Ashok-Leyland_Prime Mover,3900000.0
+12294480,25,2015,2026-09-09 22:39:01.647994,8500000.0,11.0,250.0,2200.0,Heavy-Duty,CAT,Bob Cat,Diesel,Automatic,Jaffna,Registered (Used),CAT_Bob Cat,8500000.0
+12285094,26,1998,2026-09-09 22:39:01.651250,6200000.0,28.0,10000.0,3800.0,Heavy-Duty,CAT,Caterpillar E120B,Diesel,Manual,Gampaha,Registered (Used),CAT_Caterpillar E120B,6200000.0
+12282057,27,2008,2026-09-09 22:39:01.654258,2900000.0,18.0,85.0,1.0,Heavy-Duty,CAT,Caterpillar,Diesel,Manual,Kurunegala,Registered (Used),CAT_Caterpillar,2900000.0
+12278273,28,2018,2026-09-09 22:39:01.657191,3600000.0,8.0,1.0,,Heavy-Duty,Hitachi,30 Landy Kid,Diesel,Manual,Divulapitiya,Registered (Used),Hitachi_30 Landy Kid,3600000.0
+12283479,29,2020,2026-09-09 22:39:01.659878,3275000.0,6.0,4160.0,1422.0,Heavy-Duty,Hitachi,Ex 30,Diesel,Manual,Mirigama,Registered (Used),Hitachi_Ex 30,3275000.0
+12289100,31,2015,2026-09-09 22:39:01.664912,1950000.0,11.0,1800.0,,Heavy-Duty,IHI,IS 30,Diesel,Manual,Dankotuwa,Registered (Used),IHI_IS 30,1950000.0
+12294699,32,2001,2026-09-09 22:39:17.242907,2075000.0,25.0,112000.0,650.0,Lorries,Daihatsu,Hijet,Petrol,Manual,Kandy,Registered (Used),Daihatsu_Hijet,2075000.0
+12294729,34,2023,2026-09-09 22:39:17.250174,5850000.0,3.0,14000.0,660.0,Lorries,Daihatsu,Hijet Truck,Petrol,Manual,Kandy,Unregistered (Recondition),Daihatsu_Hijet Truck,5850000.0
+12294693,35,2008,2026-09-09 22:39:17.253627,1350000.0,18.0,12000.0,2400.0,Lorries,FAW,Canter,Diesel,Manual,Embilipitiya,Registered (Used),FAW_Canter,1350000.0
+12294663,36,2001,2026-09-09 22:39:17.257228,1850000.0,25.0,14000.0,650.0,Lorries,Honda,Acty,Petrol,Manual,Ampara,Registered (Used),Honda_Acty,1850000.0
+12294571,37,1978,2026-09-09 22:39:17.261059,1250000.0,48.0,100000.0,,Lorries,Isuzu,ELF 250,Diesel,Manual,Kuliyapitiya,Registered (Used),Isuzu_ELF 250,1250000.0
+12265716,40,2017,2026-09-09 22:39:17.268500,21800000.0,9.0,300000.0,5176.0,Lorries,Isuzu,Forward CAR CARRIER,Diesel,Automatic,Colombo,Unregistered (Recondition),Isuzu_Forward CAR CARRIER,21800000.0
+12294409,41,1980,2026-09-09 22:39:17.271824,1975000.0,46.0,355.0,2000.0,Lorries,Isuzu,Isuzu,Diesel,Manual,Kurunegala,Registered (Used),Isuzu_Isuzu,1975000.0
+12294934,44,2007,2026-09-09 22:39:33.230167,255000.0,19.0,50000.0,100.0,Motorbikes,Bajaj,CT-100,,,Kurunegala,Registered (Used),Bajaj_CT-100,255000.0
+12294986,46,2007,2026-09-09 22:39:33.237829,208000.0,19.0,33525.0,125.0,Motorbikes,Bajaj,Discover 125,,,Katunayake,Registered (Used),Bajaj_Discover 125,208000.0
+12294933,47,2025,2026-09-09 22:39:33.241386,600000.0,1.0,40000.0,125.0,Motorbikes,Bajaj,Discover 125,,,Matara,Registered (Used),Bajaj_Discover 125,600000.0
+12294837,48,2025,2026-09-09 22:39:33.245182,250000.0,1.0,10123.0,160.0,Motorbikes,Bajaj,N160,,,Colombo,Registered (Used),Bajaj_N160,250000.0
+12294924,49,2011,2026-09-09 22:39:33.249188,240000.0,15.0,138000.0,135.0,Motorbikes,Bajaj,Pulsar 135,,,Dompe,Registered (Used),Bajaj_Pulsar 135,240000.0
+12294959,51,2018,2026-09-09 22:39:33.255705,815000.0,8.0,65000.0,200.0,Motorbikes,Bajaj,Pulsar NS200,,,Bandaragama,Registered (Used),Bajaj_Pulsar NS200,815000.0
+12294695,52,2016,2026-09-09 22:39:50.242006,14800000.0,10.0,121000.0,2200.0,Pickups,Ford,Ranger,Diesel,Manual,Hanwella,Registered (Used),Ford_Ranger,14800000.0
+12290244,53,2017,2026-09-09 22:39:50.247395,16800000.0,9.0,120000.0,2209.0,Pickups,Ford,Raptor Ranger F150 Modified,Diesel,Manual,Colombo,Registered (Used),Ford_Raptor Ranger F150 Modified,16800000.0
+12293575,54,2015,2026-09-09 22:39:50.250294,3800000.0,11.0,40250.0,2523.0,Pickups,Mahindra,Bolero Maxi Truck,Diesel,Manual,Puttalam,Registered (Used),Mahindra_Bolero Maxi Truck,3800000.0
+12293246,55,2011,2026-09-09 22:39:50.253841,3000000.0,15.0,100000.0,2500.0,Pickups,Mahindra,Bolero,Diesel,Manual,Anuradapura,Registered (Used),Mahindra_Bolero,3000000.0
+12293621,56,2013,2026-09-09 22:39:50.257535,3600000.0,13.0,48000.0,,Pickups,Mahindra,Bolero,Diesel,Manual,Galle,Registered (Used),Mahindra_Bolero,3600000.0
+12293659,58,2013,2026-09-09 22:39:50.265348,3600000.0,13.0,1.0,900.0,Pickups,Mahindra,Bolero,Diesel,Manual,Kurunegala,Registered (Used),Mahindra_Bolero,3600000.0
+12293712,59,2016,2026-09-09 22:39:50.269382,4675000.0,10.0,1.0,900.0,Pickups,Mahindra,Bolero,Diesel,Manual,Kurunegala,Registered (Used),Mahindra_Bolero,4675000.0
+11546198,62,2018,2026-09-09 22:40:05.986835,12500000.0,8.0,73000.0,1000.0,SUVs,Audi,Q2,Petrol,Automatic,Colombo,Registered (Used),Audi_Q2,12500000.0
+12294972,64,2025,2026-09-09 22:40:05.999136,12900000.0,1.0,14.0,,SUVs,Baic,Beijing X55,Petrol,Automatic,Colombo,Registered (Used),Baic_Beijing X55,12900000.0
+12294341,66,2026,2026-09-09 22:40:06.008994,13750000.0,0.0,20.0,1200.0,SUVs,Daihatsu,Rocky G Premium HEV,Hybrid,Automatic,Horana,Brand New,Daihatsu_Rocky G Premium HEV,13750000.0
+12294908,67,2018,2026-09-09 22:40:06.013071,15500000.0,8.0,125000.0,1500.0,SUVs,Honda,CRV,Petrol,Automatic,Kalutara,Registered (Used),Honda_CRV,15500000.0
+12294737,69,2026,2026-09-09 22:40:06.022140,19300000.0,0.0,5000.0,1500.0,SUVs,Honda,Vezel Z Premium,Hybrid,Automatic,Gampaha,Registered (Used),Honda_Vezel Z Premium,19300000.0
+12260644,70,2026,2026-09-09 22:40:06.026165,12290000.0,0.0,30.0,1000.0,SUVs,Kia,SONET GTX PLUS,Petrol,Automatic,Boralesgamuwa,Brand New,Kia_SONET GTX PLUS,12290000.0
+12294826,71,2026,2026-09-09 22:40:06.029828,11850000.0,0.0,30.0,1000.0,SUVs,Kia,Sonet Gtx Plus Gt Line,Petrol,Automatic,Colombo,Brand New,Kia_Sonet Gtx Plus Gt Line,11850000.0
+12294681,73,2004,2026-09-09 22:40:21.569103,835000.0,22.0,50000.0,150.0,Three Wheelers,Bajaj,2 Stroke,Petrol,Manual,Gampaha,Registered (Used),Bajaj_2 Stroke,835000.0
+12294717,74,2006,2026-09-09 22:40:21.576448,960000.0,20.0,50000.0,150.0,Three Wheelers,Bajaj,2 Stroke,Petrol,Manual,Gampaha,Registered (Used),Bajaj_2 Stroke,960000.0
+12294922,75,2006,2026-09-09 22:40:21.580190,1100000.0,20.0,2800.0,175.0,Three Wheelers,Bajaj,2 Stroke,Petrol,Manual,Gampaha,Registered (Used),Bajaj_2 Stroke,1100000.0
+12294835,81,2003,2026-09-09 22:40:21.595663,785000.0,23.0,60000.0,150.0,Three Wheelers,Bajaj,2 Stroke,Petrol,Manual,Kandy,Registered (Used),Bajaj_2 Stroke,785000.0
+12294974,82,2018,2026-09-09 22:40:37.396937,6500000.0,8.0,83000.0,660.0,Vans,Daihatsu,Atrai,Petrol,Automatic,Galle,Registered (Used),Daihatsu_Atrai,6500000.0
+12294690,83,2016,2026-09-09 22:40:37.401537,5825000.0,10.0,160000.0,650.0,Vans,Daihatsu,Hijet Caddie Safety,Petrol,Automatic,Gampaha,Registered (Used),Daihatsu_Hijet Caddie Safety,5825000.0
+12294583,85,2000,2026-09-09 22:40:37.409014,4150000.0,26.0,10.0,,Vans,Hyundai,H100,Diesel,Manual,Kandy,Registered (Used),Hyundai_H100,4150000.0
+12294984,86,1986,2026-09-09 22:40:37.412590,1400000.0,40.0,168000.0,2500.0,Vans,Mitsubishi,L 300 Original Deisel,Diesel,Manual,Galle,Registered (Used),Mitsubishi_L 300 Original Deisel,1400000.0
+12294743,88,1999,2026-09-09 22:40:37.419080,3250000.0,27.0,167000.0,650.0,Vans,Mitsubishi,MiniCab,Petrol,Automatic,Nittambuwa,Registered (Used),Mitsubishi_MiniCab,3250000.0
+12294586,89,1995,2026-09-09 22:40:37.422627,3675000.0,31.0,1999.0,,Vans,Mitsubishi,PO5,Diesel,Manual,Ruwanwella,Registered (Used),Mitsubishi_PO5,3675000.0
+12294827,90,2000,2026-09-09 22:40:37.426490,5250000.0,26.0,217000.0,2200.0,Vans,Mitsubishi,SK82V,Diesel,Manual,Kuliyapitiya,Registered (Used),Mitsubishi_SK82V,5250000.0
+12293566,92,2016,2026-09-09 23:06:33.765395,8645000.0,10.0,136035.0,1500.0,Cars,Honda,Fit GP5,Hybrid,Automatic,Horana,Registered (Used),Honda_Fit GP5,8645000.0
+12300561,94,2018,2026-09-10 23:01:37.613082,53500000.0,8.0,23000.0,2000.0,Cars,BMW,740le,Hybrid,Automatic,Kandy,Registered (Used),BMW_740le,53500000.0
+12300545,95,2017,2026-09-10 23:01:37.631748,5975000.0,9.0,168000.0,660.0,Cars,Daihatsu,Mira,Petrol,Automatic,Galle,Registered (Used),Daihatsu_Mira,5975000.0
+12300502,96,2016,2026-09-10 23:01:37.636134,3300000.0,10.0,115000.0,,Cars,Datsun,Redi-GO,Petrol,Manual,Colombo,Registered (Used),Datsun_Redi-GO,3300000.0
+12300508,97,2016,2026-09-10 23:01:37.639665,3300000.0,10.0,115000.0,,Cars,Datsun,Redi-GO,Petrol,Manual,Colombo,Registered (Used),Datsun_Redi-GO,3300000.0
+12286510,98,2013,2026-09-10 23:02:48.377444,20800000.0,13.0,113000.0,2000.0,Cars,BMW,520D,Diesel,Automatic,Colombo,Registered (Used),BMW_520D,20800000.0
+12291856,99,2026,2026-09-10 23:02:48.403856,7890000.0,0.0,1.0,660.0,Cars,Daihatsu,Mira G,Petrol,Automatic,Colombo,Unregistered (Recondition),Daihatsu_Mira G,7890000.0
+12268740,100,2024,2026-09-10 23:02:48.408683,6690000.0,2.0,3255.0,658.0,Cars,Daihatsu,Mira L SA3 LTD SAFETY,Petrol,Automatic,Gampaha,Unregistered (Recondition),Daihatsu_Mira L SA3 LTD SAFETY,6690000.0
+12300228,101,2011,2026-09-10 23:03:37.771569,4775000.0,15.0,112346.0,650.0,Vans,Daihatsu,Hijet,Petrol,Automatic,Bentota,Registered (Used),Daihatsu_Hijet,4775000.0
