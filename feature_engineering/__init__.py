@@ -6,7 +6,11 @@ vehicle market valuation platform.
 """
 
 from feature_engineering.dataset import MLDatasetLoader
+from feature_engineering.numerical import NumericalFeatureEngineer
+from feature_engineering.target import TargetTransformer
 
 __all__ = [
     "MLDatasetLoader",
+    "TargetTransformer",
+    "NumericalFeatureEngineer",
 ]
