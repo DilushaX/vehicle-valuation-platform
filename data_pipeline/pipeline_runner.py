@@ -3,6 +3,7 @@ from typing import Any, Callable, Dict, List, Optional
 from sqlalchemy.orm import Session
 
 from config import settings
+from data_pipeline.cleaning.cleaners import VehicleCleaner
 from data_pipeline.completeness import CategoryCompleteness
 from data_pipeline.export.csv_exporter import CSVExporter
 from database.connection import get_sessionmaker
@@ -342,14 +343,37 @@ class PipelineRunner:
                 if part_clean:
                     raw_list.append(part_clean)
 
+        # Build lookup map from dynamic discovery if available
+        discovered_map: Dict[str, DiscoveredCategory] = {}
+        try:
+            for dc in self.category_discovery.discover_categories():
+                can_name = VehicleCleaner.canonicalize_category(dc.name) or dc.name
+                discovered_map[can_name.lower()] = dc
+                discovered_map[dc.name.lower()] = dc
+        except Exception as e:
+            logger.debug(f"Dynamic category discovery lookup failed ({e}).")
+
         for cat_clean in raw_list:
             if cat_clean.startswith("http"):
                 name = cat_clean.rstrip("/").split("/")[-1]
                 name = name if any(c.isupper() for c in name) else name.capitalize()
                 url = cat_clean
             else:
-                name = cat_clean if any(c.isupper() for c in cat_clean) else cat_clean.capitalize()
-                url = f"https://riyasewana.com/search/{cat_clean.lower()}"
+                can_name = VehicleCleaner.canonicalize_category(cat_clean) or cat_clean
+                can_key = can_name.lower()
+                clean_key = cat_clean.lower()
+                if can_key in discovered_map:
+                    matched = discovered_map[can_key]
+                    name = matched.name
+                    url = matched.url
+                elif clean_key in discovered_map:
+                    matched = discovered_map[clean_key]
+                    name = matched.name
+                    url = matched.url
+                else:
+                    name = can_name if any(c.isupper() for c in can_name) else can_name.capitalize()
+                    slug = cat_clean.lower().replace(" ", "-")
+                    url = f"https://riyasewana.com/search/{slug}"
             resolved.append(DiscoveredCategory(name=name, url=url))
 
         return resolved
