@@ -1,19 +1,19 @@
 {
-  "generated_at": "2026-09-16T15:23:58.669396+00:00",
+  "generated_at": "2026-09-16T16:12:05.200305+00:00",
   "source_of_truth": "PostgreSQL (read-only extraction)",
   "target_definition": {
     "name": "asking_price",
     "transform": "raw",
     "description": "Seller advertised/asking price in LKR (NOT confirmed transaction price)",
-    "min": 208000.0,
+    "min": 169000.0,
     "max": 195000000.0,
-    "median": 4150000.0,
-    "mean": 9805285.714285715,
-    "q25": 2025000.0,
-    "q75": 8572500.0
+    "median": 3950000.0,
+    "mean": 8365898.230088496,
+    "q25": 1475000.0,
+    "q75": 9450000.0
   },
   "dataset_statistics": {
-    "total_records": 63,
+    "total_records": 113,
     "features_in_X": 11,
     "active_feature_names": [
       "vehicle_age",
@@ -36,14 +36,14 @@
       "raw_asking_price"
     ],
     "categories": {
-      "Cars": 15,
-      "Vans": 9,
-      "Heavy-Duty": 8,
-      "Lorries": 7,
-      "Pickups": 7,
-      "SUVs": 7,
-      "Motorbikes": 6,
-      "Three Wheelers": 4
+      "Cars": 25,
+      "Heavy-Duty": 14,
+      "Motorbikes": 14,
+      "Lorries": 13,
+      "SUVs": 13,
+      "Pickups": 12,
+      "Vans": 11,
+      "Three Wheelers": 11
     }
   },
   "configuration": {
