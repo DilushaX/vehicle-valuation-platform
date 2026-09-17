@@ -1,0 +1,33 @@
+{
+  "model_name": "LinearRegression",
+  "sklearn_version": "1.9.1",
+  "trained_at": "2026-09-17T05:50:17.673333+00:00",
+  "target_variable": "asking_price",
+  "target_transform": "log1p",
+  "reference_year": 2026,
+  "train_samples": 90,
+  "test_samples": 23,
+  "random_state": 42,
+  "cv_folds": 5,
+  "cv_metrics": {
+    "model_name": "LinearRegression",
+    "target_transform": "log1p",
+    "cv_mae_mean": 0.40741510702882133,
+    "cv_mae_std": 0.032288589582449574,
+    "cv_rmse_mean": 0.5827759236961167,
+    "cv_rmse_std": 0.13320268146722533,
+    "cv_r2_mean": 0.8137945017204894,
+    "cv_r2_std": 0.07658372374042871,
+    "cv_medae_mean": 0.33385316538187465,
+    "cv_medae_std": 0.07618377790838662,
+    "num_folds": 5
+  },
+  "test_metrics": {
+    "mae": 0.2734653471554566,
+    "rmse": 0.36553150150528535,
+    "r2": 0.9269083666825518,
+    "medae": 0.19887939903630958,
+    "mape": 1.8984238896609928
+  },
+  "status": "EXPERIMENTAL_RESEARCH_BENCHMARK"
+}
