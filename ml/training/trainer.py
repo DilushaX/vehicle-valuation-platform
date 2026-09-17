@@ -88,9 +88,10 @@ class ModelTrainer:
         if raw_df is None:
             loader = MLDatasetLoader()
             raw_df = loader.load_raw_dataset(ml_eligible_only=True)
-
-        X, y, meta = self.pipeline_coordinator.prepare_features(raw_df)
-        return X, y, meta
+        X, y_trans, meta = self.pipeline_coordinator.prepare_features(raw_df)
+        y_raw = meta["raw_asking_price"].copy()
+        y_raw.name = "asking_price"
+        return X, y_raw, meta
 
     def split_data(
         self,
