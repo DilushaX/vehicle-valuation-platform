@@ -1,6 +1,6 @@
 # Vehicle Valuation Model Training & Evaluation Report
 
-**Evaluation Date**: 2026-09-17 05:50:17 UTC  
+**Evaluation Date**: 2026-09-17 05:51:20 UTC  
 **Target Variable**: Observed Seller Asking Price (`asking_price`) in LKR  
 **Evaluation Scale**: Original Sri Lankan Rupees (LKR)  
 
@@ -28,19 +28,19 @@
 
 | Model | Target Transform | Selected | CV MAE (Mean ± Std) | CV RMSE (Mean) | CV R² (Mean) | Test MAE (LKR) | Test RMSE (LKR) | Test R² | Test MedAE (LKR) |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **LinearRegression** | `log1p` | Yes (Best CV) | LKR 0 ± 0 | LKR 1 | 0.8138 | LKR 0 | LKR 0 | 0.9269 | LKR 0 |
-| **RandomForestRegressor** | `log1p` | No | LKR 0 ± 0 | LKR 1 | 0.8103 | LKR 0 | LKR 0 | 0.9311 | LKR 0 |
-| **HistGradientBoostingRegressor** | `log1p` | No | LKR 1 ± 0 | LKR 1 | 0.6461 | LKR 0 | LKR 0 | 0.8848 | LKR 0 |
-| **MedianBaseline** | `log1p` | No | LKR 1 ± 0 | LKR 1 | -0.0523 | LKR 1 | LKR 1 | -0.0242 | LKR 1 |
-| **MeanBaseline** | `log1p` | No | LKR 1 ± 0 | LKR 1 | -0.0548 | LKR 1 | LKR 1 | -0.0005 | LKR 1 |
+| **RandomForestRegressor** | `log1p` | Yes (Best CV) | LKR 4,290,840 ± 3,502,448 | LKR 11,916,938 | 0.5949 | LKR 1,228,489 | LKR 1,916,199 | 0.8959 | LKR 766,519 |
+| **LinearRegression** | `log1p` | No | LKR 4,406,413 ± 3,625,003 | LKR 12,078,357 | 0.5764 | LKR 1,439,241 | LKR 2,491,244 | 0.8241 | LKR 374,050 |
+| **HistGradientBoostingRegressor** | `log1p` | No | LKR 5,026,914 ± 3,755,265 | LKR 12,829,184 | 0.5029 | LKR 1,740,768 | LKR 2,554,045 | 0.8151 | LKR 949,604 |
+| **MedianBaseline** | `log1p` | No | LKR 7,287,272 ± 3,666,484 | LKR 16,186,246 | -0.1490 | LKR 4,292,569 | LKR 6,323,888 | -0.1334 | LKR 3,089,920 |
+| **MeanBaseline** | `log1p` | No | LKR 7,291,784 ± 3,650,468 | LKR 16,341,717 | -0.1810 | LKR 4,331,421 | LKR 6,487,456 | -0.1927 | LKR 2,888,264 |
 
 ---
 
-## 3. Selected Model Performance: `LinearRegression`
-- **Holdout Test MAE**: LKR 0
-- **Holdout Test RMSE**: LKR 0
-- **Holdout Test R²**: 0.9269
-- **Holdout Test Median Absolute Error**: LKR 0
+## 3. Selected Model Performance: `RandomForestRegressor`
+- **Holdout Test MAE**: LKR 1,228,489
+- **Holdout Test RMSE**: LKR 1,916,199
+- **Holdout Test R²**: 0.8959
+- **Holdout Test Median Absolute Error**: LKR 766,519
 
 ---
 
@@ -49,32 +49,32 @@
 ### Category Error Breakdown
 | Category | Test Count | Median Actual (LKR) | Median Predicted (LKR) | Mean MAE (LKR) | Median Error % |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| Cars | 5 | LKR 16 | LKR 16 | LKR 0 | 1.8% |
-| Heavy-Duty | 3 | LKR 15 | LKR 15 | LKR 0 | 0.7% |
-| Lorries | 3 | LKR 14 | LKR 14 | LKR 0 | 1.3% |
-| Motorbikes | 3 | LKR 12 | LKR 13 | LKR 1 | 4.1% |
-| SUVs | 3 | LKR 17 | LKR 16 | LKR 0 | 0.7% |
-| Pickups | 2 | LKR 15 | LKR 15 | LKR 0 | 0.2% |
-| Three Wheelers | 2 | LKR 13 | LKR 14 | LKR 0 | 1.1% |
-| Vans | 2 | LKR 15 | LKR 16 | LKR 0 | 2.8% |
+| Cars | 5 | LKR 7,850,000 | LKR 9,013,965 | LKR 2,496,411 | 25.3% |
+| Heavy-Duty | 3 | LKR 3,600,000 | LKR 3,692,403 | LKR 459,436 | 2.6% |
+| Lorries | 3 | LKR 1,975,000 | LKR 2,076,602 | LKR 1,282,805 | 56.4% |
+| Motorbikes | 3 | LKR 240,000 | LKR 407,536 | LKR 177,473 | 69.8% |
+| SUVs | 3 | LKR 15,500,000 | LKR 12,968,703 | LKR 2,444,827 | 16.3% |
+| Pickups | 2 | LKR 4,050,000 | LKR 4,435,012 | LKR 385,012 | 8.6% |
+| Three Wheelers | 2 | LKR 716,500 | LKR 743,513 | LKR 123,279 | 18.3% |
+| Vans | 2 | LKR 5,012,500 | LKR 5,334,912 | LKR 831,500 | 16.0% |
 
 ### Price Bracket Error Breakdown
 | Price Bracket | Test Count | Mean MAE (LKR) | Median MAE (LKR) | Median Error % |
 | :--- | :--- | :--- | :--- | :--- |
-| < 2M | 23 | LKR 0 | LKR 0 | 1.3% |
-| 2M - 5M | 0 | LKR nan | LKR nan | nan% |
-| 5M - 10M | 0 | LKR nan | LKR nan | nan% |
-| 10M - 25M | 0 | LKR nan | LKR nan | nan% |
+| < 2M | 7 | LKR 298,216 | LKR 150,291 | 65.5% |
+| 2M - 5M | 7 | LKR 731,367 | LKR 509,088 | 12.1% |
+| 5M - 10M | 4 | LKR 2,615,961 | LKR 1,551,042 | 24.4% |
+| 10M - 25M | 5 | LKR 2,116,866 | LKR 2,531,297 | 16.3% |
 | > 25M | 0 | LKR nan | LKR nan | nan% |
 
 ### Top 5 Largest Absolute Errors (Holdout Test Set)
 | Listing ID | Category | Make / Model | Age | Mileage | Actual Asking | Predicted | Absolute Error (LKR) | Error % |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| `12268740` | Cars | Daihatsu Mira L SA3 LTD SAFETY | 2 yrs | 3,255 km | LKR 16 | LKR 17 | LKR 1 | 5.0% |
-| `12294837` | Motorbikes | Bajaj N160 | 1 yrs | 10,123 km | LKR 12 | LKR 13 | LKR 1 | 6.3% |
-| `12311860` | Cars | Honda N WGN | 1 yrs | 17,063 km | LKR 16 | LKR 16 | LKR 1 | 3.9% |
-| `12294409` | Lorries | Isuzu Isuzu | 46 yrs | 355 km | LKR 14 | LKR 14 | LKR 1 | 3.9% |
-| `12294924` | Motorbikes | Bajaj Pulsar 135 | 15 yrs | 138,000 km | LKR 12 | LKR 13 | LKR 1 | 4.1% |
+| `12293566` | Cars | Honda Fit GP5 | 10 yrs | 136,035 km | LKR 8,645,000 | LKR 14,852,849 | LKR 6,207,849 | 71.8% |
+| `12336170` | SUVs | BYD Sealion 6 | 1 yrs | 6,000 km | LKR 21,950,000 | LKR 18,161,093 | LKR 3,788,907 | 17.3% |
+| `12336155` | Cars | Honda Jade | 11 yrs | 98,500 km | LKR 11,000,000 | LKR 13,781,250 | LKR 2,781,250 | 25.3% |
+| `12336121` | Lorries | Ashok-Leyland Leyland | 16 yrs | 12,856 km | LKR 4,500,000 | LKR 1,960,122 | LKR 2,539,878 | 56.4% |
+| `12294908` | SUVs | Honda CRV | 8 yrs | 125,000 km | LKR 15,500,000 | LKR 12,968,703 | LKR 2,531,297 | 16.3% |
 
 ---
 

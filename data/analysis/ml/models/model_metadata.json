@@ -1,7 +1,7 @@
 {
-  "model_name": "LinearRegression",
+  "model_name": "RandomForestRegressor",
   "sklearn_version": "1.9.1",
-  "trained_at": "2026-09-17T05:50:17.673333+00:00",
+  "trained_at": "2026-09-17T05:51:20.254755+00:00",
   "target_variable": "asking_price",
   "target_transform": "log1p",
   "reference_year": 2026,
@@ -10,24 +10,24 @@
   "random_state": 42,
   "cv_folds": 5,
   "cv_metrics": {
-    "model_name": "LinearRegression",
+    "model_name": "RandomForestRegressor",
     "target_transform": "log1p",
-    "cv_mae_mean": 0.40741510702882133,
-    "cv_mae_std": 0.032288589582449574,
-    "cv_rmse_mean": 0.5827759236961167,
-    "cv_rmse_std": 0.13320268146722533,
-    "cv_r2_mean": 0.8137945017204894,
-    "cv_r2_std": 0.07658372374042871,
-    "cv_medae_mean": 0.33385316538187465,
-    "cv_medae_std": 0.07618377790838662,
+    "cv_mae_mean": 4290840.388794948,
+    "cv_mae_std": 3502447.807242699,
+    "cv_rmse_mean": 11916937.530053752,
+    "cv_rmse_std": 15389557.255441332,
+    "cv_r2_mean": 0.5949498127421234,
+    "cv_r2_std": 0.2895812847416009,
+    "cv_medae_mean": 1024194.8286923971,
+    "cv_medae_std": 343672.6484509196,
     "num_folds": 5
   },
   "test_metrics": {
-    "mae": 0.2734653471554566,
-    "rmse": 0.36553150150528535,
-    "r2": 0.9269083666825518,
-    "medae": 0.19887939903630958,
-    "mape": 1.8984238896609928
+    "mae": 1228489.464793961,
+    "rmse": 1916198.7944645432,
+    "r2": 0.8959409189002634,
+    "medae": 766518.7134781145,
+    "mape": 30.379927544401138
   },
   "status": "EXPERIMENTAL_RESEARCH_BENCHMARK"
 }
