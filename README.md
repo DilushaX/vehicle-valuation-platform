@@ -544,6 +544,61 @@ python scripts/prepare_ml_dataset.py --output-dir data/analysis/ml
 
 ---
 
+### 8. Model Training & Evaluation (Phase 5 Step 8)
+
+The **Model Training & Evaluation** subsystem (`ml/`) implements a leakage-safe regression benchmark and inference interface for Sri Lankan vehicle asking-price prediction.
+
+> [!IMPORTANT]
+> **Observed Asking Price Disclaimer**: The target variable is `asking_price` — the seller's advertised price on Riyasewana.
+> It does **NOT** represent confirmed transaction or settlement price. Predictions estimate expected advertised asking prices.
+
+> [!NOTE]
+> **Sample Size & Research Benchmark Status**: With 113 ML-eligible listings across 8 vehicle categories, all models are designated as **EXPERIMENTAL RESEARCH BENCHMARKS**.
+> They validate mathematical rigor, pipeline isolation, and leakage safety, but must **NOT** be used as a production-grade valuation authority until large-scale crawling expands the dataset.
+
+#### 1. Methodology & Validation Architecture
+- **Holdout Partitioning (80/20)**: 90 training records, 23 holdout test records (`random_state=42`). Category stratification is applied where category counts support it.
+- **Strict Leakage Prevention**: Feature transformers (imputation, rare category grouping, one-hot encoding) are fitted **only** on the training partition (or training folds within CV). The holdout test set remains completely untouched until final evaluation.
+- **5-Fold Cross-Validation**: Candidate models are cross-validated on the 90-sample training split. Model selection is based exclusively on mean CV MAE.
+- **LKR Scale Integrity**: When using `--target-transform log1p`, scikit-learn's `TransformedTargetRegressor` manages `log1p` on fit and inverts predictions via `expm1`. All evaluation metrics (MAE, RMSE, $R^2$, MedAE) are calculated and reported strictly in **original Sri Lankan Rupees (LKR)**.
+
+#### 2. Model Comparison Table (Holdout Test Set)
+
+| Model | Target Transform | Selected | CV MAE (Mean ± Std) | CV RMSE (Mean) | CV R² (Mean) | Test MAE (LKR) | Test RMSE (LKR) | Test R² | Test MedAE (LKR) |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **RandomForestRegressor** | `log1p` | **Yes (Best CV)** | LKR 4,290,840 ± 3,502,448 | LKR 11,916,938 | 0.5949 | **LKR 1,228,489** | **LKR 1,916,199** | **0.8959** | **LKR 766,519** |
+| **LinearRegression** | `log1p` | No | LKR 4,406,413 ± 3,625,003 | LKR 12,078,357 | 0.5764 | LKR 1,439,241 | LKR 2,491,244 | 0.8241 | LKR 374,050 |
+| **HistGradientBoostingRegressor** | `log1p` | No | LKR 5,026,914 ± 3,755,265 | LKR 12,829,184 | 0.5029 | LKR 1,740,768 | LKR 2,554,045 | 0.8151 | LKR 949,604 |
+| **MedianBaseline** | `log1p` | No | LKR 7,287,272 ± 3,666,484 | LKR 16,186,246 | -0.1490 | LKR 4,292,569 | LKR 6,323,888 | -0.1334 | LKR 3,089,920 |
+| **MeanBaseline** | `log1p` | No | LKR 7,291,784 ± 3,650,468 | LKR 16,341,717 | -0.1810 | LKR 4,331,421 | LKR 6,487,456 | -0.1927 | LKR 2,888,264 |
+
+*Raw target run comparison: With `--target-transform raw`, RandomForestRegressor achieved Test MAE of LKR 1,524,263, RMSE of LKR 2,223,011, and $R^2$ of 0.8600. Log-target transformation improves performance across all candidates by dampening extreme price outliers.*
+
+#### 3. CLI Execution
+
+```bash
+# Run model training and evaluation with log1p target transformation (recommended)
+python scripts/train_valuation_model.py --target-transform log1p
+
+# Run training with raw LKR target
+python scripts/train_valuation_model.py --target-transform raw
+
+# Custom test split size and cross-validation folds
+python scripts/train_valuation_model.py --test-size 0.20 --cv-folds 5 --seed 42
+```
+
+#### 4. Generated Artifacts & Evaluation Reports
+- Model pipeline artifact: [`data/analysis/ml/models/model.joblib`](file:///Users/dilusha/Documents/vehicle-valuation-platform/data/analysis/ml/models/model.joblib)
+- Serialization metadata: [`data/analysis/ml/models/model_metadata.json`](file:///Users/dilusha/Documents/vehicle-valuation-platform/data/analysis/ml/models/model_metadata.json)
+- Model comparison table: [`data/analysis/ml/model_comparison.csv`](file:///Users/dilusha/Documents/vehicle-valuation-platform/data/analysis/ml/model_comparison.csv)
+- Detailed evaluation report: [`data/analysis/ml/model_evaluation_report.md`](file:///Users/dilusha/Documents/vehicle-valuation-platform/data/analysis/ml/model_evaluation_report.md)
+- Diagnostic figures:
+  - Actual vs Predicted: `data/analysis/ml/figures/actual_vs_predicted.png`
+  - Residual Distribution: `data/analysis/ml/figures/residual_distribution.png`
+  - Absolute Error Distribution: `data/analysis/ml/figures/absolute_error_distribution.png`
+
+---
+
 ## 🚀 Quickstart Guide
 
 ### 1. Installation & Environment Setup
