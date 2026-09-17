@@ -279,7 +279,7 @@ class ModelTrainer:
         ax1.set_ylabel("Frequency", fontsize=10)
         ax1.grid(True, linestyle=":", alpha=0.6)
 
-        ax2.boxplot(residuals, vert=True, patch_artist=True, boxprops=dict(facecolor="#98df8a"))
+        ax2.boxplot(residuals, orientation="vertical", patch_artist=True, boxprops=dict(facecolor="#98df8a"))
         ax2.axhline(0, color="red", linestyle="--", lw=1.5)
         ax2.set_title("Residual Dispersion", fontsize=12, fontweight="bold")
         ax2.set_ylabel("Residual [Million LKR]", fontsize=10)
