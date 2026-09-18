@@ -203,9 +203,9 @@ def test_exclude_self_listing(candidate_pool, query_car):
     assert "CAR_01" not in listing_ids
 
 
-def test_find_comparables_live_database(query_car, db_session: Session):
+def test_find_comparables_live_database(query_car):
     """Verifies that comparable engine works with real PostgreSQL database records."""
-    engine = ComparableVehicleEngine(session=db_session)
+    engine = ComparableVehicleEngine()
     results = engine.find_comparables(query=query_car, top_k=3)
 
     assert len(results) > 0
