@@ -124,15 +124,21 @@ class VehiclePricePredictor:
         # 1. Target and Private Info Leakage validation
         self.leakage_validator.validate_features(df)
 
-        # 2. Derive vehicle_age from manufacture_year if vehicle_age is absent
-        if "vehicle_age" not in df.columns:
-            if "manufacture_year" in df.columns:
+        # 2. Derive vehicle_age from manufacture_year if vehicle_age is absent or all null
+        if "vehicle_age" not in df.columns or df["vehicle_age"].isna().all():
+            if "manufacture_year" in df.columns and df["manufacture_year"].notna().any():
                 mfg = pd.to_numeric(df["manufacture_year"], errors="coerce")
                 if mfg.isna().any():
                     raise ValidationError("manufacture_year contains null or non-numeric values.")
                 df["vehicle_age"] = self.reference_year - mfg
             else:
                 raise ValidationError("Missing required feature: 'vehicle_age' (or 'manufacture_year').")
+        elif "manufacture_year" in df.columns:
+            # If vehicle_age has some NaNs but manufacture_year is present, fill NaNs
+            nan_mask = df["vehicle_age"].isna()
+            if nan_mask.any() and df["manufacture_year"].notna().any():
+                mfg = pd.to_numeric(df["manufacture_year"], errors="coerce")
+                df.loc[nan_mask, "vehicle_age"] = self.reference_year - mfg[nan_mask]
 
         # 3. Check for required categorical features
         missing_cats = [col for col in REQUIRED_CATEGORICAL_COLUMNS if col not in df.columns]
