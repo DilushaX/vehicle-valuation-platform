@@ -228,3 +228,24 @@ class VehiclePricePredictor:
         if len(preds) == 0:
             raise ValidationError("No prediction generated for empty input.")
         return float(preds[0])
+
+    def explain(
+        self,
+        vehicle_data: Union[Dict[str, Any], pd.DataFrame],
+        top_k: Optional[int] = None,
+    ) -> List[Dict[str, Any]]:
+        """
+        Explains feature contributions for a vehicle listing using ModelExplainer.
+        
+        Args:
+            vehicle_data: Dictionary or DataFrame representing a vehicle.
+            top_k: Maximum number of top contributing factors to return.
+            
+        Returns:
+            List of structured feature contribution records.
+        """
+        from ml.explainability.explainer import ModelExplainer
+        if not hasattr(self, "_explainer") or self._explainer is None:
+            self._explainer = ModelExplainer(self)
+        return self._explainer.explain_prediction(vehicle_data, top_k=top_k)
+
