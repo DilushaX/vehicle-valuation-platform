@@ -249,3 +249,39 @@ class VehiclePricePredictor:
             self._explainer = ModelExplainer(self)
         return self._explainer.explain_prediction(vehicle_data, top_k=top_k)
 
+    def predict_with_range(
+        self,
+        vehicle_data: Union[Dict[str, Any], pd.DataFrame],
+        percentile_lower: Optional[int] = 10,
+        percentile_upper: Optional[int] = 90,
+    ) -> Dict[str, Any]:
+        """
+        Generates point prediction and model-based valuation range.
+        
+        Args:
+            vehicle_data: Dictionary or DataFrame of vehicle features.
+            percentile_lower: Lower bound percentile (default: 10).
+            percentile_upper: Upper bound percentile (default: 90).
+            
+        Returns:
+            Dict containing 'estimate', 'lower', 'upper', 'spread', and 'method'.
+        """
+        from ml.prediction.uncertainty import UncertaintyEstimator
+        df_formatted = self.validate_and_format_input(vehicle_data)
+        if df_formatted.empty:
+            raise ValidationError("Cannot compute range for empty input.")
+
+        point_est = self.predict_single(vehicle_data)
+
+        if not hasattr(self, "_uncertainty_estimator") or self._uncertainty_estimator is None:
+            self._uncertainty_estimator = UncertaintyEstimator(self.model, self.metadata)
+
+        val_range = self._uncertainty_estimator.estimate_range(
+            formatted_df=df_formatted,
+            point_estimate=point_est,
+            percentile_lower=percentile_lower,
+            percentile_upper=percentile_upper,
+        )
+        return val_range.to_dict()
+
+
