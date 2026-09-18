@@ -599,6 +599,174 @@ python scripts/train_valuation_model.py --test-size 0.20 --cv-folds 5 --seed 42
 
 ---
 
+### 9. Explainable Valuation Prediction Layer (Phase 5 Step 9)
+
+The **Explainable Valuation Prediction Layer** (`ml/valuation/`, `ml/explainability/`, `ml/prediction/`, `analytics/comparables/`, `api/`) turns the trained machine learning pipeline into an end-to-end explainable valuation service with model-based uncertainty ranges, Tree SHAP factor attribution, comparable vehicle retrieval, and REST API endpoints.
+
+> [!IMPORTANT]
+> **Asking Price vs. Actual Transaction Price**:
+> The valuation service estimates the **seller's advertised asking price** observed on Riyasewana.
+> It does **NOT** know or represent the confirmed transaction, sold, or settlement price. In the Sri Lankan vehicle market, negotiated transaction prices typically settle 5% to 15% below advertised asking prices depending on offline negotiation, payment terms, and vehicle condition.
+> The system must **never** be interpreted as providing a guaranteed resale price or binding appraisal.
+
+> [!NOTE]
+> **Dataset Size & Benchmark Status**:
+> The underlying model is trained on a verified research benchmark of **113 ML-eligible listings** across 8 vehicle categories (`Cars`, `Heavy-Duty`, `Lorries`, `Motorbikes`, `Pickups`, `SUVs`, `Three Wheelers`, `Vans`).
+> Predictions in sparse categories carry wider uncertainty bounds. This is a mathematically verified and leakage-safe valuation benchmark, but requires further large-scale data collection before production-grade deployment.
+
+#### 1. System Architecture & Capabilities
+```
+                  Incoming Vehicle Specification
+                               │
+                               ▼
+        ┌──────────────────────────────────────────────┐
+        │        VehiclePricePredictor Validation      │
+        │  - Strict domain & schema checks             │
+        │  - Zero leakage guard (blocks asking_price)  │
+        │  - Vehicle age derivation (2026 - mfg_year)  │
+        │  - Canonical category normalization          │
+        └──────────────────────┬───────────────────────┘
+                               │
+            ┌──────────────────┼──────────────────┐
+            ▼                  ▼                  ▼
+    ┌───────────────┐  ┌───────────────┐  ┌───────────────┐
+    │  ML Asking    │  │  Model-Based  │  │   Tree SHAP   │
+    │  Price Point  │  │  Prediction   │  │  Explainable  │
+    │   Estimate    │  │     Range     │  │  Attribution  │
+    └───────┬───────┘  └───────┬───────┘  └───────┬───────┘
+            │                  │                  │
+            └──────────────────┼──────────────────┘
+                               │
+                               ▼
+        ┌──────────────────────────────────────────────┐
+        │        ComparableVehicleEngine Search        │
+        │  - Multi-attribute weighted similarity model │
+        │  - Strictly same category matching           │
+        │  - Filter ML-eligible & valid prices only    │
+        └──────────────────────┬───────────────────────┘
+                               │
+                               ▼
+        ┌──────────────────────────────────────────────┐
+        │       Unified VehicleValuationService        │
+        │  - REST API: POST /api/valuation/predict     │
+        │  - ValuationReportFormatter (Text/Markdown)  │
+        └──────────────────────────────────────────────┘
+```
+
+#### 2. Methodology & Component Details
+1. **Model Used**: Scikit-Learn `TransformedTargetRegressor` wrapping `ColumnTransformer` (imputation, rare category grouping, one-hot encoding) and `RandomForestRegressor` (300 estimators, `min_samples_leaf=2`, `random_state=42`) trained on `log1p(y)` and inverted via `expm1` to original LKR.
+2. **Prediction Range Methodology**:
+   - Computes empirical quantiles across the individual predictions of all 300 decision trees in the Random Forest.
+   - Evaluated at the 10th percentile (lower bound) and 90th percentile (upper bound).
+   - Bounds are strictly non-negative ($\ge \text{Rs. } 10,000$) and mathematically ordered ($\text{lower} \le \text{estimate} \le \text{upper}$).
+   - **Disclaimer**: This is an *indicative model-based prediction range* representing tree ensemble dispersion; it is NOT a statistically guaranteed confidence interval.
+3. **Explainability Methodology**:
+   - Implements **Tree SHAP** (`shap.TreeExplainer`) on the underlying forest.
+   - Aggregates high-dimensional one-hot encoded dummy features back to canonical input attributes (`vehicle_age`, `mileage`, `engine_cc`, `transmission`, `brand`, `model`, `fuel_type`, `district`, `condition`).
+   - Returns structured records with numerical contributions, direction (`"positive"` vs `"negative"`), and clear human-readable descriptions.
+4. **Comparable Vehicle Retrieval Methodology**:
+   - Queries verified PostgreSQL market listings matching the requested vehicle category.
+   - Evaluates multi-attribute weighted similarity: Brand (0.25), Model (0.25), Manufacture Year/Age (0.14), Mileage (0.10), Engine CC (0.08), Transmission (0.06), Fuel Type (0.04), District (0.04), Condition (0.04).
+   - Excludes ML-ineligible records, unpriced listings, and query vehicle self-matches.
+   - Returns similarity scores normalized between 0.0 and 1.0 (0% to 100%).
+
+#### 3. REST API Reference: `POST /api/valuation/predict`
+
+##### Example Request:
+```bash
+curl -X POST http://localhost:8000/api/valuation/predict \
+  -H "Content-Type: application/json" \
+  -d '{
+    "category": "Cars",
+    "brand": "Toyota",
+    "model": "Premio",
+    "manufacture_year": 2016,
+    "mileage": 85000,
+    "engine_cc": 1500,
+    "fuel_type": "Petrol",
+    "transmission": "Automatic",
+    "district": "Colombo",
+    "condition": "Registered (Used)",
+    "top_k_factors": 3,
+    "top_k_comparables": 3
+  }'
+```
+
+##### Example Response:
+```json
+{
+  "estimated_asking_price_lkr": 15916610.12,
+  "prediction_range_lkr": {
+    "estimate": 15916610.12,
+    "lower": 8723171.12,
+    "upper": 24122604.89,
+    "spread": 15399433.77,
+    "percentile_lower": 10,
+    "percentile_upper": 90,
+    "method": "RandomForest 300-tree empirical dispersion (10th–90th percentiles)"
+  },
+  "currency": "LKR",
+  "model": {
+    "name": "RandomForestRegressor",
+    "target_variable": "asking_price",
+    "target_transform": "log1p",
+    "training_records": 90,
+    "test_samples": 23,
+    "status": "EXPERIMENTAL_RESEARCH_BENCHMARK"
+  },
+  "explanation": [
+    {
+      "feature": "transmission",
+      "value": "Automatic",
+      "contribution": 0.6673,
+      "direction": "positive",
+      "description": "Transmission (Automatic) contributed positively to the estimated asking price."
+    },
+    {
+      "feature": "brand",
+      "value": "Toyota",
+      "contribution": 0.4541,
+      "direction": "positive",
+      "description": "Brand (Toyota) contributed positively to the estimated asking price."
+    },
+    {
+      "feature": "engine_cc",
+      "value": "1,500 cc",
+      "contribution": 0.1681,
+      "direction": "positive",
+      "description": "Engine Cc (1,500 cc) contributed positively to the estimated asking price."
+    }
+  ],
+  "comparables": [
+    {
+      "listing_id": "12293566",
+      "category": "Cars",
+      "brand": "Toyota",
+      "model": "Allion",
+      "manufacture_year": 2015,
+      "mileage": 90000.0,
+      "engine_cc": 1500.0,
+      "fuel_type": "Petrol",
+      "transmission": "Automatic",
+      "district": "Colombo",
+      "condition": "Registered (Used)",
+      "asking_price": 14500000.0,
+      "similarity_score": 0.88,
+      "similarity_percentage": 88.0
+    }
+  ],
+  "limitations": [
+    "This valuation estimates the seller advertised asking price on Riyasewana, NOT the confirmed transaction or final settlement price.",
+    "Actual negotiated selling prices in Sri Lanka typically settle 5% to 15% below advertised asking prices depending on offline negotiation and payment terms.",
+    "The underlying valuation model was trained on an experimental benchmark dataset of 113 verified ML-eligible records across 8 vehicle categories; sparse categories exhibit higher variance.",
+    "The indicative prediction range reflects ensemble decision tree dispersion, NOT a legally or financially guaranteed appraisal.",
+    "Physical vehicle condition, accidental history, battery/engine health, and registration documentation are not observed and may substantially alter vehicle value."
+  ]
+}
+```
+
+---
+
 ## 🚀 Quickstart Guide
 
 ### 1. Installation & Environment Setup
