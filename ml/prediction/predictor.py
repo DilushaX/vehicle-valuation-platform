@@ -14,9 +14,11 @@ import numpy as np
 import pandas as pd
 from sklearn.base import BaseEstimator
 
+from data_pipeline.cleaning.cleaners import VehicleCleaner
 from feature_engineering.numerical import DEFAULT_REFERENCE_YEAR
-from feature_engineering.schema import CANONICAL_CATEGORIES, FeatureSchema
 from feature_engineering.validation import DataLeakageError, LeakageValidator
+
+CANONICAL_CATEGORIES = set(VehicleCleaner.CANONICAL_CATEGORIES.values())
 
 logger = logging.getLogger(__name__)
 
@@ -137,14 +139,15 @@ class VehiclePricePredictor:
         if missing_cats:
             raise ValidationError(f"Missing required categorical features: {missing_cats}")
 
-        # 4. Check category against canonical categories
-        invalid_categories = [
-            cat for cat in df["category"].dropna().unique()
-            if cat not in CANONICAL_CATEGORIES
-        ]
-        if invalid_categories:
+        # 4. Canonicalize and validate category against canonical categories
+        df["category"] = df["category"].apply(
+            lambda c: VehicleCleaner.canonicalize_category(str(c).strip()) if pd.notna(c) else None
+        )
+        invalid_mask = ~df["category"].isin(CANONICAL_CATEGORIES)
+        if invalid_mask.any():
+            invalid_vals = list(df.loc[invalid_mask, "category"].unique())
             raise ValidationError(
-                f"Invalid vehicle category: {invalid_categories}. "
+                f"Invalid vehicle category: {invalid_vals}. "
                 f"Must be one of: {sorted(list(CANONICAL_CATEGORIES))}"
             )
 
