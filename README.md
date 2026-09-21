@@ -1,6 +1,6 @@
-# 🇱🇰 Sri Lankan Vehicle Market Intelligence & ML Valuation Platform
+# 🚗 Sri Lankan Vehicle Market Intelligence & Valuation Platform
 
-A production-grade, end-to-end data-driven market intelligence and machine learning valuation platform for Sri Lankan used vehicles.
+An end-to-end data-driven market intelligence and explainable machine learning valuation platform for Sri Lankan used vehicles.
 
 The system continuously tracks vehicle listings (primarily from **Riyasewana**), audits data quality, detects suspicious anomalies, maintains historical price and status timelines, performs multi-factor comparable matching, and estimates market asking values using category-specific ML models with **Explainable AI (SHAP)**.
 
@@ -610,9 +610,9 @@ The **Explainable Valuation Prediction Layer** (`ml/valuation/`, `ml/explainabil
 > The system must **never** be interpreted as providing a guaranteed resale price or binding appraisal.
 
 > [!NOTE]
-> **Dataset Size & Benchmark Status**:
-> The underlying model is trained on an experimental benchmark dataset of **113 ML-eligible listings** across 8 vehicle categories (`Cars`, `Heavy-Duty`, `Lorries`, `Motorbikes`, `Pickups`, `SUVs`, `Three Wheelers`, `Vans`).
-> Current dataset size limits generalization across sparse categories. This is a mathematically verified and leakage-safe valuation benchmark, but requires further large-scale data collection before production-grade deployment.
+> **Dataset Size & Experimental Research Benchmark Status**:
+> The underlying model is an **experimental research benchmark** trained on **113 ML-eligible listings** across 8 vehicle categories (`Cars`, `Heavy-Duty`, `Lorries`, `Motorbikes`, `Pickups`, `SUVs`, `Three Wheelers`, `Vans`).
+> Technically implemented valuation layer; further large-scale data collection is required before production-grade valuation claims. Current dataset size limits generalization across sparse categories.
 
 #### 1. System Architecture & Capabilities
 ```
@@ -854,4 +854,4 @@ docker-compose up --build
 2. **Unobserved Vehicle Factors**: Actual vehicle value may differ due to factors not captured by the dataset, including physical condition, accident history, mechanical condition, battery/engine health, and registration documentation.
 3. **Observation Lifecycle**: An ad no longer appearing on Riyasewana is classified as `NO_LONGER_OBSERVED` and is never assumed to be a completed transaction.
 4. **Statistical Estimates**: Indicative prediction ranges reflect ensemble decision tree dispersion, NOT legally or financially guaranteed appraisals.
-5. **Dataset Scope**: The current valuation model is an experimental research benchmark trained on 113 verified records; further large-scale data collection is required before production-grade valuation claims.
+5. **Dataset Scope**: The current valuation model is an **experimental research benchmark** trained on 113 verified records. It is a technically implemented valuation layer; further large-scale data collection is required before production-grade valuation claims.
