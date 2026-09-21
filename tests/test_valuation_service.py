@@ -94,7 +94,8 @@ def test_complete_valuation_request(valuation_service, valid_car_request):
 
     # 6. Limitations
     assert len(d["limitations"]) == len(STANDARD_VALUATION_LIMITATIONS)
-    assert any("not the confirmed transaction" in lim.lower() for lim in d["limitations"])
+    assert any("not a confirmed transaction" in lim.lower() or "not the confirmed transaction" in lim.lower() for lim in d["limitations"])
+    assert any("physical condition" in lim.lower() for lim in d["limitations"])
 
 
 def test_missing_fields_validation(valuation_service, valid_car_request):

@@ -850,6 +850,8 @@ docker-compose up --build
 
 ## ⚠️ Important Legal & Technical Disclaimers
 
-1. **Asking Price vs Transaction Price**: Listing prices observed on Riyasewana are seller asking prices, not confirmed settlement prices.
-2. **Observation Lifecycle**: An ad no longer appearing on Riyasewana is classified as `NO_LONGER_OBSERVED` and is never assumed to be a completed transaction.
-3. **Statistical Estimates**: ML predictions represent observed market asking ranges and do not constitute financial appraisals or guarantees.
+1. **Asking Price vs Transaction Price**: This valuation estimates market asking prices observed on Riyasewana. It is not a confirmed transaction or final selling price.
+2. **Unobserved Vehicle Factors**: Actual vehicle value may differ due to factors not captured by the dataset, including physical condition, accident history, mechanical condition, battery/engine health, and registration documentation.
+3. **Observation Lifecycle**: An ad no longer appearing on Riyasewana is classified as `NO_LONGER_OBSERVED` and is never assumed to be a completed transaction.
+4. **Statistical Estimates**: Indicative prediction ranges reflect ensemble decision tree dispersion, NOT legally or financially guaranteed appraisals.
+5. **Dataset Scope**: The current valuation model is an experimental research benchmark trained on 113 verified records; further large-scale data collection is required before production-grade valuation claims.
