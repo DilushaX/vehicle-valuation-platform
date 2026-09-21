@@ -30,11 +30,11 @@ from ml.prediction.uncertainty import UncertaintyEstimator, ValuationRange
 logger = logging.getLogger(__name__)
 
 STANDARD_VALUATION_LIMITATIONS = [
-    "This valuation estimates the seller advertised asking price on Riyasewana, NOT the confirmed transaction or final settlement price.",
+    "This valuation estimates market asking prices observed on Riyasewana. It is not a confirmed transaction or final selling price.",
     "Actual negotiated selling prices may differ from advertised asking prices because the collected dataset does not contain verified final transaction prices.",
-    "The underlying valuation model was trained on an experimental benchmark dataset of 113 verified ML-eligible records across 8 vehicle categories; sparse categories exhibit higher variance.",
+    "The underlying valuation model was trained on an experimental benchmark dataset of 113 verified ML-eligible records across 8 vehicle categories; current dataset size limits generalization across sparse categories.",
     "The indicative prediction range reflects ensemble decision tree dispersion, NOT a legally or financially guaranteed appraisal.",
-    "Physical vehicle condition, accidental history, battery/engine health, and registration documentation are not observed and may substantially alter vehicle value.",
+    "Actual vehicle value may differ due to factors not captured by the dataset, including physical condition, accident history, mechanical condition, battery/engine health, and registration documentation.",
 ]
 
 

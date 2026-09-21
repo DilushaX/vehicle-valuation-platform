@@ -604,14 +604,15 @@ The **Explainable Valuation Prediction Layer** (`ml/valuation/`, `ml/explainabil
 
 > [!IMPORTANT]
 > **Asking Price vs. Actual Transaction Price**:
-> The valuation service estimates the **seller's advertised asking price** observed on Riyasewana.
-> It does **NOT** know or represent the confirmed transaction, sold, or settlement price. Actual negotiated selling prices may differ from advertised asking prices because the collected dataset does not contain verified final transaction prices.
+> This valuation estimates market asking prices observed on Riyasewana. It is not a confirmed transaction or final selling price.
+> Actual negotiated selling prices may differ from advertised asking prices because the collected dataset does not contain verified final transaction prices.
+> Actual vehicle value may differ due to factors not captured by the dataset, including physical condition, accident history, mechanical condition, battery/engine health, and registration documentation.
 > The system must **never** be interpreted as providing a guaranteed resale price or binding appraisal.
 
 > [!NOTE]
 > **Dataset Size & Benchmark Status**:
-> The underlying model is trained on a verified research benchmark of **113 ML-eligible listings** across 8 vehicle categories (`Cars`, `Heavy-Duty`, `Lorries`, `Motorbikes`, `Pickups`, `SUVs`, `Three Wheelers`, `Vans`).
-> Predictions in sparse categories carry wider uncertainty bounds. This is a mathematically verified and leakage-safe valuation benchmark, but requires further large-scale data collection before production-grade deployment.
+> The underlying model is trained on an experimental benchmark dataset of **113 ML-eligible listings** across 8 vehicle categories (`Cars`, `Heavy-Duty`, `Lorries`, `Motorbikes`, `Pickups`, `SUVs`, `Three Wheelers`, `Vans`).
+> Current dataset size limits generalization across sparse categories. This is a mathematically verified and leakage-safe valuation benchmark, but requires further large-scale data collection before production-grade deployment.
 
 #### 1. System Architecture & Capabilities
 ```
@@ -755,11 +756,11 @@ curl -X POST http://localhost:8000/api/valuation/predict \
     }
   ],
   "limitations": [
-    "This valuation estimates the seller advertised asking price on Riyasewana, NOT the confirmed transaction or final settlement price.",
+    "This valuation estimates market asking prices observed on Riyasewana. It is not a confirmed transaction or final selling price.",
     "Actual negotiated selling prices may differ from advertised asking prices because the collected dataset does not contain verified final transaction prices.",
-    "The underlying valuation model was trained on an experimental benchmark dataset of 113 verified ML-eligible records across 8 vehicle categories; sparse categories exhibit higher variance.",
+    "The underlying valuation model was trained on an experimental benchmark dataset of 113 verified ML-eligible records across 8 vehicle categories; current dataset size limits generalization across sparse categories.",
     "The indicative prediction range reflects ensemble decision tree dispersion, NOT a legally or financially guaranteed appraisal.",
-    "Physical vehicle condition, accidental history, battery/engine health, and registration documentation are not observed and may substantially alter vehicle value."
+    "Actual vehicle value may differ due to factors not captured by the dataset, including physical condition, accident history, mechanical condition, battery/engine health, and registration documentation."
   ]
 }
 ```

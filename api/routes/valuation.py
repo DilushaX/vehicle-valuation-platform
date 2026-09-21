@@ -39,8 +39,9 @@ def get_valuation_service() -> VehicleValuationService:
     },
     summary="Estimate Vehicle Asking Price",
     description=(
-        "Estimates seller advertised asking price on Riyasewana with model-based "
-        "prediction range, Tree SHAP factor attribution, and comparable vehicle matches."
+        "Estimates market asking prices observed on Riyasewana with indicative model-based "
+        "prediction range, Tree SHAP factor attribution, and comparable vehicle matches. "
+        "This is not a confirmed transaction or final selling price."
     ),
 )
 def predict_vehicle_valuation(
@@ -48,6 +49,11 @@ def predict_vehicle_valuation(
 ) -> VehicleValuationResponse:
     """
     Computes explainable valuation for a vehicle listing.
+    
+    This valuation estimates market asking prices observed on Riyasewana. It is not a confirmed
+    transaction or final selling price. Actual vehicle value may differ due to factors not captured
+    by the dataset, including physical condition, accident history, mechanical condition,
+    battery/engine health, and registration documentation.
     """
     try:
         service = get_valuation_service()
