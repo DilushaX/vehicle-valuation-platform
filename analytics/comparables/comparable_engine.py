@@ -17,16 +17,14 @@ It is NOT:
 - likelihood of being the same physical vehicle
 """
 
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 import logging
-from typing import Any, Dict, List, Optional, Sequence, Union
+from typing import Any, Dict, List, Optional, Union
 
-import numpy as np
 import pandas as pd
 from sqlalchemy.orm import Session
 
 from data_pipeline.cleaning.cleaners import VehicleCleaner
-from database.connection import get_sessionmaker
 from feature_engineering.dataset import MLDatasetLoader
 
 logger = logging.getLogger(__name__)

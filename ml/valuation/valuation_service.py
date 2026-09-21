@@ -11,21 +11,18 @@ Coordinates:
 7. Model metadata and explicit legal/methodological limitations.
 """
 
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 import logging
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence, Union
+from typing import Any, Dict, List, Optional, Union
 
 import pandas as pd
 from sqlalchemy.orm import Session
 
-from analytics.comparables.comparable_engine import (
-    ComparableVehicle,
-    ComparableVehicleEngine,
-)
+from analytics.comparables.comparable_engine import ComparableVehicleEngine
 from ml.explainability.explainer import ModelExplainer
 from ml.prediction.predictor import ValidationError, VehiclePricePredictor
-from ml.prediction.uncertainty import UncertaintyEstimator, ValuationRange
+from ml.prediction.uncertainty import UncertaintyEstimator
 
 logger = logging.getLogger(__name__)
 

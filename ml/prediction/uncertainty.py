@@ -8,7 +8,7 @@ This represents empirical tree dispersion, NOT a statistically guaranteed confid
 
 from dataclasses import dataclass
 import logging
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, Optional
 
 import numpy as np
 import pandas as pd
