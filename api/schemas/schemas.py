@@ -57,6 +57,10 @@ class VehicleValuationRequest(BaseModel):
 
 
 class PredictionRangeResponse(BaseModel):
+    """
+    Indicative model-based prediction range representing empirical RandomForest tree dispersion.
+    Not a statistically guaranteed confidence interval.
+    """
     estimate: float
     lower: float
     upper: float

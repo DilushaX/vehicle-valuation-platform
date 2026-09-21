@@ -29,12 +29,11 @@ The system continuously tracks vehicle listings (primarily from **Riyasewana**),
    - Returns Top-K matching vehicles with similarity score percentages (e.g. 94%, 91%).
 
 5. **Machine Learning Valuation & Explainable AI (SHAP)**:
-   - Category-specific regression models (Gradient Boosting, Random Forest, Ridge, XGBoost).
-   - Outputs: **Estimated Market Asking Value**, **Estimated Market Range (Confidence Interval)**, and **Confidence Rating** (High/Medium/Low).
-   - "Insufficient Market Data" safety fallback for sparse models.
-   - **SHAP TreeExplainer** factor breakdown in Sri Lankan Rupees.
-   - **Asking Price Assessment**: Classifies seller price as `BELOW MARKET RANGE`, `WITHIN MARKET RANGE`, or `ABOVE MARKET RANGE`.
-   - Data-driven negotiation context with explicit legal disclaimers.
+   - Category-specific regression models (e.g. Random Forest with log target transform).
+   - Outputs: **Estimated Market Asking Price**, **Indicative Model-Based Prediction Range**, and **Factor Attribution (Tree SHAP)**.
+   - Robust fallback mechanisms for sparse categories.
+   - **SHAP TreeExplainer** feature contribution breakdown in Sri Lankan Rupees.
+   - Explicit disclaimers regarding unobserved physical conditions and asking price scope.
 
 6. **Interactive 10-Tab Streamlit Dashboard**:
    - Overview KPIs, Category Comparison, Market Analytics, Market Trends, Model Deep-Dive, Comparable Finder, AI Valuation & SHAP Waterfall, Price Assessment, Data Quality Audit, and System Monitoring.
@@ -834,7 +833,7 @@ docker-compose up --build
 
 | Method | Endpoint | Description |
 | :--- | :--- | :--- |
-| `POST` | `/api/v1/valuation/predict` | ML Price Valuation, Range, Confidence & SHAP Factor Breakdown |
+| `POST` | `/api/valuation/predict` | ML Asking Price Valuation, Indicative Range & Tree SHAP Attribution |
 | `POST` | `/api/v1/comparables/search` | Multi-attribute similarity search returning top matching listings |
 | `GET` | `/api/v1/analytics/overview` | High-level market KPIs (Median/Average prices, top makes & models) |
 | `GET` | `/api/v1/analytics/brands` | Brand listing volumes, price statistics, market share % |

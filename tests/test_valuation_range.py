@@ -107,3 +107,16 @@ def test_direct_uncertainty_estimator(trained_predictor, sample_car):
     summary_str = val_range.format_summary()
     assert "Estimated Asking Price" in summary_str
     assert "Indicative Range" in summary_str
+
+
+def test_prediction_range_method_and_terminology(trained_predictor, sample_car):
+    range_dict = trained_predictor.predict_with_range(sample_car, percentile_lower=10, percentile_upper=90)
+    method_str = range_dict["method"].lower()
+
+    # Verify method clearly identifies empirical dispersion
+    assert "empirical dispersion" in method_str or "randomforest" in method_str
+    # Verify no claims of statistical guarantees or confidence intervals
+    assert "statistically guaranteed" not in method_str
+    assert "guaranteed" not in method_str
+    assert "confidence interval" not in method_str
+

@@ -1,8 +1,9 @@
 """
-Model-Based Valuation Prediction Range and Uncertainty Estimation.
+Indicative Model-Based Valuation Prediction Range and Uncertainty Estimation.
 
-Calculates indicative prediction intervals reflecting model disagreement
-across individual decision trees in a Random Forest ensemble or residual variance.
+Calculates indicative prediction ranges reflecting empirical model dispersion
+across individual decision trees in a Random Forest ensemble.
+This represents empirical tree dispersion, NOT a statistically guaranteed confidence interval.
 """
 
 from dataclasses import dataclass
@@ -23,8 +24,8 @@ class ValuationRange:
     Structured model-based valuation range.
     
     Note:
-    This is an indicative prediction range representing tree dispersion
-    or model uncertainty. It is NOT a guaranteed statistical confidence interval.
+    This is an indicative model-based prediction range representing empirical
+    Random Forest tree dispersion. It is NOT a statistically guaranteed confidence interval.
     """
     estimate: float
     lower_bound: float
