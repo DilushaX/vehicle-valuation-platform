@@ -218,3 +218,26 @@ def test_find_comparables_live_database(query_car):
         d = comp.to_dict()
         assert "listing_id" in d
         assert "similarity_percentage" in d
+
+
+def test_similarity_score_semantics_and_attribute_weights():
+    engine = ComparableVehicleEngine()
+    # 1. Verify weights sum to 1.00
+    total_weights = (
+        engine.WEIGHT_BRAND
+        + engine.WEIGHT_MODEL
+        + engine.WEIGHT_YEAR
+        + engine.WEIGHT_MILEAGE
+        + engine.WEIGHT_CC
+        + engine.WEIGHT_TRANSMISSION
+        + engine.WEIGHT_FUEL
+        + engine.WEIGHT_DISTRICT
+        + engine.WEIGHT_CONDITION
+    )
+    assert total_weights == pytest.approx(1.0, rel=1e-5)
+
+    # 2. Verify engine docstring semantics clarify specification distance
+    doc = ComparableVehicleEngine.__doc__.lower()
+    assert "specification alignment" in doc
+    assert "not represent prediction confidence" in doc
+

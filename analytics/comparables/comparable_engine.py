@@ -4,12 +4,17 @@ Comparable Vehicle Search Engine.
 Retrieves and ranks similar market listings from the PostgreSQL database using
 a weighted multi-attribute similarity scoring model. Prioritizes strong market
 identity signals (Category, Brand, Model) followed by physical specifications
-(Manufacture Year / Age, Mileage, Engine CC, Fuel, Transmission, District).
+(Manufacture Year / Age, Mileage, Engine CC, Fuel, Transmission, District, Condition).
 
-IMPORTANT:
-The similarity score is a mathematical distance/similarity metric reflecting
-specification alignment. It is NOT a valuation accuracy score, model confidence
-rating, or indicator of vehicle condition.
+IMPORTANT SEMANTIC DEFINITION:
+The similarity score represents multi-attribute specification distance between
+the requested vehicle and candidate listings based on implemented feature weights.
+It is NOT:
+- prediction confidence
+- valuation confidence
+- probability of correctness
+- price accuracy
+- likelihood of being the same physical vehicle
 """
 
 from dataclasses import asdict, dataclass
@@ -31,6 +36,10 @@ logger = logging.getLogger(__name__)
 class ComparableVehicle:
     """
     Representation of a comparable vehicle retrieved from market listings.
+    
+    The similarity score represents specification alignment relative to the requested vehicle
+    based on weighted feature distances. It does NOT represent prediction confidence, price
+    accuracy, or identity probability.
     """
     listing_id: str
     category: str
@@ -69,6 +78,10 @@ class ComparableVehicle:
 class ComparableVehicleEngine:
     """
     Retrieves and ranks comparable vehicle listings for valuation reference.
+    
+    The similarity score measures feature-level specification alignment based on
+    implemented attribute weights. It does NOT represent prediction confidence,
+    valuation accuracy, or probability of correctness.
     
     Attribute Weights:
     - Brand (Make): 0.25
