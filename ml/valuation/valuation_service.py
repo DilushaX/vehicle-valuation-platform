@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 
 STANDARD_VALUATION_LIMITATIONS = [
     "This valuation estimates the seller advertised asking price on Riyasewana, NOT the confirmed transaction or final settlement price.",
-    "Actual negotiated selling prices in Sri Lanka typically settle 5% to 15% below advertised asking prices depending on offline negotiation and payment terms.",
+    "Actual negotiated selling prices may differ from advertised asking prices because the collected dataset does not contain verified final transaction prices.",
     "The underlying valuation model was trained on an experimental benchmark dataset of 113 verified ML-eligible records across 8 vehicle categories; sparse categories exhibit higher variance.",
     "The indicative prediction range reflects ensemble decision tree dispersion, NOT a legally or financially guaranteed appraisal.",
     "Physical vehicle condition, accidental history, battery/engine health, and registration documentation are not observed and may substantially alter vehicle value.",

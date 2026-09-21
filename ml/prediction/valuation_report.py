@@ -129,7 +129,7 @@ class ValuationReportFormatter:
             "IMPORTANT NOTICE & DISCLAIMERS:",
             "  * This estimate models seller advertised asking prices on Riyasewana.",
             "  * It is NOT a confirmed transaction or settlement price.",
-            "  * Actual negotiated prices in Sri Lanka typically settle lower.",
+            "  * Actual negotiated selling prices may differ from advertised asking prices.",
             "  * Model-based range reflects tree dispersion, not a guaranteed appraisal.",
             "============================================================",
         ])
@@ -166,7 +166,7 @@ class ValuationReportFormatter:
             "",
             "> [!IMPORTANT]",
             "> **Asking Price Notice**: This estimate reflects seller advertised asking prices observed on Riyasewana, ",
-            "> **NOT** confirmed transaction or settlement values. Actual finalized transaction prices are subject to offline negotiation.",
+            "> **NOT** confirmed transaction or settlement values. Actual negotiated selling prices may differ from advertised asking prices because the collected dataset does not contain verified final transaction prices.",
             "",
             "---",
             "",
