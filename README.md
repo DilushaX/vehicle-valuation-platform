@@ -720,21 +720,21 @@ curl -X POST http://localhost:8000/api/valuation/predict \
       "value": "Automatic",
       "contribution": 0.6673,
       "direction": "positive",
-      "description": "Transmission (Automatic) contributed positively to the estimated asking price."
+      "description": "Transmission (Automatic) contributed positively to the model prediction."
     },
     {
       "feature": "brand",
       "value": "Toyota",
       "contribution": 0.4541,
       "direction": "positive",
-      "description": "Brand (Toyota) contributed positively to the estimated asking price."
+      "description": "Brand (Toyota) contributed positively to the model prediction."
     },
     {
       "feature": "engine_cc",
       "value": "1,500 cc",
       "contribution": 0.1681,
       "direction": "positive",
-      "description": "Engine Cc (1,500 cc) contributed positively to the estimated asking price."
+      "description": "Engine Cc (1,500 cc) contributed positively to the model prediction."
     }
   ],
   "comparables": [

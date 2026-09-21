@@ -109,3 +109,19 @@ def test_predictor_explain_convenience_method(trained_predictor, sample_car):
     direct_expl = trained_predictor.explain(sample_car, top_k=5)
     assert len(direct_expl) == 5
     assert direct_expl[0]["feature"] in CANONICAL_FEATURE_KEYS
+
+
+def test_shap_explanation_uses_non_causal_attribution_terminology(explainer, sample_car):
+    explanations = explainer.explain_prediction(sample_car)
+    assert len(explanations) > 0
+    for item in explanations:
+        desc = item["description"].lower()
+        # Verify non-causal attribution phrasing
+        assert "contributed" in desc
+        assert "to the model prediction" in desc
+        # Ensure no causal language
+        assert "cause" not in desc
+        assert "causes" not in desc
+        assert "increases the vehicle price" not in desc
+        assert "decreases the vehicle price" not in desc
+

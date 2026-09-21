@@ -100,7 +100,7 @@ class ModelExplainer:
                     "value": "Automatic",
                     "contribution": 0.6673,
                     "direction": "positive",
-                    "description": "Transmission (Automatic) increased the estimated asking price."
+                    "description": "Transmission (Automatic) contributed positively to the model prediction."
                 },
                 ...
             ]
@@ -172,9 +172,9 @@ class ModelExplainer:
             direction = "positive" if contrib > 0 else "negative"
 
             if direction == "positive":
-                desc = f"{feat.replace('_', ' ').title()} ({val_repr}) contributed positively to the estimated asking price."
+                desc = f"{feat.replace('_', ' ').title()} ({val_repr}) contributed positively to the model prediction."
             else:
-                desc = f"{feat.replace('_', ' ').title()} ({val_repr}) contributed negatively to the estimated asking price."
+                desc = f"{feat.replace('_', ' ').title()} ({val_repr}) contributed negatively to the model prediction."
 
             results.append({
                 "feature": feat,
@@ -238,12 +238,16 @@ class ModelExplainer:
                 direction = "negative"
 
             contrib = round(float(imp), 4) * (1.0 if direction == "positive" else -1.0)
+            if direction == "positive":
+                desc = f"{feat.replace('_', ' ').title()} ({val_repr}) contributed positively to the model prediction."
+            else:
+                desc = f"{feat.replace('_', ' ').title()} ({val_repr}) contributed negatively to the model prediction."
             results.append({
                 "feature": feat,
                 "value": val_repr,
                 "contribution": contrib,
                 "direction": direction,
-                "description": f"{feat.replace('_', ' ').title()} ({val_repr}) influenced the estimated asking price.",
+                "description": desc,
             })
 
         results.sort(key=lambda x: abs(x["contribution"]), reverse=True)
