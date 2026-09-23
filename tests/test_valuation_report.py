@@ -75,6 +75,21 @@ def mock_valuation_result():
             "average_asking_price": 15_500_000.0,
             "price_spread": 0.0,
         },
+        "audit": {
+            "model_name": "RandomForestRegressor",
+            "model_version": "1.9.1",
+            "model_status": "EXPERIMENTAL_RESEARCH_BENCHMARK",
+            "target": "asking_price",
+            "generated_at": "2026-09-23T16:25:00+00:00",
+            "feature_schema_version": "1.0",
+            "valuation_method": "RandomForest asking-price regression with Tree SHAP explainability",
+            "comparable_method": "Multi-attribute weighted similarity scoring",
+            "prediction_range_method": "individual_tree_percentiles",
+        },
+        "reproducibility": {
+            "fingerprint": "a1b2c3d4e5f67890123456789abcdef0123456789abcdef0123456789abcdef0",
+            "algorithm": "SHA-256",
+        },
         "limitations": [
             "This estimate models seller advertised asking prices on Riyasewana.",
             "Actual transaction prices may differ.",
@@ -121,6 +136,8 @@ def test_format_text_output(mock_valuation_result, mock_vehicle_spec):
     assert "VALUATION DATA QUALITY" in text
     assert "11 / 11" in text
     assert "COMPLETE" in text
+    assert "VALUATION AUDIT & REPRODUCIBILITY" in text
+    assert "a1b2c3d4" in text
 
 
 def test_format_markdown_output(mock_valuation_result, mock_vehicle_spec):
@@ -134,8 +151,11 @@ def test_format_markdown_output(mock_valuation_result, mock_vehicle_spec):
     assert "Comparable Market Summary" in md
     assert "Valuation Data Quality" in md
     assert "COMPLETE" in md
+    assert "Valuation Audit & Reproducibility" in md
+    assert "a1b2c3d4" in md
     assert "[!IMPORTANT]" in md
     assert "Asking Price Notice" in md
+
 
 
 

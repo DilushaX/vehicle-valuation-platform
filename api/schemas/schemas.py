@@ -121,6 +121,23 @@ class ComparableMarketSummaryResponse(BaseModel):
     price_spread: Optional[float] = Field(None, description="Spread between maximum and minimum asking price in LKR")
 
 
+class ValuationAuditResponse(BaseModel):
+    model_name: str = Field(..., description="Name of the underlying regression model architecture")
+    model_version: Optional[str] = Field(None, description="Model training version or timestamp identifier")
+    model_status: str = Field(..., description="Research/production deployment readiness state")
+    target: str = Field("asking_price", description="Target variable predicted by the model")
+    generated_at: str = Field(..., description="UTC ISO-8601 timestamp of valuation generation")
+    feature_schema_version: str = Field("1.0", description="Feature schema definition version")
+    valuation_method: str = Field(..., description="Core asking-price estimation methodology")
+    comparable_method: str = Field(..., description="Comparable vehicle retrieval scoring methodology")
+    prediction_range_method: str = Field(..., description="Model uncertainty/range estimation methodology")
+
+
+class ValuationReproducibilityResponse(BaseModel):
+    fingerprint: str = Field(..., description="Deterministic SHA-256 hash of valuation input and model configuration")
+    algorithm: str = Field("SHA-256", description="Cryptographic hashing algorithm used for reproducibility")
+
+
 class VehicleValuationResponse(BaseModel):
     estimated_asking_price_lkr: float
     prediction_range_lkr: PredictionRangeResponse
@@ -133,7 +150,16 @@ class VehicleValuationResponse(BaseModel):
         description="Descriptive market summary of asking prices among retrieved comparables",
     )
     data_quality: ValuationDataQualityResponse = Field(default_factory=lambda: ValuationDataQualityResponse(status="COMPLETE", provided_features=11, expected_features=11, missing_features=[], comparable_count=0))
+    audit: Optional[ValuationAuditResponse] = Field(
+        default=None,
+        description="Transparent audit metadata documenting model version and methodologies",
+    )
+    reproducibility: Optional[ValuationReproducibilityResponse] = Field(
+        default=None,
+        description="Deterministic reproducibility fingerprint identifying equivalent valuation inputs and configuration",
+    )
     limitations: List[str]
+
 
 
 

@@ -669,6 +669,19 @@ The **Explainable Valuation Prediction Layer** (`ml/valuation/`, `ml/explainabil
    - Evaluates multi-attribute weighted similarity: Brand (0.25), Model (0.25), Manufacture Year/Age (0.14), Mileage (0.10), Engine CC (0.08), Transmission (0.06), Fuel Type (0.04), District (0.04), Condition (0.04).
    - Excludes ML-ineligible records, unpriced listings, and query vehicle self-matches.
    - Returns similarity scores normalized between 0.0 and 1.0 (0% to 100%).
+5. **Valuation Data Quality Indicators**:
+   - Assesses feature completeness across core and optional input attributes.
+   - Does NOT report arbitrary confidence percentages or statistical guarantees.
+6. **Comparable Market Summary**:
+   - Computes distribution metrics (min, median, max, average, count) across verified comparable listings.
+7. **Valuation Audit & Reproducibility**:
+   - **Auditable via Model Metadata**: Every valuation result embeds non-sensitive metadata (`model_name`, `model_version`, `model_status`, `target`, `generated_at`, `feature_schema_version`, `valuation_method`, `comparable_method`, `prediction_range_method`) sourced directly from `model_metadata.json`.
+   - **Deterministic Reproducibility Fingerprint**: Implements SHA-256 hashing over canonicalized, key-sorted vehicle inputs and model configuration. Identical inputs and model artifacts generate the exact same fingerprint, while changing input parameters alters the fingerprint.
+   - **Important System Clarifications & Limitations**:
+     - **Not a Security Signature**: The reproducibility fingerprint is an algorithmic input/model configuration identifier for provenance tracking, NOT a cryptographic security signature, appraisal guarantee, or anti-tamper seal.
+     - **Experimental Research Benchmark**: The valuation pipeline is an experimental research benchmark trained on verified ML-eligible listings; it is not a production enterprise appraisal service.
+     - **Asking Price vs Transaction Price**: The model predicts advertised asking price observed on online listings, NOT negotiated or verified final transaction prices.
+     - **Indicative Range vs Confidence Interval**: The prediction range represents empirical tree dispersion across the Random Forest ensemble (10th–90th percentiles), NOT a statistical confidence interval.
 
 #### 3. REST API Reference: `POST /api/valuation/predict`
 

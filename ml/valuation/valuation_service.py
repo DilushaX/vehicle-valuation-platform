@@ -27,6 +27,7 @@ from analytics.comparables.market_summary import (
 from ml.explainability.explainer import ModelExplainer
 from ml.prediction.predictor import ValidationError, VehiclePricePredictor
 from ml.prediction.uncertainty import UncertaintyEstimator
+from ml.valuation.audit import create_valuation_audit
 from ml.valuation.data_quality import ValuationDataQuality, assess_valuation_data_quality
 
 logger = logging.getLogger(__name__)
@@ -54,6 +55,8 @@ class ValuationResult:
     limitations: List[str]
     data_quality: Optional[Dict[str, Any]] = None
     comparable_market_summary: Optional[Dict[str, Any]] = None
+    audit: Optional[Dict[str, Any]] = None
+    reproducibility: Optional[Dict[str, Any]] = None
 
     def to_dict(self) -> Dict[str, Any]:
         dq = self.data_quality
@@ -74,7 +77,15 @@ class ValuationResult:
         elif hasattr(cms, "to_dict"):
             cms = cms.to_dict()
 
-        return {
+        aud = self.audit
+        if aud is not None and hasattr(aud, "to_dict"):
+            aud = aud.to_dict()
+
+        rep = self.reproducibility
+        if rep is not None and hasattr(rep, "to_dict"):
+            rep = rep.to_dict()
+
+        out: Dict[str, Any] = {
             "estimated_asking_price_lkr": round(float(self.estimated_asking_price_lkr), 2),
             "prediction_range_lkr": self.prediction_range_lkr,
             "currency": self.currency,
@@ -85,6 +96,13 @@ class ValuationResult:
             "data_quality": dq,
             "limitations": self.limitations,
         }
+        if aud is not None:
+            out["audit"] = aud
+        if rep is not None:
+            out["reproducibility"] = rep
+
+        return out
+
 
 
 
@@ -219,7 +237,15 @@ class VehicleValuationService:
             "status": meta.get("status", "EXPERIMENTAL_RESEARCH_BENCHMARK"),
         }
 
-        # 9. Construct Unified Result
+        # 9. Valuation Audit & Reproducibility Metadata
+        audit_info = create_valuation_audit(
+            vehicle_input=df_formatted,
+            model_metadata=meta,
+            percentile_lower=percentile_lower,
+            percentile_upper=percentile_upper,
+        )
+
+        # 10. Construct Unified Result
         return ValuationResult(
             estimated_asking_price_lkr=point_estimate,
             prediction_range_lkr=val_range.to_dict(),
@@ -230,6 +256,8 @@ class VehicleValuationService:
             limitations=STANDARD_VALUATION_LIMITATIONS,
             data_quality=dq.to_dict(),
             comparable_market_summary=market_summary.to_dict(),
+            audit=audit_info["audit"],
+            reproducibility=audit_info["reproducibility"],
         )
 
     def plot_explanation(

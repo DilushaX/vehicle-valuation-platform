@@ -111,6 +111,14 @@ def test_complete_valuation_request(valuation_service, valid_car_request):
     assert cms["min_asking_price"] <= cms["max_asking_price"]
     assert cms["price_spread"] == round(cms["max_asking_price"] - cms["min_asking_price"], 2)
 
+    # 9. Audit and Reproducibility
+    assert "audit" in d
+    assert d["audit"]["model_name"] == "RandomForestRegressor"
+    assert d["audit"]["target"] == "asking_price"
+    assert "reproducibility" in d
+    assert len(d["reproducibility"]["fingerprint"]) == 64
+
+
 
 
 

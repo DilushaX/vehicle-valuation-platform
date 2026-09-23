@@ -165,6 +165,34 @@ class ValuationReportFormatter:
             "------------------------------------------------------------",
         ])
 
+        # Valuation Audit & Reproducibility
+        audit = data.get("audit", {})
+        rep = data.get("reproducibility", {})
+        if audit or rep:
+            m_name = audit.get("model_name", "RandomForestRegressor")
+            m_ver = audit.get("model_version")
+            m_str = f"{m_name} ({m_ver})" if m_ver else m_name
+            target_str = audit.get("target", "asking_price")
+            m_status_str = audit.get("model_status", "EXPERIMENTAL_RESEARCH_BENCHMARK")
+            gen_str = audit.get("generated_at", "N/A")
+            fingerprint = rep.get("fingerprint", "N/A")
+            range_method = audit.get("prediction_range_method", "individual_tree_percentiles")
+            comp_method = audit.get("comparable_method", "Multi-attribute weighted similarity scoring")
+
+            lines.extend([
+                "",
+                "------------------------------------------------------------",
+                "VALUATION AUDIT & REPRODUCIBILITY:",
+                f"  Model                       : {m_str}",
+                f"  Target                      : Advertised asking price ({target_str})",
+                f"  Model Status                : {m_status_str}",
+                f"  Generated                   : {gen_str}",
+                f"  Reproducibility Fingerprint : {fingerprint}",
+                f"  Prediction Range Method     : {range_method}",
+                f"  Comparable Method           : {comp_method}",
+                "------------------------------------------------------------",
+            ])
+
         # Limitations
         lines.extend([
             "",
@@ -288,6 +316,40 @@ class ValuationReportFormatter:
             f"- **Input Features**: {prov_val} / {exp_val}",
             f"- **Missing Features**: {missing_str}",
             f"- **Comparable Listings**: {comps_count}",
+        ])
+
+        # Valuation Audit & Reproducibility
+        audit = data.get("audit", {})
+        rep = data.get("reproducibility", {})
+        if audit or rep:
+            m_name = audit.get("model_name", "RandomForestRegressor")
+            m_ver = audit.get("model_version")
+            m_str = f"{m_name} ({m_ver})" if m_ver else m_name
+            target_str = audit.get("target", "asking_price")
+            m_status_str = audit.get("model_status", "EXPERIMENTAL_RESEARCH_BENCHMARK")
+            gen_str = audit.get("generated_at", "N/A")
+            fingerprint = rep.get("fingerprint", "N/A")
+            range_method = audit.get("prediction_range_method", "individual_tree_percentiles")
+            comp_method = audit.get("comparable_method", "Multi-attribute weighted similarity scoring")
+
+            md.extend([
+                "",
+                "---",
+                "",
+                "### 🛡️ Valuation Audit & Reproducibility",
+                f"- **Model**: `{m_str}`",
+                f"- **Target**: Advertised asking price (`{target_str}`)",
+                f"- **Model Status**: `{m_status_str}`",
+                f"- **Generated**: `{gen_str}`",
+                f"- **Reproducibility Fingerprint**: `{fingerprint}` (SHA-256)",
+                f"- **Prediction Range Method**: {range_method}",
+                f"- **Comparable Method**: {comp_method}",
+                "",
+                "> [!NOTE]",
+                "> **Audit Notice**: The reproducibility fingerprint identifies equivalent valuation configurations and inputs. It does not represent a cryptographic security signature or financial appraisal guarantee.",
+            ])
+
+        md.extend([
             "",
             "---",
             "",
@@ -296,4 +358,5 @@ class ValuationReportFormatter:
         ])
 
         return "\n".join(md)
+
 
