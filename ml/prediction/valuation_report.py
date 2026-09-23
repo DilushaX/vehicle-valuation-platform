@@ -122,6 +122,26 @@ class ValuationReportFormatter:
         else:
             lines.append("  (No close comparables found in database)")
 
+        # Data Quality
+        dq = data.get("data_quality", {})
+        status_val = dq.get("status", "COMPLETE")
+        prov_val = dq.get("provided_features", 11)
+        exp_val = dq.get("expected_features", 11)
+        missing_val = dq.get("missing_features", [])
+        missing_str = ", ".join(missing_val) if missing_val else "None"
+        comps_count = dq.get("comparable_count", len(comparables))
+
+        lines.extend([
+            "",
+            "------------------------------------------------------------",
+            "VALUATION DATA QUALITY:",
+            f"  Status              : {status_val}",
+            f"  Input Features      : {prov_val} / {exp_val}",
+            f"  Missing Features    : {missing_str}",
+            f"  Comparable Listings : {comps_count}",
+            "------------------------------------------------------------",
+        ])
+
         # Limitations
         lines.extend([
             "",
@@ -204,7 +224,25 @@ class ValuationReportFormatter:
             sim = comp.get("similarity_percentage", 0.0)
             md.append(f"| `{lid}` | **{veh}** | {yr}, {km} | {dist} | Rs. {price:,.0f} | **{sim:.0f}%** |")
 
+        # Data Quality Section
+        dq = data.get("data_quality", {})
+        status_val = dq.get("status", "COMPLETE")
+        prov_val = dq.get("provided_features", 11)
+        exp_val = dq.get("expected_features", 11)
+        missing_val = dq.get("missing_features", [])
+        missing_str = ", ".join(missing_val) if missing_val else "None"
+        comps_count = dq.get("comparable_count", len(data.get("comparables", [])))
+        badge = "🟢 COMPLETE" if status_val == "COMPLETE" else "🟡 PARTIAL"
+
         md.extend([
+            "",
+            "---",
+            "",
+            "### 📋 Valuation Data Quality",
+            f"- **Status**: {badge}",
+            f"- **Input Features**: {prov_val} / {exp_val}",
+            f"- **Missing Features**: {missing_str}",
+            f"- **Comparable Listings**: {comps_count}",
             "",
             "---",
             "",
@@ -213,3 +251,4 @@ class ValuationReportFormatter:
         ])
 
         return "\n".join(md)
+

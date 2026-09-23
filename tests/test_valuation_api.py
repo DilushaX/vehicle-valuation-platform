@@ -75,6 +75,16 @@ def test_successful_valuation_api(valid_car_payload):
     # Limitations
     assert len(data["limitations"]) > 0
 
+    # Data Quality
+    assert "data_quality" in data
+    dq = data["data_quality"]
+    assert dq["status"] == "COMPLETE"
+    assert dq["provided_features"] == 11
+    assert dq["expected_features"] == 11
+    assert dq["missing_features"] == []
+    assert isinstance(dq["comparable_count"], int)
+
+
 
 def test_manufacture_year_payload(valid_car_payload):
     payload = valid_car_payload.copy()

@@ -97,6 +97,12 @@ def test_complete_valuation_request(valuation_service, valid_car_request):
     assert any("not a confirmed transaction" in lim.lower() or "not the confirmed transaction" in lim.lower() for lim in d["limitations"])
     assert any("physical condition" in lim.lower() for lim in d["limitations"])
 
+    # 7. Data Quality
+    assert "data_quality" in d
+    assert d["data_quality"]["status"] == "COMPLETE"
+    assert d["data_quality"]["provided_features"] == 11
+
+
 
 def test_missing_fields_validation(valuation_service, valid_car_request):
     bad = valid_car_request.copy()

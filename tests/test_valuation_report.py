@@ -60,6 +60,13 @@ def mock_valuation_result():
                 "similarity_percentage": 96.0,
             }
         ],
+        "data_quality": {
+            "status": "COMPLETE",
+            "provided_features": 11,
+            "expected_features": 11,
+            "missing_features": [],
+            "comparable_count": 1,
+        },
         "limitations": [
             "This estimate models seller advertised asking prices on Riyasewana.",
             "Actual transaction prices may differ.",
@@ -101,6 +108,9 @@ def test_format_text_output(mock_valuation_result, mock_vehicle_spec):
     assert "Transmission (Automatic)" in text
     assert "12293566" in text
     assert "NOT a confirmed transaction" in text
+    assert "VALUATION DATA QUALITY" in text
+    assert "11 / 11" in text
+    assert "COMPLETE" in text
 
 
 def test_format_markdown_output(mock_valuation_result, mock_vehicle_spec):
@@ -111,8 +121,11 @@ def test_format_markdown_output(mock_valuation_result, mock_vehicle_spec):
     assert "Rs. 8,720,000 – Rs. 24,120,000" in md
     assert "| **Transmission** | Automatic | 🟢 Positive" in md
     assert "| `12293566` |" in md
+    assert "Valuation Data Quality" in md
+    assert "COMPLETE" in md
     assert "[!IMPORTANT]" in md
     assert "Asking Price Notice" in md
+
 
 
 def test_formatter_handles_empty_or_minimal_data():

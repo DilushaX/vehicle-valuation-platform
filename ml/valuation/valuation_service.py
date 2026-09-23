@@ -23,6 +23,7 @@ from analytics.comparables.comparable_engine import ComparableVehicleEngine
 from ml.explainability.explainer import ModelExplainer
 from ml.prediction.predictor import ValidationError, VehiclePricePredictor
 from ml.prediction.uncertainty import UncertaintyEstimator
+from ml.valuation.data_quality import ValuationDataQuality, assess_valuation_data_quality
 
 logger = logging.getLogger(__name__)
 
@@ -47,8 +48,21 @@ class ValuationResult:
     explanation: List[Dict[str, Any]]
     comparables: List[Dict[str, Any]]
     limitations: List[str]
+    data_quality: Optional[Dict[str, Any]] = None
 
     def to_dict(self) -> Dict[str, Any]:
+        dq = self.data_quality
+        if dq is None:
+            dq = {
+                "status": "COMPLETE",
+                "provided_features": 11,
+                "expected_features": 11,
+                "missing_features": [],
+                "comparable_count": len(self.comparables),
+            }
+        elif hasattr(dq, "to_dict"):
+            dq = dq.to_dict()
+
         return {
             "estimated_asking_price_lkr": round(float(self.estimated_asking_price_lkr), 2),
             "prediction_range_lkr": self.prediction_range_lkr,
@@ -56,8 +70,10 @@ class ValuationResult:
             "model": self.model,
             "explanation": self.explanation,
             "comparables": self.comparables,
+            "data_quality": dq,
             "limitations": self.limitations,
         }
+
 
     def plot_explanation(
         self,
@@ -170,7 +186,13 @@ class VehicleValuationService:
         )
         comparables_dict_list = [c.to_dict() for c in comps]
 
-        # 6. Extract Model Metadata
+        # 6. Assess Valuation Input Data Quality
+        dq = assess_valuation_data_quality(
+            formatted_df=df_formatted,
+            comparable_count=len(comparables_dict_list),
+        )
+
+        # 7. Extract Model Metadata
         meta = self.predictor.metadata or {}
         model_info = {
             "name": meta.get("model_name", "RandomForestRegressor"),
@@ -181,7 +203,7 @@ class VehicleValuationService:
             "status": meta.get("status", "EXPERIMENTAL_RESEARCH_BENCHMARK"),
         }
 
-        # 7. Construct Unified Result
+        # 8. Construct Unified Result
         return ValuationResult(
             estimated_asking_price_lkr=point_estimate,
             prediction_range_lkr=val_range.to_dict(),
@@ -190,6 +212,7 @@ class VehicleValuationService:
             explanation=explanations,
             comparables=comparables_dict_list,
             limitations=STANDARD_VALUATION_LIMITATIONS,
+            data_quality=dq.to_dict(),
         )
 
     def plot_explanation(

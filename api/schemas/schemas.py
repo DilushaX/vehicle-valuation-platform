@@ -104,6 +104,14 @@ class ModelMetadataResponse(BaseModel):
     status: str
 
 
+class ValuationDataQualityResponse(BaseModel):
+    status: str = Field(..., description="Valuation input data completeness status (COMPLETE or PARTIAL)")
+    provided_features: int = Field(..., ge=0, description="Count of valid input features provided")
+    expected_features: int = Field(..., ge=0, description="Total count of features expected by the valuation model")
+    missing_features: List[str] = Field(default_factory=list, description="List of expected features that were omitted or incomplete")
+    comparable_count: int = Field(..., ge=0, description="Number of comparable market listings retrieved")
+
+
 class VehicleValuationResponse(BaseModel):
     estimated_asking_price_lkr: float
     prediction_range_lkr: PredictionRangeResponse
@@ -111,7 +119,9 @@ class VehicleValuationResponse(BaseModel):
     model: ModelMetadataResponse
     explanation: List[ExplanationFactorResponse]
     comparables: List[ComparableVehicleResponse]
+    data_quality: ValuationDataQualityResponse = Field(default_factory=lambda: ValuationDataQualityResponse(status="COMPLETE", provided_features=11, expected_features=11, missing_features=[], comparable_count=0))
     limitations: List[str]
+
 
 
 class ErrorResponse(BaseModel):
