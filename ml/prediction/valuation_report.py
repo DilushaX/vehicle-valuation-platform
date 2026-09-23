@@ -122,8 +122,31 @@ class ValuationReportFormatter:
         else:
             lines.append("  (No close comparables found in database)")
 
+        # Comparable Market Summary
+        cms = data.get("comparable_market_summary")
+        if not cms and comparables:
+            from analytics.comparables.market_summary import create_comparable_market_summary
+            cms = create_comparable_market_summary(comparables).to_dict()
+
+        if cms and cms.get("comparable_count", 0) > 0:
+            c_cnt = cms.get("comparable_count")
+            min_p = round_sensible_lkr(cms.get("min_asking_price", 0.0))
+            max_p = round_sensible_lkr(cms.get("max_asking_price", 0.0))
+            med_p = round_sensible_lkr(cms.get("median_asking_price", 0.0))
+            avg_p = round_sensible_lkr(cms.get("average_asking_price", 0.0))
+            spr_p = round_sensible_lkr(cms.get("price_spread", 0.0))
+            lines.extend([
+                "",
+                "COMPARABLE MARKET SUMMARY:",
+                f"  Based on the {c_cnt} returned comparable vehicles, advertised asking prices range from",
+                f"  Rs. {min_p:,.0f} to Rs. {max_p:,.0f}, with a median asking price of Rs. {med_p:,.0f}",
+                f"  (Average: Rs. {avg_p:,.0f}, Price Spread: Rs. {spr_p:,.0f}).",
+                "  * Note: Based on advertised asking prices, not verified transaction-price data.",
+            ])
+
         # Data Quality
         dq = data.get("data_quality", {})
+
         status_val = dq.get("status", "COMPLETE")
         prov_val = dq.get("provided_features", 11)
         exp_val = dq.get("expected_features", 11)
@@ -223,6 +246,28 @@ class ValuationReportFormatter:
             price = round_sensible_lkr(comp.get("asking_price", 0.0))
             sim = comp.get("similarity_percentage", 0.0)
             md.append(f"| `{lid}` | **{veh}** | {yr}, {km} | {dist} | Rs. {price:,.0f} | **{sim:.0f}%** |")
+
+        # Comparable Market Summary
+        cms = data.get("comparable_market_summary")
+        if not cms and data.get("comparables"):
+            from analytics.comparables.market_summary import create_comparable_market_summary
+            cms = create_comparable_market_summary(data.get("comparables")).to_dict()
+
+        if cms and cms.get("comparable_count", 0) > 0:
+            c_cnt = cms.get("comparable_count")
+            min_p = round_sensible_lkr(cms.get("min_asking_price", 0.0))
+            max_p = round_sensible_lkr(cms.get("max_asking_price", 0.0))
+            med_p = round_sensible_lkr(cms.get("median_asking_price", 0.0))
+            avg_p = round_sensible_lkr(cms.get("average_asking_price", 0.0))
+            spr_p = round_sensible_lkr(cms.get("price_spread", 0.0))
+            md.extend([
+                "",
+                "#### 📊 Comparable Market Summary",
+                f"Based on the **{c_cnt}** returned comparable vehicles, advertised asking prices range from **Rs. {min_p:,.0f}** to **Rs. {max_p:,.0f}**, with a median asking price of **Rs. {med_p:,.0f}** (Average: Rs. {avg_p:,.0f}, Price Spread: Rs. {spr_p:,.0f}).",
+                "",
+                "> [!NOTE]",
+                "> **Asking Price Notice**: This summary is based strictly on seller advertised asking prices from retrieved comparables and does not represent verified transaction prices or statistical confidence.",
+            ])
 
         # Data Quality Section
         dq = data.get("data_quality", {})

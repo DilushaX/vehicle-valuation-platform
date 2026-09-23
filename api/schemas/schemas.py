@@ -112,6 +112,15 @@ class ValuationDataQualityResponse(BaseModel):
     comparable_count: int = Field(..., ge=0, description="Number of comparable market listings retrieved")
 
 
+class ComparableMarketSummaryResponse(BaseModel):
+    comparable_count: int = Field(..., ge=0, description="Count of comparable market listings included in the summary")
+    min_asking_price: Optional[float] = Field(None, description="Minimum advertised asking price among comparables in LKR")
+    max_asking_price: Optional[float] = Field(None, description="Maximum advertised asking price among comparables in LKR")
+    median_asking_price: Optional[float] = Field(None, description="Median advertised asking price among comparables in LKR")
+    average_asking_price: Optional[float] = Field(None, description="Arithmetic mean advertised asking price among comparables in LKR")
+    price_spread: Optional[float] = Field(None, description="Spread between maximum and minimum asking price in LKR")
+
+
 class VehicleValuationResponse(BaseModel):
     estimated_asking_price_lkr: float
     prediction_range_lkr: PredictionRangeResponse
@@ -119,8 +128,13 @@ class VehicleValuationResponse(BaseModel):
     model: ModelMetadataResponse
     explanation: List[ExplanationFactorResponse]
     comparables: List[ComparableVehicleResponse]
+    comparable_market_summary: Optional[ComparableMarketSummaryResponse] = Field(
+        default=None,
+        description="Descriptive market summary of asking prices among retrieved comparables",
+    )
     data_quality: ValuationDataQualityResponse = Field(default_factory=lambda: ValuationDataQualityResponse(status="COMPLETE", provided_features=11, expected_features=11, missing_features=[], comparable_count=0))
     limitations: List[str]
+
 
 
 

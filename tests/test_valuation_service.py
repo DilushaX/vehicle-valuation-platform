@@ -102,6 +102,16 @@ def test_complete_valuation_request(valuation_service, valid_car_request):
     assert d["data_quality"]["status"] == "COMPLETE"
     assert d["data_quality"]["provided_features"] == 11
 
+    # 8. Comparable Market Summary
+    assert "comparable_market_summary" in d
+    cms = d["comparable_market_summary"]
+    assert cms["comparable_count"] == len(comps)
+    assert cms["min_asking_price"] is not None
+    assert cms["max_asking_price"] is not None
+    assert cms["min_asking_price"] <= cms["max_asking_price"]
+    assert cms["price_spread"] == round(cms["max_asking_price"] - cms["min_asking_price"], 2)
+
+
 
 
 def test_missing_fields_validation(valuation_service, valid_car_request):

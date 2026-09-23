@@ -84,6 +84,16 @@ def test_successful_valuation_api(valid_car_payload):
     assert dq["missing_features"] == []
     assert isinstance(dq["comparable_count"], int)
 
+    # Comparable Market Summary
+    assert "comparable_market_summary" in data
+    cms = data["comparable_market_summary"]
+    assert cms is not None
+    assert cms["comparable_count"] == len(data["comparables"])
+    assert cms["min_asking_price"] is not None
+    assert cms["max_asking_price"] is not None
+    assert cms["min_asking_price"] <= cms["max_asking_price"]
+
+
 
 
 def test_manufacture_year_payload(valid_car_payload):
