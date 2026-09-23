@@ -59,6 +59,32 @@ class ValuationResult:
             "limitations": self.limitations,
         }
 
+    def plot_explanation(
+        self,
+        output_path: Union[str, Path] = "data/analysis/ml/figures/valuation_feature_contributions.png",
+        top_k: Optional[int] = 10,
+        show_values: bool = True,
+    ) -> Path:
+        """
+        Generates and saves a model feature contribution plot for this valuation result.
+        
+        Args:
+            output_path: Target filesystem path for the output PNG.
+            top_k: Maximum number of contributing features to display.
+            show_values: Whether to include feature values in labels.
+            
+        Returns:
+            Path object pointing to the generated image file.
+        """
+        from ml.explainability.visualization import create_feature_contribution_plot
+        return create_feature_contribution_plot(
+            explanation=self.explanation,
+            output_path=output_path,
+            top_k=top_k,
+            show_values=show_values,
+        )
+
+
 
 class VehicleValuationService:
     """
@@ -165,3 +191,31 @@ class VehicleValuationService:
             comparables=comparables_dict_list,
             limitations=STANDARD_VALUATION_LIMITATIONS,
         )
+
+    def plot_explanation(
+        self,
+        valuation_result_or_explanation: Union[ValuationResult, List[Dict[str, Any]], Dict[str, Any]],
+        output_path: Union[str, Path] = "data/analysis/ml/figures/valuation_feature_contributions.png",
+        top_k: Optional[int] = 10,
+        show_values: bool = True,
+    ) -> Path:
+        """
+        Convenience method to render and save a model feature contribution plot.
+        
+        Args:
+            valuation_result_or_explanation: ValuationResult or list/dict containing explanation.
+            output_path: Target filesystem path for the output PNG.
+            top_k: Maximum number of contributing features to display.
+            show_values: Whether to include feature values in labels.
+            
+        Returns:
+            Path to the saved figure.
+        """
+        from ml.explainability.visualization import create_feature_contribution_plot
+        return create_feature_contribution_plot(
+            explanation=valuation_result_or_explanation,
+            output_path=output_path,
+            top_k=top_k,
+            show_values=show_values,
+        )
+
