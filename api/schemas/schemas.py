@@ -9,6 +9,16 @@ from data_pipeline.cleaning.cleaners import VehicleCleaner
 from ml.prediction.predictor import CANONICAL_CATEGORIES
 
 
+class HealthResponse(BaseModel):
+    """Liveness health check response schema."""
+    status: str = Field("ok", description="Service liveness status")
+
+
+class ReadyResponse(BaseModel):
+    """Model readiness response schema."""
+    status: str = Field("ready", description="Valuation model readiness status")
+
+
 class VehicleValuationRequest(BaseModel):
     """
     Request schema for estimating vehicle asking price.
@@ -18,8 +28,8 @@ class VehicleValuationRequest(BaseModel):
     model: str = Field(..., min_length=1, description="Vehicle model (e.g. Premio, Vezel, Fit)")
     vehicle_age: Optional[float] = Field(None, ge=0, le=100, description="Vehicle age in years (relative to 2026)")
     manufacture_year: Optional[int] = Field(None, ge=1920, le=2026, description="Year of vehicle manufacture")
-    mileage: Optional[float] = Field(None, ge=0, description="Vehicle odometer reading in kilometers")
-    engine_cc: Optional[float] = Field(None, ge=0, description="Engine capacity in cubic centimeters (cc)")
+    mileage: Optional[float] = Field(None, ge=0, le=2_000_000, description="Vehicle odometer reading in kilometers (0 to 2,000,000 km)")
+    engine_cc: Optional[float] = Field(None, ge=0, le=25_000, description="Engine capacity in cubic centimeters (0 to 25,000 cc)")
     fuel_type: str = Field(..., min_length=1, description="Fuel type (e.g. Petrol, Diesel, Hybrid, Electric)")
     transmission: str = Field(..., min_length=1, description="Transmission (e.g. Automatic, Manual)")
     district: str = Field(..., min_length=1, description="Sri Lankan administrative district (e.g. Colombo, Kandy)")
@@ -50,9 +60,14 @@ class VehicleValuationRequest(BaseModel):
         return s
 
     @model_validator(mode="after")
-    def validate_age_or_year(self) -> "VehicleValuationRequest":
+    def validate_request_bounds(self) -> "VehicleValuationRequest":
         if self.vehicle_age is None and self.manufacture_year is None:
             raise ValueError("Either 'vehicle_age' or 'manufacture_year' must be provided.")
+        if self.percentile_lower >= self.percentile_upper:
+            raise ValueError(
+                f"percentile_lower ({self.percentile_lower}) must be strictly less than "
+                f"percentile_upper ({self.percentile_upper})."
+            )
         return self
 
 
@@ -166,4 +181,4 @@ class VehicleValuationResponse(BaseModel):
 
 class ErrorResponse(BaseModel):
     detail: str
-    error_type: str
+    error_type: Optional[str] = None

@@ -39,9 +39,12 @@ def get_valuation_service() -> VehicleValuationService:
     },
     summary="Estimate Vehicle Asking Price",
     description=(
-        "Estimates market asking prices observed on Riyasewana with indicative model-based "
-        "prediction range, Tree SHAP factor attribution, and comparable vehicle matches. "
-        "This is not a confirmed transaction or final selling price."
+        "Estimates market asking prices observed on Sri Lankan vehicle listings (Riyasewana) with indicative "
+        "model-based prediction range, Tree SHAP factor attribution, and comparable vehicle matches.\n\n"
+        "**Important Operational Disclaimers**:\n"
+        "- The model estimates advertised asking price, NOT verified transaction or settlement price.\n"
+        "- It does NOT predict verified transaction price or final sale contracts.\n"
+        "- The valuation model is an experimental research benchmark trained on verified benchmark listings."
     ),
 )
 def predict_vehicle_valuation(
@@ -50,10 +53,11 @@ def predict_vehicle_valuation(
     """
     Computes explainable valuation for a vehicle listing.
     
-    This valuation estimates market asking prices observed on Riyasewana. It is not a confirmed
-    transaction or final selling price. Actual vehicle value may differ due to factors not captured
-    by the dataset, including physical condition, accident history, mechanical condition,
-    battery/engine health, and registration documentation.
+    This valuation estimates market asking prices observed on Riyasewana. It does not predict
+    verified transaction or final selling prices. The underlying valuation model is an experimental
+    research benchmark. Actual vehicle value may differ due to factors not captured by the dataset,
+    including physical condition, accident history, mechanical condition, battery/engine health,
+    and registration documentation.
     """
     try:
         service = get_valuation_service()
@@ -94,7 +98,7 @@ def predict_vehicle_valuation(
             detail=f"Invalid vehicle input: {str(e)}",
         )
     except Exception as e:
-        logger.error(f"Internal valuation processing error: {e}", exc_info=False)
+        logger.error(f"Internal valuation processing error: {e}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An unexpected error occurred during vehicle valuation.",
