@@ -35,8 +35,9 @@ The system continuously tracks vehicle listings (primarily from **Riyasewana**),
    - **SHAP TreeExplainer** feature contribution breakdown in Sri Lankan Rupees.
    - Explicit disclaimers regarding unobserved physical conditions and asking price scope.
 
-6. **Interactive 10-Tab Streamlit Dashboard**:
-   - Overview KPIs, Category Comparison, Market Analytics, Market Trends, Model Deep-Dive, Comparable Finder, AI Valuation & SHAP Waterfall, Price Assessment, Data Quality Audit, and System Monitoring.
+6. **Interactive Streamlit Dashboard** (Phase 10.2):
+   - **Overview Page**: Platform introduction, live API liveness / model-readiness status, and feature highlights.
+   - **Vehicle Valuation Page**: Interactive input form → calls `POST /api/valuation/predict` → displays Price Estimate Hero, Indicative Range, SHAP Factor Attribution bar chart, Data Quality indicator, Comparable Listings table, Market Summary chart, Audit & Reproducibility metadata, Model Metadata, and Limitations.
 
 7. **FastAPI REST Backend**:
    - Complete RESTful endpoints for valuation, comparables, market analytics, trends, and quality reports.
@@ -871,12 +872,21 @@ uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
 - Interactive API Docs: `http://localhost:8000/docs`
 - Health Check: `http://localhost:8000/health`
 
-### 6. Launch Streamlit Dashboard
+### 6. Launch Streamlit Dashboard (Phase 10.2)
+
+Ensure the FastAPI backend is running first (Step 5), then:
 
 ```bash
 streamlit run dashboard/app.py
 ```
+
 - Dashboard UI: `http://localhost:8501`
+- **Pages**:
+  - 🏠 **Overview** — API status and feature highlights
+  - 🔍 **Vehicle Valuation** — interactive valuation form with full result display
+
+> The dashboard calls the API over HTTP (default: `http://localhost:8000`). The API base URL is
+> configurable in the sidebar without restarting the dashboard.
 
 ---
 
