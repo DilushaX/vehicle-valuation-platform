@@ -778,6 +778,53 @@ curl -X POST http://localhost:8000/api/valuation/predict \
 }
 ```
 
+##### 4. Health & Readiness Endpoints
+
+###### Service Liveness Check: `GET /health`
+Verifies that the FastAPI process is active and receiving requests.
+```bash
+curl -X GET http://localhost:8000/health
+```
+Response (`200 OK`):
+```json
+{
+  "status": "ok"
+}
+```
+
+###### Model Readiness Check: `GET /ready`
+Verifies that the serialized valuation model pipeline (`model.joblib`) is present on disk and ready to serve live inferences without executing database writes.
+```bash
+curl -X GET http://localhost:8000/ready
+```
+Response (`200 OK` when ready):
+```json
+{
+  "status": "ready"
+}
+```
+If the trained model artifact is missing or unavailable, the endpoint returns `503 Service Unavailable`:
+```json
+{
+  "status": "unavailable",
+  "detail": "Valuation model artifact is unavailable.",
+  "error_type": "ServiceUnavailable"
+}
+```
+
+##### 5. Validation & Error Handling Behavior
+
+The Valuation API enforces production hardening across all entry points:
+- **Request Validation (`422 Unprocessable Entity`)**: Rejects missing required attributes (`category`, `brand`, `model`, `fuel_type`, `transmission`, `district`, `condition`, and age/year), malformed numeric values, negative values (`mileage < 0`, `engine_cc < 0`, `vehicle_age < 0`), and physically implausible manufacture years (`< 1920` or `> 2026`).
+- **Domain Validation (`400 Bad Request`)**: Rejects unrecognized vehicle categories outside canonical classes.
+- **Model Availability (`404 Not Found`)**: Returns a structured message if model artifacts have not yet been trained or registered.
+- **Internal Error Safety (`500 Internal Server Error`)**: Unhandled exceptions are logged with full server-side tracebacks while returning a sanitized response (`detail: "An unexpected error occurred during vehicle valuation."`). Stack traces, absolute file paths, database credentials, passwords, and private seller contact details are strictly withheld from client responses.
+- **Explicit CORS**: Restricts cross-origin resource sharing to designated local development environments (`localhost:8501`, `127.0.0.1:8501`, `localhost:8000`, `localhost:3000`) or custom origins via `CORS_ALLOWED_ORIGINS`, preventing accidental wildcard exposure.
+
+##### 6. Methodological Scope & Limitations
+- **Asking Price vs. Transaction Price**: The model predicts advertised asking prices observed on Riyasewana. It does **not** predict verified final transaction or negotiated selling prices.
+- **Experimental Research Benchmark**: The underlying valuation pipeline is an experimental research benchmark trained on 113 verified listings across 8 vehicle categories. It serves as a benchmark and technical foundation, not a certified appraisal guarantee.
+
 ---
 
 ## 🚀 Quickstart Guide
@@ -847,6 +894,8 @@ docker-compose up --build
 
 | Method | Endpoint | Description |
 | :--- | :--- | :--- |
+| `GET` | `/health` | API service liveness check (`{"status": "ok"}`) |
+| `GET` | `/ready` | Model artifact availability and inference readiness check (`{"status": "ready"}`) |
 | `POST` | `/api/valuation/predict` | ML Asking Price Valuation, Indicative Range & Tree SHAP Attribution |
 | `POST` | `/api/v1/comparables/search` | Multi-attribute similarity search returning top matching listings |
 | `GET` | `/api/v1/analytics/overview` | High-level market KPIs (Median/Average prices, top makes & models) |
