@@ -19,9 +19,28 @@ from typing import Any, Dict, List, Optional
 import pandas as pd
 import streamlit as st
 
+from analytics.market.market_analytics import apply_filters, get_filter_options
 from eda.dataset import EDADatasetLoader
 
 logger = logging.getLogger(__name__)
+
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+def _fmt_lkr(amount: Optional[float]) -> str:
+    """Format a LKR value as '12,500,000' or 'N/A'."""
+    if amount is None or pd.isna(amount):
+        return "N/A"
+    return f"{amount:,.0f} LKR"
+
+
+def _fmt_num(val: Optional[float | int]) -> str:
+    """Format an integer or number with commas."""
+    if val is None or pd.isna(val):
+        return "0"
+    return f"{val:,.0f}"
 
 
 # ---------------------------------------------------------------------------
@@ -93,17 +112,176 @@ def render_market_intelligence_page(api_url: str = "http://localhost:8000") -> N
         st.warning("No market listing records found in the database. Please verify the database connection.")
         return
 
-    # ── Dashboard Structure Placeholders ─────────────────────────────────
-    filters_container = st.container()
-    overview_container = st.container()
-    category_container = st.container()
-    brand_model_container = st.container()
-    price_container = st.container()
-    characteristics_container = st.container()
-    geographic_container = st.container()
-    trends_container = st.container()
-    quality_scope_container = st.container()
+    # Extract dynamic options from current dataset
+    opts = get_filter_options(df_raw)
 
-    with filters_container:
-        st.markdown("<div class='section-title'>🔍 Global Market Filters</div>", unsafe_allow_html=True)
-        st.caption("Filters apply dynamically across all analytical views.")
+    # ── Global Filters ───────────────────────────────────────────────────
+    with st.expander("🔍 **Global Market Filters** (Click to expand/collapse)", expanded=True):
+        col1, col2, col3 = st.columns(3)
+
+        with col1:
+            sel_categories = st.multiselect(
+                "Vehicle Category",
+                options=opts["categories"],
+                default=[],
+                placeholder="All Categories",
+                help="Filter by vehicle categories present in the dataset.",
+                key="filter_categories",
+            )
+
+            # Available brands dynamic filter
+            cat_filtered_df = (
+                df_raw[df_raw["canonical_category"].isin(sel_categories)]
+                if sel_categories
+                else df_raw
+            )
+            brand_options = sorted(
+                [str(b) for b in cat_filtered_df["brand"].dropna().unique() if str(b).strip()]
+            )
+
+            sel_brands = st.multiselect(
+                "Brand",
+                options=brand_options,
+                default=[],
+                placeholder="All Brands",
+                help="Filter by brands available in the selected categories.",
+                key="filter_brands",
+            )
+
+            # Available models dynamic filter
+            brand_filtered_df = (
+                cat_filtered_df[cat_filtered_df["brand"].isin(sel_brands)]
+                if sel_brands
+                else cat_filtered_df
+            )
+            model_options = sorted(
+                [str(m) for m in brand_filtered_df["model"].dropna().unique() if str(m).strip()]
+            )
+
+            sel_models = st.multiselect(
+                "Model",
+                options=model_options,
+                default=[],
+                placeholder="All Models",
+                help="Filter by models available for the selected brands.",
+                key="filter_models",
+            )
+
+        with col2:
+            sel_districts = st.multiselect(
+                "District",
+                options=opts["districts"],
+                default=[],
+                placeholder="All Districts",
+                help="Filter by Sri Lankan administrative districts.",
+                key="filter_districts",
+            )
+
+            sel_fuels = st.multiselect(
+                "Fuel Type",
+                options=opts["fuel_types"],
+                default=[],
+                placeholder="All Fuel Types",
+                help="Filter by fuel type (Petrol, Diesel, Hybrid, etc.).",
+                key="filter_fuels",
+            )
+
+            sel_transmissions = st.multiselect(
+                "Transmission",
+                options=opts["transmissions"],
+                default=[],
+                placeholder="All Transmissions",
+                help="Filter by transmission (Automatic, Manual).",
+                key="filter_transmissions",
+            )
+
+        with col3:
+            sel_conditions = st.multiselect(
+                "Condition",
+                options=opts["conditions"],
+                default=[],
+                placeholder="All Conditions",
+                help="Filter by condition (e.g. Registered (Used), Unregistered).",
+                key="filter_conditions",
+            )
+
+            # Year range slider
+            y_min, y_max = opts["year_min"], opts["year_max"]
+            if y_min < y_max:
+                sel_year_range = st.slider(
+                    "Manufacture Year Range",
+                    min_value=y_min,
+                    max_value=y_max,
+                    value=(y_min, y_max),
+                    key="filter_year_range",
+                )
+            else:
+                sel_year_range = (y_min, y_max)
+                st.caption(f"Manufacture Year: {y_min}")
+
+            # Price range slider
+            p_min, p_max = opts["price_min"], opts["price_max"]
+            if p_min < p_max:
+                sel_price_range = st.slider(
+                    "Asking Price Range (LKR)",
+                    min_value=p_min,
+                    max_value=p_max,
+                    value=(p_min, p_max),
+                    step=max(50_000, (p_max - p_min) // 100),
+                    format="%d",
+                    key="filter_price_range",
+                )
+            else:
+                sel_price_range = (p_min, p_max)
+                st.caption(f"Asking Price: {_fmt_lkr(p_min)}")
+
+        # Active filter count indicator
+        active_filters = []
+        if sel_categories:
+            active_filters.append(f"Categories ({len(sel_categories)})")
+        if sel_brands:
+            active_filters.append(f"Brands ({len(sel_brands)})")
+        if sel_models:
+            active_filters.append(f"Models ({len(sel_models)})")
+        if sel_districts:
+            active_filters.append(f"Districts ({len(sel_districts)})")
+        if sel_fuels:
+            active_filters.append(f"Fuel ({len(sel_fuels)})")
+        if sel_transmissions:
+            active_filters.append(f"Transmission ({len(sel_transmissions)})")
+        if sel_conditions:
+            active_filters.append(f"Condition ({len(sel_conditions)})")
+        if sel_year_range != (y_min, y_max):
+            active_filters.append(f"Years ({sel_year_range[0]}–{sel_year_range[1]})")
+        if sel_price_range != (p_min, p_max):
+            active_filters.append(f"Price ({_fmt_lkr(sel_price_range[0])}–{_fmt_lkr(sel_price_range[1])})")
+
+        if active_filters:
+            st.markdown(
+                f"<div style='font-size:0.85rem; color:#a5b4fc; padding-top:0.4rem;'>"
+                f"⚡ <strong>Active Filters:</strong> {', '.join(active_filters)}"
+                f"</div>",
+                unsafe_allow_html=True,
+            )
+
+    # ── Apply Filters to In-Memory DataFrame ─────────────────────────────
+    df_filtered = apply_filters(
+        df=df_raw,
+        categories=sel_categories,
+        brands=sel_brands,
+        models=sel_models,
+        districts=sel_districts,
+        fuel_types=sel_fuels,
+        transmissions=sel_transmissions,
+        conditions=sel_conditions,
+        year_range=sel_year_range,
+        price_range=sel_price_range,
+    )
+
+    st.caption(
+        f"Displaying **{len(df_filtered):,}** of **{len(df_raw):,}** total listings in dataset."
+    )
+
+    if df_filtered.empty:
+        st.info("⚠️ No listings match the selected filters. Please adjust your filter criteria.")
+        return
