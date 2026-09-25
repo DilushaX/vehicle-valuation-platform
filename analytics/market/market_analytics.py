@@ -150,20 +150,23 @@ def get_price_distribution_stats(df: pd.DataFrame) -> Dict[str, Any]:
     Computes parametric and non-parametric asking price distribution metrics.
     Reuses DistributionAnalyzer.analyze_price_distribution.
     """
+    default_stats = {
+        "count": 0,
+        "missing_count": 0,
+        "suspicious_count": 0,
+        "mean": None,
+        "std": None,
+        "min": None,
+        "q1": None,
+        "median": None,
+        "q3": None,
+        "max": None,
+        "iqr": None,
+    }
     if df.empty or "asking_price" not in df.columns:
-        return {
-            "count": 0,
-            "missing_count": 0,
-            "mean": None,
-            "std": None,
-            "min": None,
-            "q1": None,
-            "median": None,
-            "q3": None,
-            "max": None,
-            "iqr": None,
-        }
-    return DistributionAnalyzer.analyze_price_distribution(df)
+        return default_stats
+    stats = DistributionAnalyzer.analyze_price_distribution(df)
+    return {**default_stats, **stats}
 
 
 def get_price_relationships(df: pd.DataFrame) -> Dict[str, Dict[str, Any]]:
@@ -230,9 +233,26 @@ def get_vehicle_age_distribution_stats(df: pd.DataFrame) -> Dict[str, Any]:
     Analyzes vehicle age and manufacture year distributions.
     Reuses DistributionAnalyzer.analyze_yom_and_age_distribution.
     """
+    default_stats = {
+        "count": 0,
+        "missing_count": 0,
+        "yom_median": None,
+        "yom_min": None,
+        "yom_max": None,
+        "yom_q1": None,
+        "yom_q3": None,
+        "age_median": None,
+        "age_mean": None,
+        "age_min": None,
+        "age_max": None,
+        "age_q1": None,
+        "age_q3": None,
+        "age_iqr": None,
+    }
     if df.empty or "manufacture_year" not in df.columns:
-        return {"count": 0, "missing_count": 0}
-    return DistributionAnalyzer.analyze_yom_and_age_distribution(df)
+        return default_stats
+    stats = DistributionAnalyzer.analyze_yom_and_age_distribution(df)
+    return {**default_stats, **stats}
 
 
 def get_mileage_distribution_stats(df: pd.DataFrame) -> Dict[str, Any]:
@@ -240,9 +260,20 @@ def get_mileage_distribution_stats(df: pd.DataFrame) -> Dict[str, Any]:
     Analyzes odometer mileage distributions and bracket frequencies.
     Reuses DistributionAnalyzer.analyze_mileage_distribution.
     """
+    default_stats = {
+        "count": 0,
+        "missing_count": 0,
+        "suspicious_count": 0,
+        "median": None,
+        "q1": None,
+        "q3": None,
+        "iqr": None,
+        "bracket_counts": {},
+    }
     if df.empty or "mileage" not in df.columns:
-        return {"count": 0, "missing_count": 0}
-    return DistributionAnalyzer.analyze_mileage_distribution(df)
+        return default_stats
+    stats = DistributionAnalyzer.analyze_mileage_distribution(df)
+    return {**default_stats, **stats}
 
 
 def get_mileage_bracket_summary(df: pd.DataFrame) -> pd.DataFrame:

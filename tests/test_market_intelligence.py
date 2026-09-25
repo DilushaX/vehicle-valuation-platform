@@ -432,6 +432,63 @@ def test_compute_data_quality_summary_empty():
     assert summary["ml_eligible_count"] == 0
 
 
+def test_analytics_with_missing_values():
+    """Verifies that all analytics safely handle DataFrames filled with None / NaNs."""
+    df_missing = pd.DataFrame([
+        {
+            "listing_id": "9999",
+            "category": None,
+            "canonical_category": None,
+            "brand": None,
+            "model": None,
+            "manufacture_year": None,
+            "vehicle_age": None,
+            "asking_price": None,
+            "mileage": None,
+            "fuel_type": None,
+            "transmission": None,
+            "condition": None,
+            "district": None,
+            "current_status": None,
+            "ml_eligible": None,
+            "validation_issues": None,
+        }
+    ])
+
+    overview = compute_market_overview(df_missing)
+    assert overview["total_listings"] == 1
+    assert overview["median_asking_price"] is None
+
+    cats = get_category_summary(df_missing)
+    assert isinstance(cats, pd.DataFrame)
+
+    brands = get_brand_summary(df_missing)
+    assert isinstance(brands, pd.DataFrame)
+
+    models = get_model_summary(df_missing)
+    assert isinstance(models, pd.DataFrame)
+
+    price_stats = get_price_distribution_stats(df_missing)
+    assert price_stats["median"] is None
+
+    rels = get_price_relationships(df_missing)
+    assert isinstance(rels, dict)
+
+    fuels = get_fuel_summary(df_missing)
+    assert isinstance(fuels, pd.DataFrame)
+
+    trans = get_transmission_summary(df_missing)
+    assert isinstance(trans, pd.DataFrame)
+
+    dist = get_district_summary(df_missing)
+    assert isinstance(dist, pd.DataFrame)
+
+    dq = compute_data_quality_summary(df_missing)
+    assert dq["total_records"] == 1
+    assert dq["ml_eligible_count"] == 0
+
+
+
 
 
 
