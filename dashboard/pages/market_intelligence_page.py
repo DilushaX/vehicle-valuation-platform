@@ -26,6 +26,7 @@ from analytics.market.market_analytics import (
     compute_market_overview,
     get_brand_summary,
     get_category_summary,
+    get_district_summary,
     get_filter_options,
     get_fuel_summary,
     get_mileage_bracket_summary,
@@ -1107,5 +1108,102 @@ def render_market_intelligence_page(api_url: str = "http://localhost:8000") -> N
                 st.plotly_chart(fig_mb_p, use_container_width=True)
         else:
             st.info("No mileage data available.")
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # ── Geographic / District Analysis ───────────────────────────────────
+    st.markdown("<div class='section-title'>🗺️ Geographic & District Market Analysis</div>", unsafe_allow_html=True)
+    st.caption(
+        "Observed asking-price differences by district. Descriptive geographic breakdown of vehicle listings across "
+        "Sri Lankan administrative districts present in the dataset. Does NOT imply that geographical location causes price differences "
+        "(unmeasured vehicle age, model mix, and condition differ by region)."
+    )
+
+    dist_df = get_district_summary(df_filtered, min_sample=1)
+
+    if dist_df.empty or dist_df["listing_count"].sum() == 0:
+        st.info("No district data available for the current filter selection.")
+    else:
+        dist_col1, dist_col2 = st.columns(2)
+
+        with dist_col1:
+            sorted_dist_cnt = dist_df.sort_values(by="listing_count", ascending=True)
+            fig_dist = go.Figure(
+                data=[
+                    go.Bar(
+                        y=sorted_dist_cnt["district"],
+                        x=sorted_dist_cnt["listing_count"],
+                        orientation="h",
+                        marker=dict(
+                            color=sorted_dist_cnt["listing_count"],
+                            colorscale="Sunset",
+                            line=dict(color="#f43f5e", width=1),
+                        ),
+                        text=sorted_dist_cnt["listing_count"],
+                        textposition="auto",
+                        hovertemplate="<b>%{y}</b><br>Listings: %{x}<br>Share: %{customdata:.1f}%<extra></extra>",
+                        customdata=sorted_dist_cnt["pct_of_total"],
+                    )
+                ]
+            )
+            fig_dist.update_layout(
+                title=f"Listings by District ({len(dist_df)} Districts)",
+                xaxis_title="Listing Count",
+                yaxis_title="District",
+            )
+            _apply_dark_theme(fig_dist, height=max(380, len(dist_df) * 25))
+            st.plotly_chart(fig_dist, use_container_width=True)
+
+        with dist_col2:
+            dist_with_price = dist_df.dropna(subset=["median_asking_price"]).sort_values(
+                by="median_asking_price", ascending=True
+            )
+            fig_dist_price = go.Figure(
+                data=[
+                    go.Bar(
+                        name="Median Price",
+                        y=dist_with_price["district"],
+                        x=dist_with_price["median_asking_price"],
+                        orientation="h",
+                        marker=dict(
+                            color=dist_with_price["median_asking_price"],
+                            colorscale="Viridis",
+                            line=dict(color="#10b981", width=1),
+                        ),
+                        text=[_fmt_lkr(p) for p in dist_with_price["median_asking_price"]],
+                        textposition="auto",
+                        hovertemplate="<b>%{y}</b><br>Median Asking Price: %{x:,.0f} LKR<extra></extra>",
+                    )
+                ]
+            )
+            fig_dist_price.update_layout(
+                title="Observed Asking-Price Differences by District (Median LKR)",
+                xaxis_title="Advertised Asking Price (LKR)",
+                yaxis_title="District",
+            )
+            _apply_dark_theme(fig_dist_price, height=max(380, len(dist_with_price) * 25))
+            st.plotly_chart(fig_dist_price, use_container_width=True)
+
+        # District Summary Table Expander
+        with st.expander("📋 View District Summary Table", expanded=False):
+            disp_dist = dist_df.copy()
+            disp_dist["median_asking_price"] = disp_dist["median_asking_price"].apply(
+                lambda p: _fmt_lkr(p) if pd.notna(p) else "N/A"
+            )
+            disp_dist["mean_asking_price"] = disp_dist["mean_asking_price"].apply(
+                lambda p: _fmt_lkr(p) if pd.notna(p) else "N/A"
+            )
+            disp_dist["pct_of_total"] = disp_dist["pct_of_total"].apply(lambda p: f"{p:.1f}%")
+            disp_dist = disp_dist.rename(
+                columns={
+                    "district": "District",
+                    "listing_count": "Listings",
+                    "pct_of_total": "Market Share",
+                    "median_asking_price": "Median Asking Price",
+                    "mean_asking_price": "Mean Asking Price",
+                    "sample_flag": "Sample Status",
+                }
+            )
+            st.dataframe(disp_dist[["District", "Listings", "Market Share", "Median Asking Price", "Mean Asking Price", "Sample Status"]], use_container_width=True, hide_index=True)
 
     st.markdown("<br>", unsafe_allow_html=True)

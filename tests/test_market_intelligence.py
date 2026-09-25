@@ -10,6 +10,7 @@ from analytics.market.market_analytics import (
     compute_market_overview,
     get_brand_summary,
     get_category_summary,
+    get_district_summary,
     get_filter_options,
     get_fuel_summary,
     get_mileage_bracket_summary,
@@ -345,6 +346,23 @@ def test_get_mileage_bracket_summary(sample_market_df):
     assert not mb_df.empty
     assert len(mb_df) == 6
     assert mb_df["listing_count"].sum() == 5
+
+
+def test_get_district_summary(sample_market_df):
+    dist_df = get_district_summary(sample_market_df, min_sample=1)
+    assert not dist_df.empty
+    assert "district" in dist_df.columns
+    assert "listing_count" in dist_df.columns
+    assert "median_asking_price" in dist_df.columns
+    assert dist_df.iloc[0]["district"] == "Colombo"
+    assert dist_df.iloc[0]["listing_count"] == 2
+
+
+def test_get_district_summary_empty():
+    dist_df = get_district_summary(pd.DataFrame())
+    assert dist_df.empty
+    assert "district" in dist_df.columns
+
 
 
 

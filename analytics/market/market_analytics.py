@@ -16,6 +16,34 @@ from eda.distributions import DistributionAnalyzer
 from eda.relationships import RelationshipAnalyzer
 
 
+def get_district_summary(
+    df: pd.DataFrame,
+    min_sample: int = 1,
+    top_n: Optional[int] = None,
+) -> pd.DataFrame:
+    """
+    Analyzes geographic listing distribution across administrative districts.
+    Reports observed price differences by district without asserting causal claims.
+    Reuses CategoricalAnalyzer.analyze_districts.
+    """
+    if df.empty or "district" not in df.columns:
+        return pd.DataFrame(
+            columns=[
+                "district",
+                "listing_count",
+                "pct_of_total",
+                "median_asking_price",
+                "mean_asking_price",
+                "is_low_sample",
+                "sample_flag",
+            ]
+        )
+    res = CategoricalAnalyzer.analyze_districts(df, min_sample=min_sample)
+    if top_n is not None and top_n > 0:
+        res = res.head(top_n)
+    return res
+
+
 def get_price_distribution_stats(df: pd.DataFrame) -> Dict[str, Any]:
     """
     Computes parametric and non-parametric asking price distribution metrics.
