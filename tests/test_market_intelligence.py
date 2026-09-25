@@ -8,8 +8,10 @@ import pytest
 from analytics.market.market_analytics import (
     apply_filters,
     compute_market_overview,
+    get_brand_summary,
     get_category_summary,
     get_filter_options,
+    get_model_summary,
 )
 
 
@@ -226,5 +228,36 @@ def test_get_category_summary_empty():
     assert cat_df.empty
     assert "category" in cat_df.columns
     assert "median_asking_price" in cat_df.columns
+
+
+def test_get_brand_summary(sample_market_df):
+    brand_df = get_brand_summary(sample_market_df, min_sample=1)
+    assert not brand_df.empty
+    assert "brand" in brand_df.columns
+    assert "listing_count" in brand_df.columns
+    assert "median_asking_price" in brand_df.columns
+    assert brand_df.iloc[0]["brand"] == "Toyota"
+    assert brand_df.iloc[0]["listing_count"] == 2
+
+
+def test_get_brand_summary_empty():
+    brand_df = get_brand_summary(pd.DataFrame())
+    assert brand_df.empty
+    assert "brand" in brand_df.columns
+
+
+def test_get_model_summary(sample_market_df):
+    model_df = get_model_summary(sample_market_df, brand="Toyota", min_sample=1)
+    assert not model_df.empty
+    assert len(model_df) == 2
+    models = set(model_df["model"])
+    assert models == {"Corolla", "Prado"}
+
+
+def test_get_model_summary_empty():
+    model_df = get_model_summary(pd.DataFrame())
+    assert model_df.empty
+    assert "model" in model_df.columns
+
 
 

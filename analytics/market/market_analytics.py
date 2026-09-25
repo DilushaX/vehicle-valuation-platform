@@ -38,6 +38,66 @@ def get_category_summary(df: pd.DataFrame) -> pd.DataFrame:
     return CategoricalAnalyzer.analyze_categories(df)
 
 
+def get_brand_summary(
+    df: pd.DataFrame,
+    min_sample: int = 1,
+    top_n: Optional[int] = None,
+) -> pd.DataFrame:
+    """
+    Analyzes vehicle brands with configurable minimum sample size and top-N ranking.
+    Descriptive statistics only (not a brand value or quality ranking).
+    Reuses CategoricalAnalyzer.analyze_brands.
+    """
+    if df.empty or "brand" not in df.columns:
+        return pd.DataFrame(
+            columns=[
+                "brand",
+                "listing_count",
+                "pct_of_total",
+                "median_asking_price",
+                "mean_asking_price",
+                "min_asking_price",
+                "max_asking_price",
+                "is_low_sample",
+                "sample_flag",
+            ]
+        )
+    return CategoricalAnalyzer.analyze_brands(df, min_sample=min_sample, top_n=top_n)
+
+
+def get_model_summary(
+    df: pd.DataFrame,
+    brand: Optional[str] = None,
+    min_sample: int = 1,
+    top_n: Optional[int] = None,
+) -> pd.DataFrame:
+    """
+    Analyzes vehicle models respecting category and brand constraints.
+    Computes asking price and vehicle attribute medians with sample flags.
+    Reuses CategoricalAnalyzer.analyze_models.
+    """
+    if df.empty or "model" not in df.columns:
+        return pd.DataFrame(
+            columns=[
+                "brand",
+                "model",
+                "listing_count",
+                "pct_of_total",
+                "median_asking_price",
+                "mean_asking_price",
+                "median_mileage",
+                "median_yom",
+                "min_yom",
+                "max_yom",
+                "is_low_sample",
+                "sample_flag",
+            ]
+        )
+    return CategoricalAnalyzer.analyze_models(
+        df, brand=brand, min_sample=min_sample, top_n=top_n
+    )
+
+
 def compute_market_overview(df: pd.DataFrame) -> Dict[str, Any]:
     """
     Computes high-level market overview metrics from a listings DataFrame.

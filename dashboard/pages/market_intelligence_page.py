@@ -24,8 +24,10 @@ import streamlit as st
 from analytics.market.market_analytics import (
     apply_filters,
     compute_market_overview,
+    get_brand_summary,
     get_category_summary,
     get_filter_options,
+    get_model_summary,
 )
 from eda.dataset import EDADatasetLoader
 
@@ -477,5 +479,213 @@ def render_market_intelligence_page(api_url: str = "http://localhost:8000") -> N
                 }
             )
             st.dataframe(display_cat_df, use_container_width=True, hide_index=True)
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # ── Brand & Model Analysis ───────────────────────────────────────────
+    st.markdown("<div class='section-title'>🏷️ Brand & Model Market Analysis</div>", unsafe_allow_html=True)
+    st.caption(
+        "Descriptive statistics for vehicle makes and models. Not a quality or reliability ranking. "
+        "Models shown respect the selected category and brand filters."
+    )
+
+    brand_col_ctl1, brand_col_ctl2 = st.columns([1, 3])
+    with brand_col_ctl1:
+        top_n_brands = st.slider(
+            "Top N Brands to Display",
+            min_value=3,
+            max_value=25,
+            value=10,
+            step=1,
+            key="slider_top_n_brands",
+        )
+
+    brand_df = get_brand_summary(df_filtered, min_sample=1, top_n=top_n_brands)
+    model_df = get_model_summary(df_filtered, min_sample=1, top_n=15)
+
+    if brand_df.empty or brand_df["listing_count"].sum() == 0:
+        st.info("No brand data available for the current filter selection.")
+    else:
+        bm_col1, bm_col2 = st.columns(2)
+
+        with bm_col1:
+            # Top Brands by Listing Count (Horizontal bar)
+            sorted_brands_cnt = brand_df.sort_values(by="listing_count", ascending=True)
+            fig_brands = go.Figure(
+                data=[
+                    go.Bar(
+                        y=sorted_brands_cnt["brand"],
+                        x=sorted_brands_cnt["listing_count"],
+                        orientation="h",
+                        marker=dict(
+                            color=sorted_brands_cnt["listing_count"],
+                            colorscale="Blues",
+                            line=dict(color="#3b82f6", width=1),
+                        ),
+                        text=sorted_brands_cnt["listing_count"],
+                        textposition="auto",
+                        hovertemplate="<b>%{y}</b><br>Listings: %{x}<br>Share: %{customdata:.1f}%<extra></extra>",
+                        customdata=sorted_brands_cnt["pct_of_total"],
+                    )
+                ]
+            )
+            fig_brands.update_layout(
+                title=f"Top {len(brand_df)} Brands by Listing Count",
+                xaxis_title="Listing Count",
+                yaxis_title="Brand",
+            )
+            _apply_dark_theme(fig_brands)
+            st.plotly_chart(fig_brands, use_container_width=True)
+
+        with bm_col2:
+            # Median Asking Price by Top Brands
+            sorted_brands_price = brand_df.dropna(subset=["median_asking_price"]).sort_values(
+                by="median_asking_price", ascending=True
+            )
+            fig_brand_price = go.Figure(
+                data=[
+                    go.Bar(
+                        y=sorted_brands_price["brand"],
+                        x=sorted_brands_price["median_asking_price"],
+                        orientation="h",
+                        marker=dict(
+                            color=sorted_brands_price["median_asking_price"],
+                            colorscale="Purples",
+                            line=dict(color="#8b5cf6", width=1),
+                        ),
+                        text=[_fmt_lkr(p) for p in sorted_brands_price["median_asking_price"]],
+                        textposition="auto",
+                        hovertemplate="<b>%{y}</b><br>Median Asking Price: %{x:,.0f} LKR<extra></extra>",
+                    )
+                ]
+            )
+            fig_brand_price.update_layout(
+                title=f"Median Asking Price by Brand (Top {len(sorted_brands_price)})",
+                xaxis_title="Advertised Asking Price (LKR)",
+                yaxis_title="Brand",
+            )
+            _apply_dark_theme(fig_brand_price)
+            st.plotly_chart(fig_brand_price, use_container_width=True)
+
+        # Asking Price Box Plot for Major Brands
+        top_brand_names = list(brand_df["brand"].unique()[:top_n_brands])
+        df_top_brands = df_filtered[df_filtered["brand"].isin(top_brand_names) & df_filtered["asking_price"].notna()]
+        if not df_top_brands.empty and len(top_brand_names) > 0:
+            fig_box = go.Figure()
+            for b_name in top_brand_names:
+                b_prices = df_top_brands[df_top_brands["brand"] == b_name]["asking_price"]
+                if not b_prices.empty:
+                    fig_box.add_trace(
+                        go.Box(
+                            y=b_prices,
+                            name=b_name,
+                            boxpoints="outliers",
+                            jitter=0.3,
+                            pointpos=-1.8,
+                            marker_color="#818cf8",
+                            hovertemplate=f"<b>{b_name}</b><br>Asking Price: %{{y:,.0f}} LKR<extra></extra>",
+                        )
+                    )
+            fig_box.update_layout(
+                title=f"Asking Price Distribution by Brand (Top {len(top_brand_names)})",
+                xaxis_title="Brand",
+                yaxis_title="Advertised Asking Price (LKR)",
+                showlegend=False,
+            )
+            _apply_dark_theme(fig_box)
+            st.plotly_chart(fig_box, use_container_width=True)
+
+    # ── Model Breakdown ──────────────────────────────────────────────────
+    if not model_df.empty and model_df["listing_count"].sum() > 0:
+        mod_col1, mod_col2 = st.columns(2)
+
+        with mod_col1:
+            sorted_models = model_df.head(12).sort_values(by="listing_count", ascending=True)
+            labels = [f"{b} {m}" for b, m in zip(sorted_models["brand"], sorted_models["model"])]
+            fig_models = go.Figure(
+                data=[
+                    go.Bar(
+                        y=labels,
+                        x=sorted_models["listing_count"],
+                        orientation="h",
+                        marker=dict(
+                            color=sorted_models["listing_count"],
+                            colorscale="Teal",
+                            line=dict(color="#14b8a6", width=1),
+                        ),
+                        text=sorted_models["listing_count"],
+                        textposition="auto",
+                        hovertemplate="<b>%{y}</b><br>Listings: %{x}<extra></extra>",
+                    )
+                ]
+            )
+            fig_models.update_layout(
+                title=f"Top Models by Listing Count",
+                xaxis_title="Listing Count",
+                yaxis_title="Model",
+            )
+            _apply_dark_theme(fig_models)
+            st.plotly_chart(fig_models, use_container_width=True)
+
+        with mod_col2:
+            models_with_price = model_df.dropna(subset=["median_asking_price"]).head(12)
+            sorted_m_price = models_with_price.sort_values(by="median_asking_price", ascending=True)
+            labels_p = [f"{b} {m}" for b, m in zip(sorted_m_price["brand"], sorted_m_price["model"])]
+            fig_m_price = go.Figure(
+                data=[
+                    go.Bar(
+                        y=labels_p,
+                        x=sorted_m_price["median_asking_price"],
+                        orientation="h",
+                        marker=dict(
+                            color=sorted_m_price["median_asking_price"],
+                            colorscale="Viridis",
+                            line=dict(color="#10b981", width=1),
+                        ),
+                        text=[_fmt_lkr(p) for p in sorted_m_price["median_asking_price"]],
+                        textposition="auto",
+                        hovertemplate="<b>%{y}</b><br>Median Asking Price: %{x:,.0f} LKR<extra></extra>",
+                    )
+                ]
+            )
+            fig_m_price.update_layout(
+                title=f"Median Asking Price by Model",
+                xaxis_title="Advertised Asking Price (LKR)",
+                yaxis_title="Model",
+            )
+            _apply_dark_theme(fig_m_price)
+            st.plotly_chart(fig_m_price, use_container_width=True)
+
+        # Brand and Model Expanders
+        with st.expander("📋 View Brand & Model Summary Tables", expanded=False):
+            t_col1, t_col2 = st.columns(2)
+            with t_col1:
+                st.markdown("**Brand Summary**")
+                disp_b = brand_df.copy()
+                disp_b["median_asking_price"] = disp_b["median_asking_price"].apply(lambda p: _fmt_lkr(p) if pd.notna(p) else "N/A")
+                disp_b["mean_asking_price"] = disp_b["mean_asking_price"].apply(lambda p: _fmt_lkr(p) if pd.notna(p) else "N/A")
+                disp_b = disp_b.rename(columns={
+                    "brand": "Brand",
+                    "listing_count": "Listings",
+                    "median_asking_price": "Median Asking Price",
+                    "mean_asking_price": "Mean Asking Price",
+                    "sample_flag": "Sample Status",
+                })
+                st.dataframe(disp_b[["Brand", "Listings", "Median Asking Price", "Mean Asking Price", "Sample Status"]], use_container_width=True, hide_index=True)
+
+            with t_col2:
+                st.markdown("**Model Summary**")
+                disp_m = model_df.copy()
+                disp_m["median_asking_price"] = disp_m["median_asking_price"].apply(lambda p: _fmt_lkr(p) if pd.notna(p) else "N/A")
+                disp_m["median_mileage"] = disp_m["median_mileage"].apply(lambda m: f"{m:,.0f} km" if pd.notna(m) else "N/A")
+                disp_m = disp_m.rename(columns={
+                    "brand": "Brand",
+                    "model": "Model",
+                    "listing_count": "Listings",
+                    "median_asking_price": "Median Asking Price",
+                    "median_mileage": "Median Mileage",
+                    "sample_flag": "Sample Status",
+                })
+                st.dataframe(disp_m[["Brand", "Model", "Listings", "Median Asking Price", "Median Mileage", "Sample Status"]], use_container_width=True, hide_index=True)
 
     st.markdown("<br>", unsafe_allow_html=True)
