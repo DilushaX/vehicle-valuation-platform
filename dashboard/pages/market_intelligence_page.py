@@ -37,6 +37,7 @@ from analytics.market.market_analytics import (
     get_transmission_summary,
     get_vehicle_age_distribution_stats,
 )
+from analytics.trends.trend_engine import compute_monthly_trends
 from eda.dataset import EDADatasetLoader
 
 logger = logging.getLogger(__name__)
@@ -1205,5 +1206,113 @@ def render_market_intelligence_page(api_url: str = "http://localhost:8000") -> N
                 }
             )
             st.dataframe(disp_dist[["District", "Listings", "Market Share", "Median Asking Price", "Mean Asking Price", "Sample Status"]], use_container_width=True, hide_index=True)
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # ── Historical Market Trends ─────────────────────────────────────────
+    st.markdown("<div class='section-title'>📅 Historical Market Trends & Time Series</div>", unsafe_allow_html=True)
+    st.caption(
+        "Longitudinal asking price and listing volume trends over time. "
+        "Strictly gated on observation depth to prevent premature inferences from short observation spans."
+    )
+
+    trend_res = compute_monthly_trends(df_filtered, min_days=60)
+
+    if not trend_res["has_sufficient_depth"]:
+        st.markdown(
+            f"""
+            <div class="info-card" style="border-left: 4px solid #f59e0b; padding: 1.2rem 1.4rem;">
+                <div style="font-weight: 600; color: #fbbf24; font-size: 1rem; margin-bottom: 0.3rem;">
+                    ⚠️ Insufficient Historical Observations for Monthly Trend Analysis
+                </div>
+                <div style="font-size: 0.88rem; color: #cbd5e1; line-height: 1.6;">
+                    {trend_res['message']}
+                    <br><br>
+                    <strong>Observed Date Range:</strong> {trend_res['min_date']} to {trend_res['max_date']} ({trend_res['days_span']} days).
+                    <br>
+                    <em>Empirical Rigor Standard:</em> Longitudinal market metrics (monthly activity, monthly price index, category trajectories)
+                    require at least 60 days of historical tracking. Data points are not extrapolated or synthetically populated.
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    else:
+        tr_col1, tr_col2 = st.columns(2)
+        m_act = trend_res["monthly_activity"]
+
+        with tr_col1:
+            # Monthly Activity Line Chart
+            fig_m_vol = go.Figure()
+            fig_m_vol.add_trace(
+                go.Scatter(
+                    x=m_act["year_month"],
+                    y=m_act["listing_count"],
+                    mode="lines+markers",
+                    line=dict(color="#3b82f6", width=2.5),
+                    marker=dict(size=8, color="#60a5fa"),
+                    hovertemplate="<b>%{x}</b><br>Listings: %{y}<extra></extra>",
+                )
+            )
+            fig_m_vol.update_layout(
+                title="Monthly Listing Activity",
+                xaxis_title="Month",
+                yaxis_title="Listing Count",
+            )
+            _apply_dark_theme(fig_m_vol, height=360)
+            st.plotly_chart(fig_m_vol, use_container_width=True)
+
+        with tr_col2:
+            # Monthly Asking Price Dynamics
+            fig_m_pr = go.Figure()
+            fig_m_pr.add_trace(
+                go.Scatter(
+                    name="Median Price",
+                    x=m_act["year_month"],
+                    y=m_act["median_asking_price"],
+                    mode="lines+markers",
+                    line=dict(color="#10b981", width=2.5),
+                    marker=dict(size=8, color="#34d399"),
+                    hovertemplate="<b>%{x}</b><br>Median Price: %{y:,.0f} LKR<extra></extra>",
+                )
+            )
+            fig_m_pr.add_trace(
+                go.Scatter(
+                    name="Mean Price",
+                    x=m_act["year_month"],
+                    y=m_act["mean_asking_price"],
+                    mode="lines+markers",
+                    line=dict(color="#a7f3d0", width=1.5, dash="dot"),
+                    marker=dict(size=6, color="#a7f3d0"),
+                    hovertemplate="<b>%{x}</b><br>Mean Price: %{y:,.0f} LKR<extra></extra>",
+                )
+            )
+            fig_m_pr.update_layout(
+                title="Monthly Advertised Asking Price Trends",
+                xaxis_title="Month",
+                yaxis_title="Asking Price (LKR)",
+                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+            )
+            _apply_dark_theme(fig_m_pr, height=360)
+            st.plotly_chart(fig_m_pr, use_container_width=True)
+
+        # Category monthly trajectories
+        cat_m = trend_res["category_monthly"]
+        if not cat_m.empty:
+            fig_cat_m = px.line(
+                cat_m,
+                x="year_month",
+                y="median_asking_price",
+                color="category",
+                markers=True,
+                labels={
+                    "year_month": "Month",
+                    "median_asking_price": "Median Asking Price (LKR)",
+                    "category": "Category",
+                },
+                title="Category-Level Monthly Asking Price Trajectories",
+            )
+            _apply_dark_theme(fig_cat_m, height=400)
+            st.plotly_chart(fig_cat_m, use_container_width=True)
 
     st.markdown("<br>", unsafe_allow_html=True)

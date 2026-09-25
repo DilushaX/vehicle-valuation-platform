@@ -364,6 +364,49 @@ def test_get_district_summary_empty():
     assert "district" in dist_df.columns
 
 
+def test_compute_monthly_trends_insufficient_depth(sample_market_df):
+    # Sample has dates spanning only a few days
+    sample_df = sample_market_df.copy()
+    sample_df["first_seen_at"] = [
+        "2026-09-01T10:00:00Z",
+        "2026-09-02T10:00:00Z",
+        "2026-09-03T10:00:00Z",
+        "2026-09-04T10:00:00Z",
+        "2026-09-05T10:00:00Z",
+    ]
+    from analytics.trends.trend_engine import compute_monthly_trends
+    res = compute_monthly_trends(sample_df, min_days=60)
+    assert res["has_sufficient_depth"] is False
+    assert "Insufficient historical observations" in res["message"]
+    assert res["days_span"] < 60
+    assert res["monthly_activity"].empty
+
+
+def test_compute_monthly_trends_sufficient_depth():
+    from analytics.trends.trend_engine import compute_monthly_trends
+    # Create 6 months of observations
+    dates = pd.date_range("2026-01-01", periods=120, freq="2D")
+    df = pd.DataFrame({
+        "listing_id": [str(i) for i in range(len(dates))],
+        "first_seen_at": dates,
+        "canonical_category": ["Cars" if i % 2 == 0 else "SUVs" for i in range(len(dates))],
+        "asking_price": [5_000_000 + i * 10_000 for i in range(len(dates))],
+    })
+    res = compute_monthly_trends(df, min_days=60)
+    assert res["has_sufficient_depth"] is True
+    assert not res["monthly_activity"].empty
+    assert len(res["monthly_activity"]) >= 4
+    assert not res["category_monthly"].empty
+
+
+def test_compute_monthly_trends_empty():
+    from analytics.trends.trend_engine import compute_monthly_trends
+    res = compute_monthly_trends(pd.DataFrame())
+    assert res["has_sufficient_depth"] is False
+    assert res["monthly_activity"].empty
+
+
+
 
 
 
