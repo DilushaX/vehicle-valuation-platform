@@ -28,6 +28,8 @@ from analytics.market.market_analytics import (
     get_category_summary,
     get_filter_options,
     get_model_summary,
+    get_price_distribution_stats,
+    get_price_relationships,
 )
 from eda.dataset import EDADatasetLoader
 
@@ -687,5 +689,178 @@ def render_market_intelligence_page(api_url: str = "http://localhost:8000") -> N
                     "sample_flag": "Sample Status",
                 })
                 st.dataframe(disp_m[["Brand", "Model", "Listings", "Median Asking Price", "Median Mileage", "Sample Status"]], use_container_width=True, hide_index=True)
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # ── Asking Price Analysis ────────────────────────────────────────────
+    st.markdown("<div class='section-title'>💰 Advertised Asking Price Analysis</div>", unsafe_allow_html=True)
+    st.caption(
+        "Analyzes advertised asking prices and their observed associations with vehicle age, mileage, and engine displacement. "
+        "Asking prices reflect advertised seller expectations and may differ from negotiated transaction prices."
+    )
+
+    price_stats = get_price_distribution_stats(df_filtered)
+    price_rels = get_price_relationships(df_filtered)
+
+    if price_stats["count"] == 0:
+        st.info("No valid price data available for the current filter selection.")
+    else:
+        # Price Summary KPI row
+        p_col1, p_col2, p_col3, p_col4, p_col5 = st.columns(5)
+        with p_col1:
+            st.metric("Median Asking Price", _fmt_lkr(price_stats["median"]), help="50th percentile asking price")
+        with p_col2:
+            st.metric("Mean Asking Price", _fmt_lkr(price_stats["mean"]), help="Arithmetic mean asking price")
+        with p_col3:
+            st.metric("Interquartile Range (IQR)", _fmt_lkr(price_stats["iqr"]), help="Spread between Q3 (75%) and Q1 (25%)")
+        with p_col4:
+            st.metric("Lowest Asking Price", _fmt_lkr(price_stats["min"]), help="Minimum asking price in sample")
+        with p_col5:
+            st.metric("Highest Asking Price", _fmt_lkr(price_stats["max"]), help="Maximum asking price in sample")
+
+        # Distribution Controls
+        dist_scale_col1, dist_scale_col2 = st.columns([1, 3])
+        with dist_scale_col1:
+            price_scale = st.radio(
+                "Price Axis Scale",
+                options=["Linear Scale", "Logarithmic Scale (Log10)"],
+                horizontal=True,
+                key="radio_price_scale",
+            )
+        is_log = "Log" in price_scale
+
+        valid_price_df = df_filtered.dropna(subset=["asking_price"]).copy()
+        valid_price_df = valid_price_df[valid_price_df["asking_price"] > 0]
+
+        # 1. Asking Price Distribution Histogram
+        fig_hist = go.Figure()
+        fig_hist.add_trace(
+            go.Histogram(
+                x=valid_price_df["asking_price"],
+                nbinsx=35,
+                marker=dict(
+                    color="rgba(99, 102, 241, 0.7)",
+                    line=dict(color="#818cf8", width=1),
+                ),
+                hovertemplate="Price Range: %{x:,.0f} LKR<br>Listings: %{y}<extra></extra>",
+            )
+        )
+        # Add median line
+        if price_stats["median"] is not None:
+            fig_hist.add_vline(
+                x=price_stats["median"],
+                line_dash="dash",
+                line_color="#10b981",
+                annotation_text=f"Median: {_fmt_lkr(price_stats['median'])}",
+                annotation_position="top right",
+            )
+
+        fig_hist.update_layout(
+            title="Advertised Asking Price Distribution",
+            xaxis_title="Advertised Asking Price (LKR)",
+            yaxis_title="Number of Listings",
+            xaxis_type="log" if is_log else "linear",
+        )
+        _apply_dark_theme(fig_hist)
+        st.plotly_chart(fig_hist, use_container_width=True)
+
+        # 2. Bivariate Associations (Age, Mileage, Engine CC)
+        st.markdown("<div style='font-size:1.05rem; font-weight:600; color:#a5b4fc; margin:1.2rem 0 0.5rem;'>Bivariate Price Relationships</div>", unsafe_allow_html=True)
+        st.caption("Observed statistical associations between asking price and key vehicle attributes. Does NOT imply mathematical causality.")
+
+        rel_col1, rel_col2 = st.columns(2)
+
+        with rel_col1:
+            # Price vs Vehicle Age
+            age_df = df_filtered.dropna(subset=["vehicle_age", "asking_price"]).copy()
+            age_df = age_df[age_df["asking_price"] > 0]
+            if not age_df.empty:
+                fig_age = px.scatter(
+                    age_df,
+                    x="vehicle_age",
+                    y="asking_price",
+                    color="canonical_category" if "canonical_category" in age_df.columns else None,
+                    hover_data=["brand", "model", "manufacture_year"],
+                    labels={
+                        "vehicle_age": "Vehicle Age (Years)",
+                        "asking_price": "Advertised Asking Price (LKR)",
+                        "canonical_category": "Category",
+                    },
+                    title="Observed Relationship: Vehicle Age vs Advertised Asking Price",
+                )
+                if is_log:
+                    fig_age.update_layout(yaxis_type="log")
+                _apply_dark_theme(fig_age)
+                st.plotly_chart(fig_age, use_container_width=True)
+            else:
+                st.info("Insufficient vehicle age observations for relationship chart.")
+
+        with rel_col2:
+            # Price vs Mileage
+            mile_df = df_filtered.dropna(subset=["mileage", "asking_price"]).copy()
+            mile_df = mile_df[(mile_df["asking_price"] > 0) & (mile_df["mileage"] > 0)]
+            if not mile_df.empty:
+                fig_mile = px.scatter(
+                    mile_df,
+                    x="mileage",
+                    y="asking_price",
+                    color="canonical_category" if "canonical_category" in mile_df.columns else None,
+                    hover_data=["brand", "model", "vehicle_age"],
+                    labels={
+                        "mileage": "Odometer Mileage (km)",
+                        "asking_price": "Advertised Asking Price (LKR)",
+                        "canonical_category": "Category",
+                    },
+                    title="Observed Relationship: Mileage vs Advertised Asking Price",
+                )
+                if is_log:
+                    fig_mile.update_layout(yaxis_type="log")
+                _apply_dark_theme(fig_mile)
+                st.plotly_chart(fig_mile, use_container_width=True)
+            else:
+                st.info("Insufficient mileage observations for relationship chart.")
+
+        # Price vs Engine CC
+        cc_df = df_filtered.dropna(subset=["engine_cc", "asking_price"]).copy()
+        cc_df = cc_df[(cc_df["asking_price"] > 0) & (cc_df["engine_cc"] > 0)]
+        if not cc_df.empty and len(cc_df) >= 3:
+            fig_cc = px.scatter(
+                cc_df,
+                x="engine_cc",
+                y="asking_price",
+                color="canonical_category" if "canonical_category" in cc_df.columns else None,
+                hover_data=["brand", "model", "manufacture_year"],
+                labels={
+                    "engine_cc": "Engine Displacement (CC)",
+                    "asking_price": "Advertised Asking Price (LKR)",
+                    "canonical_category": "Category",
+                },
+                title="Observed Relationship: Engine Capacity (CC) vs Advertised Asking Price",
+            )
+            if is_log:
+                fig_cc.update_layout(yaxis_type="log")
+            _apply_dark_theme(fig_cc)
+            st.plotly_chart(fig_cc, use_container_width=True)
+
+        # Correlation Diagnostics Expander
+        if price_rels:
+            with st.expander("🔬 View Price Correlation Diagnostics & Non-Causality Matrix", expanded=False):
+                corr_rows = []
+                for key, val in price_rels.items():
+                    corr_rows.append({
+                        "Attribute Pair": val["label"],
+                        "Sample Size (N)": val["sample_size"],
+                        "Spearman Rank Correlation (ρ)": val["spearman_rho"],
+                        "Pearson Linear Correlation (r)": val["pearson_r"],
+                        "Observed Association": val["association_interpretation"],
+                    })
+                st.dataframe(pd.DataFrame(corr_rows), use_container_width=True, hide_index=True)
+                st.markdown(
+                    "<div style='font-size:0.8rem; color:#94a3b8; font-style:italic;'>"
+                    "Notice: Correlation measures observed statistical co-variation across public listings; "
+                    "it does not prove that one vehicle characteristic mathematically causes price changes."
+                    "</div>",
+                    unsafe_allow_html=True,
+                )
 
     st.markdown("<br>", unsafe_allow_html=True)

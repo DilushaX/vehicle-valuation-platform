@@ -12,6 +12,40 @@ import numpy as np
 import pandas as pd
 
 from eda.categorical import CategoricalAnalyzer
+from eda.distributions import DistributionAnalyzer
+from eda.relationships import RelationshipAnalyzer
+
+
+def get_price_distribution_stats(df: pd.DataFrame) -> Dict[str, Any]:
+    """
+    Computes parametric and non-parametric asking price distribution metrics.
+    Reuses DistributionAnalyzer.analyze_price_distribution.
+    """
+    if df.empty or "asking_price" not in df.columns:
+        return {
+            "count": 0,
+            "missing_count": 0,
+            "mean": None,
+            "std": None,
+            "min": None,
+            "q1": None,
+            "median": None,
+            "q3": None,
+            "max": None,
+            "iqr": None,
+        }
+    return DistributionAnalyzer.analyze_price_distribution(df)
+
+
+def get_price_relationships(df: pd.DataFrame) -> Dict[str, Dict[str, Any]]:
+    """
+    Computes bivariate correlations (Pearson & Spearman) between asking price
+    and numerical attributes (vehicle age, mileage, engine CC).
+    Reuses RelationshipAnalyzer.compute_bivariate_relationships.
+    """
+    if df.empty:
+        return {}
+    return RelationshipAnalyzer.compute_bivariate_relationships(df)
 
 
 def get_category_summary(df: pd.DataFrame) -> pd.DataFrame:

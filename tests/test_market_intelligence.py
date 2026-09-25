@@ -12,6 +12,8 @@ from analytics.market.market_analytics import (
     get_category_summary,
     get_filter_options,
     get_model_summary,
+    get_price_distribution_stats,
+    get_price_relationships,
 )
 
 
@@ -258,6 +260,41 @@ def test_get_model_summary_empty():
     model_df = get_model_summary(pd.DataFrame())
     assert model_df.empty
     assert "model" in model_df.columns
+
+
+def test_get_price_distribution_stats(sample_market_df):
+    stats = get_price_distribution_stats(sample_market_df)
+    assert stats["count"] == 5
+    assert stats["median"] == 9_500_000
+    assert stats["min"] == 750_000
+    assert stats["max"] == 28_000_000
+    assert stats["iqr"] > 0
+
+
+def test_get_price_distribution_stats_empty():
+    stats = get_price_distribution_stats(pd.DataFrame())
+    assert stats["count"] == 0
+    assert stats["median"] is None
+
+
+def test_get_price_relationships(sample_market_df):
+    # Add engine_cc for complete bivariate testing
+    df = sample_market_df.copy()
+    df["engine_cc"] = [1500, 1800, 2800, 2500, 150]
+    rel = get_price_relationships(df)
+    assert "asking_price_vs_vehicle_age" in rel
+    assert "asking_price_vs_mileage" in rel
+    assert "asking_price_vs_engine_cc" in rel
+    age_rel = rel["asking_price_vs_vehicle_age"]
+    assert age_rel["sample_size"] == 5
+    assert age_rel["spearman_rho"] is not None
+    assert "STATISTICAL NOTICE" in age_rel["disclaimer"]
+
+
+def test_get_price_relationships_empty():
+    rel = get_price_relationships(pd.DataFrame())
+    assert rel == {}
+
 
 
 

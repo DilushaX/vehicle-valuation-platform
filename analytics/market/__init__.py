@@ -9,6 +9,8 @@ from analytics.market.market_analytics import (
     get_category_summary,
     get_filter_options,
     get_model_summary,
+    get_price_distribution_stats,
+    get_price_relationships,
 )
 
 __all__ = [
@@ -18,4 +20,6 @@ __all__ = [
     "get_category_summary",
     "get_filter_options",
     "get_model_summary",
+    "get_price_distribution_stats",
+    "get_price_relationships",
 ]
