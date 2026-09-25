@@ -23,6 +23,7 @@ import streamlit as st
 
 from analytics.market.market_analytics import (
     apply_filters,
+    compute_data_quality_summary,
     compute_market_overview,
     get_brand_summary,
     get_category_summary,
@@ -1316,3 +1317,96 @@ def render_market_intelligence_page(api_url: str = "http://localhost:8000") -> N
             st.plotly_chart(fig_cat_m, use_container_width=True)
 
     st.markdown("<br>", unsafe_allow_html=True)
+
+    # ── Data Quality & Market Scope Indicators ───────────────────────────
+    st.markdown("<div class='section-title'>🛡️ Data Quality & Market Scope Notice</div>", unsafe_allow_html=True)
+
+    dq_summary = compute_data_quality_summary(df_filtered)
+
+    # Market Scope Notice
+    st.markdown(
+        """
+        <div class="info-card" style="border-left: 4px solid #6366f1; margin-bottom: 1.2rem;">
+            <div style="font-weight: 600; color: #a5b4fc; font-size: 0.95rem; margin-bottom: 0.3rem;">
+                📌 Market Scope & Asking Price Definition
+            </div>
+            <div style="font-size: 0.88rem; color: #cbd5e1; line-height: 1.6;">
+                This dashboard describes advertised vehicle listings collected from configured public sources.
+                <strong>Asking prices may differ from negotiated transaction prices.</strong>
+                Observed listing disappearance does not by itself confirm a vehicle sale.
+                Statistical correlations reflect observed market patterns and do not imply mathematical causality.
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    # Quality KPI cards
+    dq_col1, dq_col2, dq_col3, dq_col4 = st.columns(4)
+    with dq_col1:
+        st.metric(
+            "Records Evaluated",
+            _fmt_num(dq_summary["total_records"]),
+            help="Total vehicle listing records in filtered selection.",
+        )
+    with dq_col2:
+        st.metric(
+            "ML Eligible",
+            f"{dq_summary['ml_eligible_pct']}% ({dq_summary['ml_eligible_count']})",
+            help="Listings passing critical schema validation and eligible for ML valuation training.",
+        )
+    with dq_col3:
+        st.metric(
+            "Validation Warnings",
+            f"{dq_summary['issue_rate_pct']}% ({dq_summary['records_with_issues']})",
+            help="Records flagged with quality or consistency warnings.",
+        )
+    with dq_col4:
+        st.metric(
+            "Active in Market",
+            _fmt_num(dq_summary["active_records"]),
+            help="Listings currently marked ACTIVE.",
+        )
+
+    # Detailed Attribute Completeness Expander
+    with st.expander("📋 View Data Quality & Attribute Completeness Details", expanded=False):
+        dq_tcol1, dq_tcol2 = st.columns(2)
+
+        with dq_tcol1:
+            st.markdown("**Attribute Completeness**")
+            comp_rows = []
+            for attr, vals in dq_summary["attribute_completeness"].items():
+                comp_rows.append({
+                    "Attribute": attr,
+                    "Valid Records": vals["valid_count"],
+                    "Missing Records": vals["missing_count"],
+                    "Completeness": f"{vals['completeness_pct']}%",
+                })
+            st.dataframe(pd.DataFrame(comp_rows), use_container_width=True, hide_index=True)
+
+        with dq_tcol2:
+            st.markdown("**Validation Issues Breakdown**")
+            if dq_summary["issue_breakdown"]:
+                iss_rows = [
+                    {"Issue Code / Flag": k, "Occurrences": v}
+                    for k, v in dq_summary["issue_breakdown"].items()
+                ]
+                st.dataframe(pd.DataFrame(iss_rows), use_container_width=True, hide_index=True)
+            else:
+                st.markdown(
+                    "<span style='color:#34d399;'>● No validation issues detected in current selection.</span>",
+                    unsafe_allow_html=True,
+                )
+
+        st.markdown(
+            """
+            <div style="font-size:0.78rem; color:#64748b; margin-top:0.8rem;">
+                ⚠️ <em>Methodological Clarification:</em> Data quality indicators describe input completeness
+                and rule validation; they do <strong>NOT</strong> represent a valuation prediction confidence score or forecast certainty.
+                Suspicious records are preserved with transparent flags rather than silently discarded.
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    st.markdown("<br><br>", unsafe_allow_html=True)

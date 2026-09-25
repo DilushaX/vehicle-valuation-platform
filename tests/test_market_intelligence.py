@@ -7,6 +7,7 @@ import pytest
 
 from analytics.market.market_analytics import (
     apply_filters,
+    compute_data_quality_summary,
     compute_market_overview,
     get_brand_summary,
     get_category_summary,
@@ -404,6 +405,32 @@ def test_compute_monthly_trends_empty():
     res = compute_monthly_trends(pd.DataFrame())
     assert res["has_sufficient_depth"] is False
     assert res["monthly_activity"].empty
+
+
+def test_compute_data_quality_summary(sample_market_df):
+    sample_df = sample_market_df.copy()
+    sample_df["validation_issues"] = [
+        ["ERR_MISSING_PRICE"],
+        [],
+        ["WARN_HIGH_MILEAGE"],
+        [],
+        [],
+    ]
+    summary = compute_data_quality_summary(sample_df)
+    assert summary["total_records"] == 5
+    assert summary["ml_eligible_count"] == 4
+    assert summary["records_with_issues"] == 2
+    assert summary["issue_rate_pct"] == 40.0
+    assert "asking_price" in summary["attribute_completeness"]
+    assert "ERR_MISSING_PRICE" in summary["issue_breakdown"]
+
+
+def test_compute_data_quality_summary_empty():
+    summary = compute_data_quality_summary(pd.DataFrame())
+    assert summary["total_records"] == 0
+    assert summary["records_with_issues"] == 0
+    assert summary["ml_eligible_count"] == 0
+
 
 
 

@@ -44,6 +44,107 @@ def get_district_summary(
     return res
 
 
+def compute_data_quality_summary(df: pd.DataFrame) -> Dict[str, Any]:
+    """
+    Computes data quality indicators across records:
+    total records, ML eligibility, validation issue counts, attribute completeness,
+    and issue breakdown.
+
+    Notice: Data quality indicators describe input completeness and rule validation;
+    they do NOT represent a valuation prediction confidence score.
+    """
+    if df.empty:
+        return {
+            "total_records": 0,
+            "ml_eligible_count": 0,
+            "ml_eligible_pct": 0.0,
+            "ml_ineligible_count": 0,
+            "records_with_issues": 0,
+            "issue_rate_pct": 0.0,
+            "active_records": 0,
+            "no_longer_observed_records": 0,
+            "attribute_completeness": {},
+            "issue_breakdown": {},
+        }
+
+    total = len(df)
+    ml_el = int(df["ml_eligible"].sum()) if "ml_eligible" in df.columns else 0
+    ml_el_pct = round((ml_el / total) * 100.0, 1)
+
+    # Validation issues
+    records_with_issues = 0
+    issue_counts: Dict[str, int] = {}
+    if "validation_issues" in df.columns:
+        for issues in df["validation_issues"]:
+            if isinstance(issues, list) and issues:
+                records_with_issues += 1
+                for iss in issues:
+                    iss_str = str(iss).strip()
+                    issue_counts[iss_str] = issue_counts.get(iss_str, 0) + 1
+            elif isinstance(issues, str) and issues.strip() and issues.strip() != "[]":
+                records_with_issues += 1
+                try:
+                    import json
+                    parsed = json.loads(issues)
+                    if isinstance(parsed, list):
+                        for iss in parsed:
+                            iss_str = str(iss).strip()
+                            issue_counts[iss_str] = issue_counts.get(iss_str, 0) + 1
+                except Exception:
+                    issue_counts[issues] = issue_counts.get(issues, 0) + 1
+
+    issue_rate = round((records_with_issues / total) * 100.0, 1)
+
+    active_cnt = (
+        int((df["current_status"] == "ACTIVE").sum())
+        if "current_status" in df.columns
+        else 0
+    )
+    nlo_cnt = (
+        int((df["current_status"] == "NO_LONGER_OBSERVED").sum())
+        if "current_status" in df.columns
+        else 0
+    )
+
+    # Core attribute completeness
+    core_attrs = [
+        "asking_price",
+        "mileage",
+        "manufacture_year",
+        "fuel_type",
+        "transmission",
+        "engine_cc",
+        "district",
+        "condition",
+    ]
+    completeness: Dict[str, Dict[str, Any]] = {}
+    for attr in core_attrs:
+        if attr in df.columns:
+            non_null = int(df[attr].dropna().shape[0])
+            pct = round((non_null / total) * 100.0, 1)
+        else:
+            non_null = 0
+            pct = 0.0
+        completeness[attr] = {
+            "valid_count": non_null,
+            "missing_count": total - non_null,
+            "completeness_pct": pct,
+        }
+
+    return {
+        "total_records": total,
+        "ml_eligible_count": ml_el,
+        "ml_eligible_pct": ml_el_pct,
+        "ml_ineligible_count": total - ml_el,
+        "records_with_issues": records_with_issues,
+        "issue_rate_pct": issue_rate,
+        "active_records": active_cnt,
+        "no_longer_observed_records": nlo_cnt,
+        "attribute_completeness": completeness,
+        "issue_breakdown": issue_counts,
+    }
+
+
 def get_price_distribution_stats(df: pd.DataFrame) -> Dict[str, Any]:
     """
     Computes parametric and non-parametric asking price distribution metrics.
