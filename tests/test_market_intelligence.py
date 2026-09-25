@@ -11,9 +11,14 @@ from analytics.market.market_analytics import (
     get_brand_summary,
     get_category_summary,
     get_filter_options,
+    get_fuel_summary,
+    get_mileage_bracket_summary,
+    get_mileage_distribution_stats,
     get_model_summary,
     get_price_distribution_stats,
     get_price_relationships,
+    get_transmission_summary,
+    get_vehicle_age_distribution_stats,
 )
 
 
@@ -294,6 +299,53 @@ def test_get_price_relationships(sample_market_df):
 def test_get_price_relationships_empty():
     rel = get_price_relationships(pd.DataFrame())
     assert rel == {}
+
+
+def test_get_fuel_summary(sample_market_df):
+    fuel_df = get_fuel_summary(sample_market_df, min_sample=1)
+    assert not fuel_df.empty
+    assert "fuel_type" in fuel_df.columns
+    assert "Petrol" in fuel_df["fuel_type"].values
+    assert "Diesel" in fuel_df["fuel_type"].values
+    petrol_row = fuel_df[fuel_df["fuel_type"] == "Petrol"].iloc[0]
+    assert petrol_row["listing_count"] == 3
+
+
+def test_get_fuel_summary_empty():
+    fuel_df = get_fuel_summary(pd.DataFrame())
+    assert fuel_df.empty
+    assert "fuel_type" in fuel_df.columns
+
+
+def test_get_transmission_summary(sample_market_df):
+    trans_df = get_transmission_summary(sample_market_df, min_sample=1)
+    assert not trans_df.empty
+    assert "transmission" in trans_df.columns
+    assert "Automatic" in trans_df["transmission"].values
+    assert "Manual" in trans_df["transmission"].values
+    auto_row = trans_df[trans_df["transmission"] == "Automatic"].iloc[0]
+    assert auto_row["listing_count"] == 3
+
+
+def test_get_transmission_summary_empty():
+    trans_df = get_transmission_summary(pd.DataFrame())
+    assert trans_df.empty
+    assert "transmission" in trans_df.columns
+
+
+def test_get_vehicle_age_distribution_stats(sample_market_df):
+    age_stats = get_vehicle_age_distribution_stats(sample_market_df)
+    assert age_stats["count"] == 5
+    assert age_stats["age_median"] is not None
+    assert age_stats["yom_median"] == 2018
+
+
+def test_get_mileage_bracket_summary(sample_market_df):
+    mb_df = get_mileage_bracket_summary(sample_market_df)
+    assert not mb_df.empty
+    assert len(mb_df) == 6
+    assert mb_df["listing_count"].sum() == 5
+
 
 
 

@@ -27,9 +27,14 @@ from analytics.market.market_analytics import (
     get_brand_summary,
     get_category_summary,
     get_filter_options,
+    get_fuel_summary,
+    get_mileage_bracket_summary,
+    get_mileage_distribution_stats,
     get_model_summary,
     get_price_distribution_stats,
     get_price_relationships,
+    get_transmission_summary,
+    get_vehicle_age_distribution_stats,
 )
 from eda.dataset import EDADatasetLoader
 
@@ -862,5 +867,245 @@ def render_market_intelligence_page(api_url: str = "http://localhost:8000") -> N
                     "</div>",
                     unsafe_allow_html=True,
                 )
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # ── Vehicle Characteristics: Fuel & Transmission ─────────────────────
+    st.markdown("<div class='section-title'>⚙️ Fuel Type & Transmission Analysis</div>", unsafe_allow_html=True)
+    st.caption(
+        "Descriptive comparisons of asking prices and market share across fuel types and transmission configurations. "
+        "No causal claims or vehicle superiority should be inferred."
+    )
+
+    fuel_df = get_fuel_summary(df_filtered, min_sample=1)
+    trans_df = get_transmission_summary(df_filtered, min_sample=1)
+
+    ft_col1, ft_col2 = st.columns(2)
+
+    with ft_col1:
+        st.markdown("**Fuel Type Market Distribution**")
+        if not fuel_df.empty and fuel_df["listing_count"].sum() > 0:
+            fig_fuel = go.Figure(
+                data=[
+                    go.Bar(
+                        x=fuel_df["fuel_type"],
+                        y=fuel_df["listing_count"],
+                        marker_color="#f59e0b",
+                        text=fuel_df["listing_count"],
+                        textposition="auto",
+                        hovertemplate="<b>%{x}</b><br>Listings: %{y}<br>Median Price: %{customdata}<extra></extra>",
+                        customdata=[_fmt_lkr(p) for p in fuel_df["median_asking_price"]],
+                    )
+                ]
+            )
+            fig_fuel.update_layout(
+                title="Listings by Fuel Type",
+                xaxis_title="Fuel Type",
+                yaxis_title="Listing Count",
+            )
+            _apply_dark_theme(fig_fuel, height=350)
+            st.plotly_chart(fig_fuel, use_container_width=True)
+        else:
+            st.info("No fuel type data available for selected filters.")
+
+    with ft_col2:
+        st.markdown("**Transmission Market Distribution**")
+        if not trans_df.empty and trans_df["listing_count"].sum() > 0:
+            fig_trans = go.Figure(
+                data=[
+                    go.Bar(
+                        x=trans_df["transmission"],
+                        y=trans_df["listing_count"],
+                        marker_color="#06b6d4",
+                        text=trans_df["listing_count"],
+                        textposition="auto",
+                        hovertemplate="<b>%{x}</b><br>Listings: %{y}<br>Median Price: %{customdata}<extra></extra>",
+                        customdata=[_fmt_lkr(p) for p in trans_df["median_asking_price"]],
+                    )
+                ]
+            )
+            fig_trans.update_layout(
+                title="Listings by Transmission",
+                xaxis_title="Transmission",
+                yaxis_title="Listing Count",
+            )
+            _apply_dark_theme(fig_trans, height=350)
+            st.plotly_chart(fig_trans, use_container_width=True)
+        else:
+            st.info("No transmission data available for selected filters.")
+
+    # Fuel and Transmission Pricing Comparison
+    ft_pcol1, ft_pcol2 = st.columns(2)
+    with ft_pcol1:
+        if not fuel_df.empty and fuel_df["listing_count"].sum() > 0:
+            fig_fuel_p = go.Figure(
+                data=[
+                    go.Bar(
+                        name="Median Price",
+                        x=fuel_df["fuel_type"],
+                        y=fuel_df["median_asking_price"],
+                        marker_color="#d97706",
+                        hovertemplate="<b>%{x}</b><br>Median Asking Price: %{y:,.0f} LKR<extra></extra>",
+                    ),
+                    go.Bar(
+                        name="Mean Price",
+                        x=fuel_df["fuel_type"],
+                        y=fuel_df["mean_asking_price"],
+                        marker_color="#fbbf24",
+                        hovertemplate="<b>%{x}</b><br>Mean Asking Price: %{y:,.0f} LKR<extra></extra>",
+                    ),
+                ]
+            )
+            fig_fuel_p.update_layout(
+                title="Advertised Asking Price by Fuel Type",
+                xaxis_title="Fuel Type",
+                yaxis_title="Advertised Asking Price (LKR)",
+                barmode="group",
+                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+            )
+            _apply_dark_theme(fig_fuel_p, height=350)
+            st.plotly_chart(fig_fuel_p, use_container_width=True)
+
+    with ft_pcol2:
+        if not trans_df.empty and trans_df["listing_count"].sum() > 0:
+            fig_trans_p = go.Figure(
+                data=[
+                    go.Bar(
+                        name="Median Price",
+                        x=trans_df["transmission"],
+                        y=trans_df["median_asking_price"],
+                        marker_color="#0891b2",
+                        hovertemplate="<b>%{x}</b><br>Median Asking Price: %{y:,.0f} LKR<extra></extra>",
+                    ),
+                    go.Bar(
+                        name="Mean Price",
+                        x=trans_df["transmission"],
+                        y=trans_df["mean_asking_price"],
+                        marker_color="#67e8f9",
+                        hovertemplate="<b>%{x}</b><br>Mean Asking Price: %{y:,.0f} LKR<extra></extra>",
+                    ),
+                ]
+            )
+            fig_trans_p.update_layout(
+                title="Advertised Asking Price by Transmission",
+                xaxis_title="Transmission",
+                yaxis_title="Advertised Asking Price (LKR)",
+                barmode="group",
+                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+            )
+            _apply_dark_theme(fig_trans_p, height=350)
+            st.plotly_chart(fig_trans_p, use_container_width=True)
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # ── Vehicle Age & Mileage Analysis ───────────────────────────────────
+    st.markdown("<div class='section-title'>⏱️ Vehicle Age & Mileage Analysis</div>", unsafe_allow_html=True)
+    st.caption(
+        "Examines asking prices across vehicle age and odometer mileage brackets. "
+        "Vehicle age is mathematically derived as: <code>vehicle_age = reference_year - manufacture_year</code>. "
+        "No specific mathematical depreciation formula is presupposed."
+    )
+
+    age_mile_col1, age_mile_col2 = st.columns(2)
+
+    with age_mile_col1:
+        # Age Distribution and Median Price by Age
+        valid_age_df = df_filtered.dropna(subset=["vehicle_age"]).copy()
+        if not valid_age_df.empty:
+            age_grouped = valid_age_df.groupby("vehicle_age").agg(
+                listing_count=("listing_id", "count"),
+                median_asking_price=("asking_price", "median"),
+            ).reset_index().sort_values(by="vehicle_age")
+
+            fig_age_dist = go.Figure()
+            fig_age_dist.add_trace(
+                go.Bar(
+                    x=age_grouped["vehicle_age"],
+                    y=age_grouped["listing_count"],
+                    name="Listings",
+                    marker_color="#818cf8",
+                    hovertemplate="Age %{x} Years<br>Listings: %{y}<extra></extra>",
+                )
+            )
+            fig_age_dist.update_layout(
+                title="Vehicle Age Distribution",
+                xaxis_title="Vehicle Age (Years)",
+                yaxis_title="Listing Count",
+            )
+            _apply_dark_theme(fig_age_dist, height=350)
+            st.plotly_chart(fig_age_dist, use_container_width=True)
+
+            # Median Asking Price by Age
+            valid_age_prices = age_grouped.dropna(subset=["median_asking_price"])
+            if not valid_age_prices.empty:
+                fig_age_price = go.Figure()
+                fig_age_price.add_trace(
+                    go.Scatter(
+                        x=valid_age_prices["vehicle_age"],
+                        y=valid_age_prices["median_asking_price"],
+                        mode="lines+markers",
+                        line=dict(color="#a855f7", width=2.5),
+                        marker=dict(size=7, color="#d8b4fe"),
+                        hovertemplate="Age %{x} Years<br>Median Price: %{y:,.0f} LKR<extra></extra>",
+                    )
+                )
+                fig_age_price.update_layout(
+                    title="Median Advertised Asking Price by Vehicle Age",
+                    xaxis_title="Vehicle Age (Years)",
+                    yaxis_title="Median Asking Price (LKR)",
+                )
+                _apply_dark_theme(fig_age_price, height=350)
+                st.plotly_chart(fig_age_price, use_container_width=True)
+        else:
+            st.info("No vehicle age data available.")
+
+    with age_mile_col2:
+        # Mileage Brackets Distribution and Median Price
+        mb_df = get_mileage_bracket_summary(df_filtered)
+        if not mb_df.empty and mb_df["listing_count"].sum() > 0:
+            fig_mb = go.Figure(
+                data=[
+                    go.Bar(
+                        x=mb_df["bracket"],
+                        y=mb_df["listing_count"],
+                        marker_color="#10b981",
+                        text=mb_df["listing_count"],
+                        textposition="auto",
+                        hovertemplate="<b>%{x}</b><br>Listings: %{y}<extra></extra>",
+                    )
+                ]
+            )
+            fig_mb.update_layout(
+                title="Listings by Odometer Mileage Bracket",
+                xaxis_title="Mileage Bracket",
+                yaxis_title="Listing Count",
+            )
+            _apply_dark_theme(fig_mb, height=350)
+            st.plotly_chart(fig_mb, use_container_width=True)
+
+            # Median Asking Price by Mileage Bracket
+            mb_with_price = mb_df.dropna(subset=["median_asking_price"])
+            if not mb_with_price.empty:
+                fig_mb_p = go.Figure(
+                    data=[
+                        go.Bar(
+                            x=mb_with_price["bracket"],
+                            y=mb_with_price["median_asking_price"],
+                            marker_color="#059669",
+                            text=[_fmt_lkr(p) for p in mb_with_price["median_asking_price"]],
+                            textposition="auto",
+                            hovertemplate="<b>%{x}</b><br>Median Asking Price: %{y:,.0f} LKR<extra></extra>",
+                        )
+                    ]
+                )
+                fig_mb_p.update_layout(
+                    title="Median Advertised Asking Price by Mileage Bracket",
+                    xaxis_title="Mileage Bracket",
+                    yaxis_title="Median Asking Price (LKR)",
+                )
+                _apply_dark_theme(fig_mb_p, height=350)
+                st.plotly_chart(fig_mb_p, use_container_width=True)
+        else:
+            st.info("No mileage data available.")
 
     st.markdown("<br>", unsafe_allow_html=True)

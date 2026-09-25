@@ -48,6 +48,114 @@ def get_price_relationships(df: pd.DataFrame) -> Dict[str, Dict[str, Any]]:
     return RelationshipAnalyzer.compute_bivariate_relationships(df)
 
 
+def get_fuel_summary(
+    df: pd.DataFrame,
+    min_sample: int = 1,
+) -> pd.DataFrame:
+    """
+    Analyzes vehicle fuel types (Petrol, Diesel, Hybrid, etc.).
+    Descriptive comparison only. Does not make causal or superiority claims.
+    Reuses CategoricalAnalyzer.analyze_fuel_types.
+    """
+    if df.empty or "fuel_type" not in df.columns:
+        return pd.DataFrame(
+            columns=[
+                "fuel_type",
+                "listing_count",
+                "pct_of_total",
+                "median_asking_price",
+                "mean_asking_price",
+                "is_low_sample",
+                "sample_flag",
+            ]
+        )
+    return CategoricalAnalyzer.analyze_fuel_types(df, min_sample=min_sample)
+
+
+def get_transmission_summary(
+    df: pd.DataFrame,
+    min_sample: int = 1,
+) -> pd.DataFrame:
+    """
+    Analyzes transmission types (Automatic, Manual).
+    Descriptive comparison only.
+    Reuses CategoricalAnalyzer.analyze_transmissions.
+    """
+    if df.empty or "transmission" not in df.columns:
+        return pd.DataFrame(
+            columns=[
+                "transmission",
+                "listing_count",
+                "pct_of_total",
+                "median_asking_price",
+                "mean_asking_price",
+                "is_low_sample",
+                "sample_flag",
+            ]
+        )
+    return CategoricalAnalyzer.analyze_transmissions(df, min_sample=min_sample)
+
+
+def get_vehicle_age_distribution_stats(df: pd.DataFrame) -> Dict[str, Any]:
+    """
+    Analyzes vehicle age and manufacture year distributions.
+    Reuses DistributionAnalyzer.analyze_yom_and_age_distribution.
+    """
+    if df.empty or "manufacture_year" not in df.columns:
+        return {"count": 0, "missing_count": 0}
+    return DistributionAnalyzer.analyze_yom_and_age_distribution(df)
+
+
+def get_mileage_distribution_stats(df: pd.DataFrame) -> Dict[str, Any]:
+    """
+    Analyzes odometer mileage distributions and bracket frequencies.
+    Reuses DistributionAnalyzer.analyze_mileage_distribution.
+    """
+    if df.empty or "mileage" not in df.columns:
+        return {"count": 0, "missing_count": 0}
+    return DistributionAnalyzer.analyze_mileage_distribution(df)
+
+
+def get_mileage_bracket_summary(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Computes listing counts and median asking prices across standard mileage brackets.
+    """
+    brackets = [
+        ("< 25,000 km", 0, 25_000),
+        ("25,000 - 50,000 km", 25_000, 50_000),
+        ("50,000 - 100,000 km", 50_000, 100_000),
+        ("100,000 - 150,000 km", 100_000, 150_000),
+        ("150,000 - 200,000 km", 150_000, 200_000),
+        ("> 200,000 km", 200_000, float("inf")),
+    ]
+    cols = ["bracket", "listing_count", "median_asking_price", "mean_asking_price"]
+    if df.empty or "mileage" not in df.columns:
+        return pd.DataFrame(columns=cols)
+
+    valid = df.dropna(subset=["mileage"]).copy()
+    valid["mileage_num"] = pd.to_numeric(valid["mileage"], errors="coerce")
+    valid = valid.dropna(subset=["mileage_num"])
+
+    rows = []
+    for label, low, high in brackets:
+        if high == float("inf"):
+            sub = valid[valid["mileage_num"] >= low]
+        else:
+            sub = valid[(valid["mileage_num"] >= low) & (valid["mileage_num"] < high)]
+        cnt = len(sub)
+        prices = pd.to_numeric(sub.get("asking_price", pd.Series()), errors="coerce").dropna()
+        prices = prices[prices > 0]
+        med = float(prices.median()) if not prices.empty else None
+        mean_p = float(prices.mean()) if not prices.empty else None
+        rows.append({
+            "bracket": label,
+            "listing_count": cnt,
+            "median_asking_price": med,
+            "mean_asking_price": mean_p,
+        })
+    return pd.DataFrame(rows)
+
+
 def get_category_summary(df: pd.DataFrame) -> pd.DataFrame:
     """
     Computes category-level market summary statistics:

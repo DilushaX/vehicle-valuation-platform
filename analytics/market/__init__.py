@@ -8,9 +8,14 @@ from analytics.market.market_analytics import (
     get_brand_summary,
     get_category_summary,
     get_filter_options,
+    get_fuel_summary,
+    get_mileage_bracket_summary,
+    get_mileage_distribution_stats,
     get_model_summary,
     get_price_distribution_stats,
     get_price_relationships,
+    get_transmission_summary,
+    get_vehicle_age_distribution_stats,
 )
 
 __all__ = [
@@ -19,7 +24,12 @@ __all__ = [
     "get_brand_summary",
     "get_category_summary",
     "get_filter_options",
+    "get_fuel_summary",
+    "get_mileage_bracket_summary",
+    "get_mileage_distribution_stats",
     "get_model_summary",
     "get_price_distribution_stats",
     "get_price_relationships",
+    "get_transmission_summary",
+    "get_vehicle_age_distribution_stats",
 ]
