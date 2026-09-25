@@ -567,9 +567,10 @@ def apply_filters(
     # Category filter
     if categories:
         cat_set = {str(c).strip().lower() for c in categories}
-        filtered = filtered[
-            filtered[cat_col].fillna("").astype(str).str.strip().str.lower().isin(cat_set)
-        ]
+        cat_match = filtered[cat_col].fillna("").astype(str).str.strip().str.lower().isin(cat_set)
+        if "category" in filtered.columns and cat_col != "category":
+            cat_match = cat_match | filtered["category"].fillna("").astype(str).str.strip().str.lower().isin(cat_set)
+        filtered = filtered[cat_match]
 
     # Brand filter
     if brands and "brand" in filtered.columns:

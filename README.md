@@ -35,9 +35,10 @@ The system continuously tracks vehicle listings (primarily from **Riyasewana**),
    - **SHAP TreeExplainer** feature contribution breakdown in Sri Lankan Rupees.
    - Explicit disclaimers regarding unobserved physical conditions and asking price scope.
 
-6. **Interactive Streamlit Dashboard** (Phase 10.2):
+6. **Interactive Streamlit Dashboard** (Phase 10.2 & Phase 10.3):
    - **Overview Page**: Platform introduction, live API liveness / model-readiness status, and feature highlights.
    - **Vehicle Valuation Page**: Interactive input form → calls `POST /api/valuation/predict` → displays Price Estimate Hero, Indicative Range, SHAP Factor Attribution bar chart, Data Quality indicator, Comparable Listings table, Market Summary chart, Audit & Reproducibility metadata, Model Metadata, and Limitations.
+   - **Market Intelligence Page (Phase 10.3)**: Comprehensive market exploration interface featuring multi-factor global filters, market overview KPIs, category breakdown, brand & model analytics with top-N selectors, asking price distributions (linear/log scale), bivariate scatter relationships (Age, Mileage, Engine CC), vehicle characteristics (Fuel, Transmission, Age, Mileage brackets), geographic district mapping, depth-gated historical trend analysis, and data quality audits. See [`dashboard/README.md`](dashboard/README.md) for full details.
 
 7. **FastAPI REST Backend**:
    - Complete RESTful endpoints for valuation, comparables, market analytics, trends, and quality reports.
@@ -872,7 +873,7 @@ uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
 - Interactive API Docs: `http://localhost:8000/docs`
 - Health Check: `http://localhost:8000/health`
 
-### 6. Launch Streamlit Dashboard (Phase 10.2)
+### 6. Launch Streamlit Dashboard (Phase 10.2 & Phase 10.3)
 
 Ensure the FastAPI backend is running first (Step 5), then:
 
@@ -882,9 +883,21 @@ streamlit run dashboard/app.py
 
 - Dashboard UI: `http://localhost:8501`
 - **Pages**:
-  - 🏠 **Overview** — API status and feature highlights
-  - 🔍 **Vehicle Valuation** — interactive valuation form with full result display
+  - 🏠 **Overview** — API status, model readiness, and platform architecture highlights.
+  - 🔍 **Vehicle Valuation** (Phase 10.2) — interactive vehicle valuation form with ML asking price estimates, indicative prediction range, Tree SHAP factor attribution breakdown, comparable listings, and market summary.
+  - 📈 **Market Intelligence** (Phase 10.3) — comprehensive market exploration interface describing advertised public listings from Riyasewana:
+    - **Global Interactive Filters**: Multi-select filters for Category, Brand, Model, District, Fuel Type, Transmission, Condition, Year range, and Asking Price range with dynamic active filter pills and instant reset.
+    - **Market Overview KPIs**: Distinguishes advertised listings from unique vehicle specifications; reports median and average asking prices and ML-eligibility rate.
+    - **Category Analysis**: Listing counts, median asking price comparison, and distribution by vehicle type.
+    - **Brand & Model Analysis**: Configurable Top-N volume rankings, asking price spreads, and box plots with low-sample size flags.
+    - **Asking Price Analysis**: Parametric and non-parametric stats, histogram with Linear/Log10 scale toggle, and scatter correlations (Age, Mileage, Engine CC) with explicit non-causal labeling.
+    - **Vehicle Characteristics**: Fuel type breakdown, Transmission comparison (Auto vs Manual), vehicle age distribution, and mileage bracket analysis.
+    - **Geographic Analysis**: Observed asking price differences and listing concentrations across Sri Lankan administrative districts.
+    - **Market Trends**: Longitudinal monthly listing activity and pricing dynamics gated by a strict **60-day minimum observation depth** rule to prevent synthetic or fabricated trends.
+    - **Data Quality & Scope Notice**: Transparent audit indicators showing ML-eligible records, validation issue breakdown, and prominent disclaimers that asking prices do not equal negotiated selling prices.
 
+> For in-depth architectural and methodological details, see [`dashboard/README.md`](dashboard/README.md).
+>
 > The dashboard calls the API over HTTP (default: `http://localhost:8000`). The API base URL is
 > configurable in the sidebar without restarting the dashboard.
 
