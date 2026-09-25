@@ -7,6 +7,7 @@ import pytest
 
 from analytics.market.market_analytics import (
     apply_filters,
+    compute_market_overview,
     get_filter_options,
 )
 
@@ -172,3 +173,36 @@ def test_apply_filters_no_matches(sample_market_df):
     filtered = apply_filters(sample_market_df, brands=["Ferrari"])
     assert len(filtered) == 0
     assert isinstance(filtered, pd.DataFrame)
+
+
+def test_compute_market_overview(sample_market_df):
+    overview = compute_market_overview(sample_market_df)
+    assert overview["total_listings"] == 5
+    assert overview["total_vehicles"] == 5
+    assert overview["distinct_categories"] == 4
+    assert overview["distinct_brands"] == 4
+    assert overview["distinct_models"] == 5
+    assert overview["median_asking_price"] == 9_500_000
+    assert overview["average_asking_price"] == (9_500_000 + 14_200_000 + 28_000_000 + 8_200_000 + 750_000) / 5
+    assert overview["active_listings"] == 4
+    assert overview["ml_eligible_listings"] == 4
+    assert overview["ml_eligible_pct"] == 80.0
+
+
+def test_compute_market_overview_empty():
+    overview = compute_market_overview(pd.DataFrame())
+    assert overview["total_listings"] == 0
+    assert overview["total_vehicles"] == 0
+    assert overview["median_asking_price"] is None
+    assert overview["average_asking_price"] is None
+    assert overview["distinct_categories"] == 0
+
+
+def test_compute_market_overview_distinguishes_vehicles_and_listings(sample_market_df):
+    # If multiple listings share the same vehicle_id
+    df_with_vehicles = sample_market_df.copy()
+    df_with_vehicles["vehicle_id"] = [1, 1, 2, 3, 4]  # 5 listings, 4 vehicles
+    overview = compute_market_overview(df_with_vehicles)
+    assert overview["total_listings"] == 5
+    assert overview["total_vehicles"] == 4
+

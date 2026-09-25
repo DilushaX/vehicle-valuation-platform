@@ -19,7 +19,11 @@ from typing import Any, Dict, List, Optional
 import pandas as pd
 import streamlit as st
 
-from analytics.market.market_analytics import apply_filters, get_filter_options
+from analytics.market.market_analytics import (
+    apply_filters,
+    compute_market_overview,
+    get_filter_options,
+)
 from eda.dataset import EDADatasetLoader
 
 logger = logging.getLogger(__name__)
@@ -285,3 +289,69 @@ def render_market_intelligence_page(api_url: str = "http://localhost:8000") -> N
     if df_filtered.empty:
         st.info("⚠️ No listings match the selected filters. Please adjust your filter criteria.")
         return
+
+    # ── Market Overview KPIs ─────────────────────────────────────────────
+    st.markdown("<div class='section-title'>📊 Market Overview KPIs</div>", unsafe_allow_html=True)
+    overview = compute_market_overview(df_filtered)
+
+    kpi_col1, kpi_col2, kpi_col3, kpi_col4 = st.columns(4)
+    with kpi_col1:
+        st.metric(
+            label="Total Listings",
+            value=_fmt_num(overview["total_listings"]),
+            help="Total advertised market listing records in the filtered view.",
+        )
+    with kpi_col2:
+        st.metric(
+            label="Vehicle Specs",
+            value=_fmt_num(overview["total_vehicles"]),
+            help="Vehicle specification records associated with listings in the current schema.",
+        )
+    with kpi_col3:
+        st.metric(
+            label="Median Asking Price",
+            value=_fmt_lkr(overview["median_asking_price"]),
+            help="50th percentile of advertised asking prices in LKR. Robust against extreme values.",
+        )
+    with kpi_col4:
+        st.metric(
+            label="Average Asking Price",
+            value=_fmt_lkr(overview["average_asking_price"]),
+            help="Arithmetic mean of advertised asking prices in LKR.",
+        )
+
+    kpi_col5, kpi_col6, kpi_col7, kpi_col8 = st.columns(4)
+    with kpi_col5:
+        st.metric(
+            label="Categories",
+            value=_fmt_num(overview["distinct_categories"]),
+            help="Number of distinct vehicle categories in view.",
+        )
+    with kpi_col6:
+        st.metric(
+            label="Brands",
+            value=_fmt_num(overview["distinct_brands"]),
+            help="Number of distinct vehicle makes/brands in view.",
+        )
+    with kpi_col7:
+        st.metric(
+            label="Models",
+            value=_fmt_num(overview["distinct_models"]),
+            help="Number of distinct vehicle models in view.",
+        )
+    with kpi_col8:
+        st.metric(
+            label="ML Eligible",
+            value=f"{overview['ml_eligible_pct']}% ({overview['ml_eligible_listings']})",
+            help="Listings meeting quality and attribute requirements for machine learning modeling.",
+        )
+
+    st.markdown(
+        """
+        <div style="font-size:0.78rem; color:#64748b; margin-top:-0.5rem; margin-bottom:1.5rem;">
+            ℹ️ <em>Note on Listings vs Vehicles:</em> In the current database schema, each collected listing corresponds to an associated vehicle record.
+            Listing count reflects individual advertised market postings, not necessarily distinct physical vehicles across repeat postings.
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )

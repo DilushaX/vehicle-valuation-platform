@@ -12,6 +12,85 @@ import numpy as np
 import pandas as pd
 
 
+def compute_market_overview(df: pd.DataFrame) -> Dict[str, Any]:
+    """
+    Computes high-level market overview metrics from a listings DataFrame.
+
+    Distinguishes listings from vehicle records:
+    - total_listings: Total advertised market listing records in the filtered view.
+    - total_vehicles: Unique physical vehicle specifications associated with the listings.
+    - asking price statistics: Advertised seller prices (not confirmed sale prices).
+    """
+    if df.empty:
+        return {
+            "total_listings": 0,
+            "total_vehicles": 0,
+            "distinct_categories": 0,
+            "distinct_brands": 0,
+            "distinct_models": 0,
+            "median_asking_price": None,
+            "average_asking_price": None,
+            "min_asking_price": None,
+            "max_asking_price": None,
+            "active_listings": 0,
+            "ml_eligible_listings": 0,
+            "ml_eligible_pct": 0.0,
+        }
+
+    total_listings = len(df)
+    
+    # Check if vehicle_id exists in df, otherwise treat vehicle spec count
+    if "vehicle_id" in df.columns:
+        total_vehicles = int(df["vehicle_id"].nunique())
+    else:
+        # In current schema, each listing corresponds to its own vehicle specification record
+        total_vehicles = total_listings
+
+    cat_col = "canonical_category" if "canonical_category" in df.columns else "category"
+    distinct_categories = int(df[cat_col].dropna().nunique()) if cat_col in df.columns else 0
+    distinct_brands = int(df["brand"].dropna().nunique()) if "brand" in df.columns else 0
+    distinct_models = int(df["model"].dropna().nunique()) if "model" in df.columns else 0
+
+    # Asking price metrics
+    valid_prices = pd.to_numeric(df["asking_price"], errors="coerce").dropna()
+    valid_prices = valid_prices[valid_prices > 0]
+
+    if not valid_prices.empty:
+        median_price = float(valid_prices.median())
+        mean_price = float(valid_prices.mean())
+        min_price = float(valid_prices.min())
+        max_price = float(valid_prices.max())
+    else:
+        median_price, mean_price, min_price, max_price = None, None, None, None
+
+    active_cnt = (
+        int((df["current_status"] == "ACTIVE").sum())
+        if "current_status" in df.columns
+        else 0
+    )
+    ml_eligible_cnt = (
+        int(df["ml_eligible"].sum())
+        if "ml_eligible" in df.columns
+        else 0
+    )
+    ml_eligible_pct = round((ml_eligible_cnt / total_listings) * 100.0, 1) if total_listings > 0 else 0.0
+
+    return {
+        "total_listings": total_listings,
+        "total_vehicles": total_vehicles,
+        "distinct_categories": distinct_categories,
+        "distinct_brands": distinct_brands,
+        "distinct_models": distinct_models,
+        "median_asking_price": median_price,
+        "average_asking_price": mean_price,
+        "min_asking_price": min_price,
+        "max_asking_price": max_price,
+        "active_listings": active_cnt,
+        "ml_eligible_listings": ml_eligible_cnt,
+        "ml_eligible_pct": ml_eligible_pct,
+    }
+
+
 def get_filter_options(df: pd.DataFrame) -> Dict[str, Any]:
     """
     Extracts unique filter options and min/max ranges available in the dataset.
