@@ -8,6 +8,7 @@ import pytest
 from analytics.market.market_analytics import (
     apply_filters,
     compute_market_overview,
+    get_category_summary,
     get_filter_options,
 )
 
@@ -205,4 +206,25 @@ def test_compute_market_overview_distinguishes_vehicles_and_listings(sample_mark
     overview = compute_market_overview(df_with_vehicles)
     assert overview["total_listings"] == 5
     assert overview["total_vehicles"] == 4
+
+
+def test_get_category_summary(sample_market_df):
+    cat_df = get_category_summary(sample_market_df)
+    assert not cat_df.empty
+    assert "category" in cat_df.columns
+    assert "listing_count" in cat_df.columns
+    assert "median_asking_price" in cat_df.columns
+    assert "mean_asking_price" in cat_df.columns
+    # Check cars
+    cars_row = cat_df[cat_df["category"] == "Cars"].iloc[0]
+    assert cars_row["listing_count"] == 2
+    assert cars_row["median_asking_price"] == (9_500_000 + 14_200_000) / 2
+
+
+def test_get_category_summary_empty():
+    cat_df = get_category_summary(pd.DataFrame())
+    assert cat_df.empty
+    assert "category" in cat_df.columns
+    assert "median_asking_price" in cat_df.columns
+
 

@@ -17,16 +17,38 @@ import logging
 from typing import Any, Dict, List, Optional
 
 import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
 import streamlit as st
 
 from analytics.market.market_analytics import (
     apply_filters,
     compute_market_overview,
+    get_category_summary,
     get_filter_options,
 )
 from eda.dataset import EDADatasetLoader
 
 logger = logging.getLogger(__name__)
+
+
+# ---------------------------------------------------------------------------
+# Theme Helper for Plotly Charts
+# ---------------------------------------------------------------------------
+
+def _apply_dark_theme(fig: go.Figure, height: int = 400) -> go.Figure:
+    """Applies unified dark glassmorphism styling to Plotly figures."""
+    fig.update_layout(
+        template="plotly_dark",
+        paper_bgcolor="rgba(17, 24, 39, 0.7)",
+        plot_bgcolor="rgba(15, 23, 42, 0.5)",
+        font=dict(family="Inter, sans-serif", color="#e2e8f0", size=12),
+        margin=dict(l=40, r=30, t=50, b=40),
+        height=height,
+    )
+    fig.update_xaxes(showgrid=True, gridcolor="rgba(99, 102, 241, 0.15)")
+    fig.update_yaxes(showgrid=True, gridcolor="rgba(99, 102, 241, 0.15)")
+    return fig
 
 
 # ---------------------------------------------------------------------------
@@ -355,3 +377,105 @@ def render_market_intelligence_page(api_url: str = "http://localhost:8000") -> N
         """,
         unsafe_allow_html=True,
     )
+
+    # ── Category Analysis ────────────────────────────────────────────────
+    st.markdown("<div class='section-title'>🚗 Vehicle Category Analysis</div>", unsafe_allow_html=True)
+    st.caption("Compare listing volumes, market share, and advertised asking price levels across vehicle categories.")
+
+    cat_df = get_category_summary(df_filtered)
+    if cat_df.empty or cat_df["listing_count"].sum() == 0:
+        st.info("No category data available for the current filter selection.")
+    else:
+        cat_col1, cat_col2 = st.columns(2)
+
+        with cat_col1:
+            # Bar chart: Listings by Category
+            fig_vol = go.Figure(
+                data=[
+                    go.Bar(
+                        x=cat_df["category"],
+                        y=cat_df["listing_count"],
+                        marker=dict(
+                            color=cat_df["listing_count"],
+                            colorscale="Viridis",
+                            line=dict(color="#6366f1", width=1),
+                        ),
+                        text=cat_df["listing_count"],
+                        textposition="auto",
+                        hovertemplate="<b>%{x}</b><br>Listings: %{y}<br>Share: %{customdata:.1f}%<extra></extra>",
+                        customdata=cat_df["pct_of_total"],
+                    )
+                ]
+            )
+            fig_vol.update_layout(
+                title="Listings by Category",
+                xaxis_title="Category",
+                yaxis_title="Listing Count",
+            )
+            _apply_dark_theme(fig_vol)
+            st.plotly_chart(fig_vol, use_container_width=True)
+
+        with cat_col2:
+            # Grouped Bar chart: Median vs Average Asking Price by Category
+            fig_price = go.Figure(
+                data=[
+                    go.Bar(
+                        name="Median Asking Price",
+                        x=cat_df["category"],
+                        y=cat_df["median_asking_price"],
+                        marker_color="#6366f1",
+                        hovertemplate="<b>%{x}</b><br>Median Asking Price: %{y:,.0f} LKR<extra></extra>",
+                    ),
+                    go.Bar(
+                        name="Average Asking Price",
+                        x=cat_df["category"],
+                        y=cat_df["mean_asking_price"],
+                        marker_color="#a5b4fc",
+                        hovertemplate="<b>%{x}</b><br>Average Asking Price: %{y:,.0f} LKR<extra></extra>",
+                    ),
+                ]
+            )
+            fig_price.update_layout(
+                title="Advertised Asking Price by Category (Median vs Mean)",
+                xaxis_title="Category",
+                yaxis_title="Advertised Asking Price (LKR)",
+                barmode="group",
+                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+            )
+            _apply_dark_theme(fig_price)
+            st.plotly_chart(fig_price, use_container_width=True)
+
+        # Category Breakdown Table
+        with st.expander("📋 View Category Summary Table", expanded=False):
+            display_cat_df = cat_df.copy()
+            display_cat_df["median_asking_price"] = display_cat_df["median_asking_price"].apply(
+                lambda p: _fmt_lkr(p) if pd.notna(p) else "N/A"
+            )
+            display_cat_df["mean_asking_price"] = display_cat_df["mean_asking_price"].apply(
+                lambda p: _fmt_lkr(p) if pd.notna(p) else "N/A"
+            )
+            display_cat_df["median_mileage"] = display_cat_df["median_mileage"].apply(
+                lambda m: f"{m:,.0f} km" if pd.notna(m) else "N/A"
+            )
+            display_cat_df["pct_of_total"] = display_cat_df["pct_of_total"].apply(
+                lambda pct: f"{pct:.1f}%"
+            )
+            display_cat_df["ml_eligible_pct"] = display_cat_df["ml_eligible_pct"].apply(
+                lambda pct: f"{pct:.1f}%"
+            )
+            display_cat_df = display_cat_df.rename(
+                columns={
+                    "category": "Category",
+                    "listing_count": "Listings",
+                    "pct_of_total": "Market Share",
+                    "ml_eligible_count": "ML Eligible",
+                    "ml_eligible_pct": "ML Eligible %",
+                    "median_asking_price": "Median Asking Price",
+                    "mean_asking_price": "Mean Asking Price",
+                    "median_mileage": "Median Mileage",
+                    "median_yom": "Median YOM",
+                }
+            )
+            st.dataframe(display_cat_df, use_container_width=True, hide_index=True)
+
+    st.markdown("<br>", unsafe_allow_html=True)

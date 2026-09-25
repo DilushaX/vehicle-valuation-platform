@@ -11,6 +11,32 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple
 import numpy as np
 import pandas as pd
 
+from eda.categorical import CategoricalAnalyzer
+
+
+def get_category_summary(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Computes category-level market summary statistics:
+    listing count, market share percentage, ML eligible count/rate,
+    median asking price, mean asking price, median mileage, and median manufacture year.
+    Reuses CategoricalAnalyzer.analyze_categories.
+    """
+    if df.empty:
+        return pd.DataFrame(
+            columns=[
+                "category",
+                "listing_count",
+                "pct_of_total",
+                "ml_eligible_count",
+                "ml_eligible_pct",
+                "median_asking_price",
+                "mean_asking_price",
+                "median_mileage",
+                "median_yom",
+            ]
+        )
+    return CategoricalAnalyzer.analyze_categories(df)
+
 
 def compute_market_overview(df: pd.DataFrame) -> Dict[str, Any]:
     """
