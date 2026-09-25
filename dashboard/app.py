@@ -27,6 +27,7 @@ import streamlit as st
 from dashboard.api_client import APIClientError, ValuationAPIClient
 from dashboard.pages.valuation_page import render_valuation_page
 from dashboard.pages.overview_page import render_overview_page
+from dashboard.pages.market_intelligence_page import render_market_intelligence_page
 
 # ---------------------------------------------------------------------------
 # Page configuration
@@ -276,7 +277,7 @@ with st.sidebar:
 
     page = st.radio(
         "Navigation",
-        options=["🏠 Overview", "🔍 Vehicle Valuation"],
+        options=["🏠 Overview", "🔍 Vehicle Valuation", "📈 Market Intelligence"],
         label_visibility="collapsed",
     )
 
@@ -325,5 +326,7 @@ with st.sidebar:
 # ---------------------------------------------------------------------------
 if page == "🏠 Overview":
     render_overview_page(api_url=api_url)
-else:
+elif page == "🔍 Vehicle Valuation":
     render_valuation_page(api_url=api_url)
+else:
+    render_market_intelligence_page(api_url=api_url)
