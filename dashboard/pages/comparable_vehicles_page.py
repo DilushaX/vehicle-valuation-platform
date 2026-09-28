@@ -988,20 +988,23 @@ def _render_data_quality(
             k for k, v in query.items()
             if v is not None and str(v).strip() not in ("", "nan")
         ]
-        total_attrs = 9  # brand, model, year, mileage, engine_cc, fuel, transmission, district, condition
+        total_attrs = 10  # category, brand, model, year, mileage, engine_cc, fuel, transmission, district, condition
 
         st.markdown(
             f"""
             <div style="font-size:0.88rem; color:#94a3b8; line-height:1.7;">
-                <b style="color:#e2e8f0;">Comparable Count:</b> {count}<br>
+                <b style="color:#e2e8f0;">Eligible comparables:</b> {count}<br>
                 <b style="color:#e2e8f0;">Input Attributes Provided:</b>
                     {len(cols_provided)} of {total_attrs}<br>
                 <b style="color:#e2e8f0;">Category Strict Matching:</b> Enabled (only same-category listings considered)<br>
+                <b style="color:#e2e8f0;">ML-Eligibility Filtering:</b> Enforced by MLDatasetLoader (verified records only)<br>
                 <b style="color:#e2e8f0;">Similarity Basis:</b> Multi-attribute weighted feature alignment
                     (Brand 25%, Model 25%, Year 14%, Mileage 10%, Engine CC 8%,
                     Transmission 6%, Fuel 4%, District 4%, Condition 4%)<br>
-                <b style="color:#e2e8f0;">Price Type:</b> Advertised Asking Price (LKR)
-                    — not verified transaction prices
+                <b style="color:#e2e8f0;">Price Basis:</b> Advertised Asking Price (LKR)
+                    — not verified transaction prices<br>
+                <b style="color:#e2e8f0;">Methodological Note:</b> Eligible comparable volume is descriptive
+                    and does NOT represent prediction confidence, valuation accuracy, or probability.
             </div>
             """,
             unsafe_allow_html=True,
