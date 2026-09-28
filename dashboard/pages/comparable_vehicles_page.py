@@ -84,6 +84,12 @@ def _apply_dark_theme(fig: go.Figure, height: int = 400) -> go.Figure:
         font=dict(family="Inter, sans-serif", color="#e2e8f0", size=12),
         margin=dict(l=40, r=30, t=50, b=40),
         height=height,
+        hoverlabel=dict(
+            bgcolor="rgba(15, 23, 42, 0.95)",
+            font_size=12,
+            font_family="Inter, sans-serif",
+            bordercolor="rgba(99, 102, 241, 0.4)",
+        ),
     )
     fig.update_xaxes(showgrid=True, gridcolor="rgba(99, 102, 241, 0.15)")
     fig.update_yaxes(showgrid=True, gridcolor="rgba(99, 102, 241, 0.15)")
