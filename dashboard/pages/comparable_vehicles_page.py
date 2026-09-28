@@ -514,11 +514,11 @@ def _run_comparable_search(
             )
             return
 
-    if min_sim_display > 0:
-        threshold = min_sim_display / 100.0
-        comparables = [c for c in comparables if c.similarity_score >= threshold]
-
-    comparables = _apply_sort(comparables, sort_by)
+    comparables = apply_result_controls(
+        comparables=comparables,
+        min_similarity_pct=float(min_sim_display),
+        sort_by=sort_by,
+    )
 
     _render_results(
         comparables=comparables,
@@ -531,23 +531,36 @@ def _run_comparable_search(
     )
 
 
-def _apply_sort(
+def apply_result_controls(
     comparables: List[ComparableVehicle],
-    sort_by: str,
+    min_similarity_pct: float = 0.0,
+    sort_by: str = "Similarity (highest first)",
 ) -> List[ComparableVehicle]:
-    """Applies UI-level sort to comparable results. Does NOT affect similarity scores."""
+    """
+    Applies UI display-level filtering and sorting to returned comparable vehicles.
+
+    IMPORTANT METHODOLOGICAL GUARANTEE:
+    - Operates strictly on displayed results; does NOT alter the underlying similarity
+      calculations, weights, or database queries.
+    - Filtered results are NOT claimed to be 'more accurate' or 'higher confidence'.
+    """
+    filtered = comparables
+    if min_similarity_pct > 0:
+        threshold = float(min_similarity_pct) / 100.0
+        filtered = [c for c in filtered if c.similarity_score >= threshold]
+
     if sort_by == "Asking Price (lowest first)":
-        return sorted(comparables, key=lambda c: c.asking_price)
+        return sorted(filtered, key=lambda c: c.asking_price)
     elif sort_by == "Asking Price (highest first)":
-        return sorted(comparables, key=lambda c: c.asking_price, reverse=True)
+        return sorted(filtered, key=lambda c: c.asking_price, reverse=True)
     elif sort_by == "Year (newest first)":
         return sorted(
-            comparables,
-            key=lambda c: c.manufacture_year if c.manufacture_year else 0,
+            filtered,
+            key=lambda c: c.manufacture_year if c.manufacture_year is not None else 0,
             reverse=True,
         )
     # Default: Similarity (highest first)
-    return sorted(comparables, key=lambda c: c.similarity_score, reverse=True)
+    return sorted(filtered, key=lambda c: c.similarity_score, reverse=True)
 
 
 # ---------------------------------------------------------------------------
