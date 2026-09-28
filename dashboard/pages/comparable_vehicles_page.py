@@ -784,10 +784,19 @@ def _render_visualizations(
                     ],
                     text=[_fmt_lkr(p) for p in prices],
                     textposition="outside",
-                    hovertemplate="<b>%{x}</b><br>Asking Price: %{y:,.0f} LKR<br><extra></extra>",
-                    name="Comparable Asking Price",
+                    hovertemplate="<b>%{x}</b><br>Advertised Asking Price: %{y:,.0f} LKR<br><extra></extra>",
+                    name="Comparable Advertised Asking Price",
                 )
             )
+            if len(prices) > 0:
+                median_p = float(pd.Series(prices).median())
+                fig.add_hline(
+                    y=median_p,
+                    line_dash="dot",
+                    line_color="#10b981",
+                    annotation_text=f"Median: {_fmt_lkr(median_p)}",
+                    annotation_position="top left",
+                )
             fig = _apply_dark_theme(fig, height=380)
             fig.update_layout(
                 xaxis_title="Vehicle",
@@ -841,31 +850,24 @@ def _render_visualizations(
                     hovertemplate=(
                         "<b>%{text}</b><br>"
                         "Year: %{x}<br>"
-                        "Asking Price: %{y:,.0f} LKR<br>"
+                        "Advertised Asking Price: %{y:,.0f} LKR<br>"
                         "<extra></extra>"
                     ),
                     name="Comparables",
                 )
             )
-            fig2.add_trace(
-                go.Scatter(
-                    x=[manufacture_year],
-                    y=[None],
-                    mode="markers",
-                    marker=dict(symbol="star", size=16, color="#f59e0b"),
-                    name=target_label,
-                    hovertemplate=(
-                        f"<b>{target_label}</b><br>"
-                        f"Year: {manufacture_year}<br>"
-                        "<extra></extra>"
-                    ),
-                )
+            fig2.add_vline(
+                x=manufacture_year,
+                line_dash="dash",
+                line_color="#f59e0b",
+                annotation_text=f"Target: {manufacture_year}",
+                annotation_position="top left",
             )
             fig2 = _apply_dark_theme(fig2, height=380)
             fig2.update_layout(
                 xaxis_title="Manufacture Year",
                 yaxis_title="Advertised Asking Price (LKR)",
-                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+                showlegend=False,
             )
             st.plotly_chart(fig2, use_container_width=True)
         else:
@@ -891,31 +893,25 @@ def _render_visualizations(
                     marker=dict(size=10, color="#6366f1", opacity=0.8),
                     hovertemplate=(
                         "Mileage: %{x:,.0f} km<br>"
-                        "Asking Price: %{y:,.0f} LKR<br>"
+                        "Advertised Asking Price: %{y:,.0f} LKR<br>"
                         "<extra></extra>"
                     ),
                     name="Comparables",
                 )
             )
-            fig3.add_trace(
-                go.Scatter(
-                    x=[mileage],
-                    y=[None],
-                    mode="markers",
-                    marker=dict(symbol="star", size=16, color="#f59e0b"),
-                    name=target_label,
-                    hovertemplate=(
-                        f"<b>{target_label}</b><br>"
-                        f"Mileage: {mileage:,.0f} km<br>"
-                        "<extra></extra>"
-                    ),
+            if mileage > 0:
+                fig3.add_vline(
+                    x=mileage,
+                    line_dash="dash",
+                    line_color="#f59e0b",
+                    annotation_text=f"Target: {mileage:,.0f} km",
+                    annotation_position="top left",
                 )
-            )
             fig3 = _apply_dark_theme(fig3, height=360)
             fig3.update_layout(
                 xaxis_title="Odometer Mileage (km)",
                 yaxis_title="Advertised Asking Price (LKR)",
-                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+                showlegend=False,
             )
             col_m, _ = st.columns([2, 1])
             with col_m:
