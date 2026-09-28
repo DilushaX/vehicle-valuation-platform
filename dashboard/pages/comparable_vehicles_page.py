@@ -325,7 +325,7 @@ def _render_target_vehicle_form() -> None:
             )
 
         submitted = st.form_submit_button(
-            "🔍 Find Comparable Vehicles",
+            "Find Comparable Vehicles",
             use_container_width=True,
             type="primary",
         )
@@ -422,6 +422,38 @@ def validate_target_vehicle_input(query: Dict[str, Any]) -> tuple[bool, List[str
 
 
 # ---------------------------------------------------------------------------
+def execute_comparable_search(
+    query: Dict[str, Any],
+    top_k: int = 10,
+    match_category_strictly: bool = True,
+    exclude_listing_id: Optional[str] = None,
+    candidate_pool: Optional[pd.DataFrame] = None,
+    engine: Optional[ComparableVehicleEngine] = None,
+) -> List[ComparableVehicle]:
+    """
+    Executes comparable vehicle search using the existing ComparableVehicleEngine.
+
+    Reuses existing parameters and methodology:
+    - Multi-attribute weighted similarity scoring
+    - Category strict matching (default: True)
+    - ML-eligible listings only
+    - Excludes private seller contact data
+
+    Returns:
+        List of ComparableVehicle objects sorted by similarity score descending.
+    """
+    if engine is None:
+        engine = _get_comparable_engine()
+    return engine.find_comparables(
+        query=query,
+        top_k=top_k,
+        match_category_strictly=match_category_strictly,
+        exclude_listing_id=exclude_listing_id,
+        candidate_pool=candidate_pool,
+    )
+
+
+# ---------------------------------------------------------------------------
 # Search execution
 # ---------------------------------------------------------------------------
 
@@ -465,8 +497,7 @@ def _run_comparable_search(
 
     with st.spinner("Searching comparable vehicles in the database…"):
         try:
-            engine = _get_comparable_engine()
-            comparables: List[ComparableVehicle] = engine.find_comparables(
+            comparables: List[ComparableVehicle] = execute_comparable_search(
                 query=query,
                 top_k=top_k,
                 match_category_strictly=True,
