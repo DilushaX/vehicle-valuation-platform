@@ -43,8 +43,8 @@ st.set_page_config(
     menu_items={
         "About": (
             "**Vehicle Market Intelligence & Valuation Platform**\n\n"
-            "Explainable ML valuations for Sri Lankan used vehicles. "
-            "Powered by RandomForest + Tree SHAP.\n\n"
+            "Explainable ML valuations, market intelligence, and multi-attribute comparable vehicle search for Sri Lankan used vehicles. "
+            "Powered by RandomForest, Tree SHAP, and weighted specification similarity matching.\n\n"
             "_Asking-price estimates only. Not a verified transaction price._"
         )
     },
