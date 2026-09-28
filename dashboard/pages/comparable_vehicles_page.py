@@ -615,10 +615,8 @@ def _render_results(
         return
 
     if count <= 2:
-        st.info(
-            f"⚠️ Limited comparable data is available ({count} result{'s' if count > 1 else ''}). "
-            "Interpret the market summary with caution — statistical figures are less reliable "
-            "with very few comparables."
+        st.warning(
+            "⚠️ Limited comparable data is available. Interpret the market summary with caution."
         )
 
     _render_results_table(comparables)
