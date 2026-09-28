@@ -623,6 +623,42 @@ def _render_results(
     _render_data_quality(comparables, query)
 
 
+def build_comparable_table_dataframe(
+    comparables: List[ComparableVehicle],
+) -> pd.DataFrame:
+    """
+    Constructs a presentation DataFrame for comparable vehicles.
+
+    Includes strictly non-private specification attributes:
+    - Brand, Model, Category, Manufacture Year, Mileage, Engine CC,
+      Fuel Type, Transmission, District, Asking Price (LKR), Similarity.
+
+    Guarantees:
+    - Excludes seller phone, email, and private contact info.
+    - Uses 'Similarity' label (NOT confidence, accuracy, or probability).
+    - Preserves observed values without synthetic imputation.
+    """
+    rows = []
+    for c in comparables:
+        rows.append(
+            {
+                "Brand": _safe_val(c.brand),
+                "Model": _safe_val(c.model),
+                "Category": _safe_val(c.category),
+                "Manufacture Year": str(c.manufacture_year) if c.manufacture_year else "N/A",
+                "Mileage": _fmt_km(c.mileage),
+                "Engine CC": _fmt_cc(c.engine_cc),
+                "Fuel Type": _safe_val(c.fuel_type),
+                "Transmission": _safe_val(c.transmission),
+                "District": _safe_val(c.district),
+                "Condition": _safe_val(c.condition),
+                "Advertised Asking Price (LKR)": _fmt_lkr(c.asking_price),
+                "Similarity": _fmt_pct(c.similarity_percentage),
+            }
+        )
+    return pd.DataFrame(rows)
+
+
 def _render_results_table(comparables: List[ComparableVehicle]) -> None:
     """Renders the comparable vehicles as a formatted Streamlit dataframe."""
 
@@ -633,26 +669,7 @@ def _render_results_table(comparables: List[ComparableVehicle]) -> None:
         unsafe_allow_html=True,
     )
 
-    rows = []
-    for c in comparables:
-        rows.append(
-            {
-                "Brand": _safe_val(c.brand),
-                "Model": _safe_val(c.model),
-                "Category": _safe_val(c.category),
-                "Year": str(c.manufacture_year) if c.manufacture_year else "N/A",
-                "Mileage": _fmt_km(c.mileage),
-                "Engine CC": _fmt_cc(c.engine_cc),
-                "Fuel": _safe_val(c.fuel_type),
-                "Transmission": _safe_val(c.transmission),
-                "District": _safe_val(c.district),
-                "Condition": _safe_val(c.condition),
-                "Asking Price (LKR)": _fmt_lkr(c.asking_price),
-                "Similarity": _fmt_pct(c.similarity_percentage),
-            }
-        )
-
-    df = pd.DataFrame(rows)
+    df = build_comparable_table_dataframe(comparables)
     st.dataframe(df, use_container_width=True, hide_index=True)
 
 
