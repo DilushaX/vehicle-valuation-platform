@@ -234,7 +234,7 @@ def _render_target_vehicle_form() -> None:
         with col2:
             manufacture_year = st.number_input(
                 "Manufacture Year *",
-                min_value=1970,
+                min_value=1950,
                 max_value=CURRENT_YEAR,
                 value=2016,
                 step=1,
@@ -349,6 +349,79 @@ def _render_target_vehicle_form() -> None:
 
 
 # ---------------------------------------------------------------------------
+# Input validation
+# ---------------------------------------------------------------------------
+
+def validate_target_vehicle_input(query: Dict[str, Any]) -> tuple[bool, List[str]]:
+    """
+    Validates target vehicle input against domain constraints.
+    
+    The target vehicle is an in-memory input object only. It is never inserted
+    or modified in the PostgreSQL database.
+    
+    Returns:
+        (is_valid, list_of_error_messages)
+    """
+    errors: List[str] = []
+
+    cat = query.get("category")
+    if not cat or cat not in VEHICLE_CATEGORIES:
+        errors.append(f"Vehicle Category must be one of: {', '.join(VEHICLE_CATEGORIES)}.")
+
+    brand = str(query.get("brand", "")).strip()
+    if not brand:
+        errors.append("Brand / Make cannot be empty.")
+
+    model = str(query.get("model", "")).strip()
+    if not model:
+        errors.append("Model cannot be empty.")
+
+    year = query.get("manufacture_year")
+    try:
+        y_int = int(year)  # type: ignore[arg-type]
+        if y_int < 1950 or y_int > CURRENT_YEAR:
+            errors.append(f"Manufacture Year must be between 1950 and {CURRENT_YEAR}.")
+    except (ValueError, TypeError):
+        errors.append(f"Manufacture Year must be a valid integer between 1950 and {CURRENT_YEAR}.")
+
+    fuel = query.get("fuel_type")
+    if fuel and fuel not in FUEL_TYPES:
+        errors.append(f"Fuel Type must be one of: {', '.join(FUEL_TYPES)}.")
+
+    trans = query.get("transmission")
+    if trans and trans not in TRANSMISSIONS:
+        errors.append(f"Transmission must be one of: {', '.join(TRANSMISSIONS)}.")
+
+    dist = query.get("district")
+    if dist and dist not in SRI_LANKA_DISTRICTS:
+        errors.append("District must be a valid Sri Lankan district.")
+
+    cond = query.get("condition")
+    if cond and cond not in CONDITIONS:
+        errors.append(f"Condition must be one of: {', '.join(CONDITIONS)}.")
+
+    mileage = query.get("mileage")
+    if mileage is not None:
+        try:
+            m_val = float(mileage)
+            if m_val < 0:
+                errors.append("Mileage cannot be negative.")
+        except (ValueError, TypeError):
+            errors.append("Mileage must be a positive number.")
+
+    engine_cc = query.get("engine_cc")
+    if engine_cc is not None:
+        try:
+            cc_val = float(engine_cc)
+            if cc_val < 0:
+                errors.append("Engine CC cannot be negative.")
+        except (ValueError, TypeError):
+            errors.append("Engine CC must be a positive number.")
+
+    return (len(errors) == 0, errors)
+
+
+# ---------------------------------------------------------------------------
 # Search execution
 # ---------------------------------------------------------------------------
 
@@ -369,19 +442,6 @@ def _run_comparable_search(
 ) -> None:
     """Validates input, calls the existing comparable engine, and renders results."""
 
-    errors: List[str] = []
-    if not brand:
-        errors.append("Brand / Make cannot be empty.")
-    if not model:
-        errors.append("Model cannot be empty.")
-    if manufacture_year < 1970 or manufacture_year > CURRENT_YEAR:
-        errors.append(f"Manufacture Year must be between 1970 and {CURRENT_YEAR}.")
-
-    if errors:
-        for e in errors:
-            st.error(f"⚠️ {e}")
-        return
-
     query: Dict[str, Any] = {
         "category": category,
         "brand": brand,
@@ -396,6 +456,12 @@ def _run_comparable_search(
         query["mileage"] = mileage
     if engine_cc is not None:
         query["engine_cc"] = engine_cc
+
+    is_valid, errors = validate_target_vehicle_input(query)
+    if not is_valid:
+        for e in errors:
+            st.error(f"⚠️ {e}")
+        return
 
     with st.spinner("Searching comparable vehicles in the database…"):
         try:
