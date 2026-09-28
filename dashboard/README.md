@@ -144,19 +144,118 @@ The dashboard provides dynamic, multi-factor filtering powered by `analytics/mar
 
 ---
 
+## 🔎 Comparable Vehicles Search UI (Phase 10.4)
+
+The **Comparable Vehicles** workflow (`dashboard/pages/comparable_vehicles_page.py`) provides an interactive, descriptive search interface for identifying similar market listings from the existing database.
+
+```
+Target Vehicle Input
+        ↓
+Existing Comparable Engine (analytics/comparables/comparable_engine.py)
+        ↓
+Comparable Vehicles Ranking
+        ↓
+Comparable Market Summary (analytics/comparables/market_summary.py)
+        ↓
+User-Friendly Visual Comparison
+```
+
+### 1. Purpose & Methodological Scope
+- **Descriptive Reference**: Allows users to inspect active, verified market listings with physical specifications closest to a target vehicle.
+- **Strictly Descriptive / Comparative**: Designed to contextualize market asking prices. It does **not** generate point valuations or appraisals.
+- **No Confirmed Transaction Prices**: All observed monetary figures are **advertised asking prices** from market postings. They do not represent verified or final transaction prices.
+- **Semantic Definition of Similarity**:
+  - The **Similarity** score represents multi-attribute specification distance based on implemented feature weights.
+  - It does **NOT** represent prediction confidence, probability, valuation accuracy, match certainty, or vehicle identity.
+
+### 2. Target Vehicle Input Fields
+The search form accepts the standard 10 vehicle specification attributes:
+| Field | UI Control | Canonical Validation Rules |
+| :--- | :--- | :--- |
+| **Category** | Selectbox | Must match canonical categories (`Cars`, `SUVs`, `Vans`, `Motorbikes`, etc.) |
+| **Brand / Make** | Text Input | Non-empty manufacturer name (e.g., `Toyota`, `Honda`) |
+| **Model** | Text Input | Non-empty model name (e.g., `Premio`, `Fit`, `Vezel`) |
+| **Manufacture Year** | Number Input | Valid integer between 1950 and current calendar year (2026) |
+| **Mileage (km)** | Number Input | Non-negative numeric odometer reading (optional; leave 0 if unknown) |
+| **Engine CC** | Number Input | Non-negative engine displacement in cubic centimetres (optional) |
+| **Fuel Type** | Selectbox | Allowed fuels: `Petrol`, `Diesel`, `Hybrid`, `Electric`, `LPG`, `CNG`, `Gas` |
+| **Transmission** | Selectbox | `Automatic`, `Manual` |
+| **District** | Selectbox | 25 administrative districts of Sri Lanka |
+| **Condition** | Selectbox | `Registered (Used)`, `Unregistered`, `Brand New` |
+
+> **Data Integrity Guarantee**: The target vehicle is strictly an in-memory input query. It is never inserted, updated, or written to PostgreSQL.
+
+### 3. Comparable Engine Integration
+- **Engine Reuse**: Directly invokes `ComparableVehicleEngine` (`analytics/comparables/comparable_engine.py`).
+- **No Second Algorithm**: Retains existing attribute similarity weights:
+  - Brand (Make): **0.25**
+  - Model: **0.25**
+  - Manufacture Year / Age: **0.14**
+  - Mileage: **0.10**
+  - Engine CC: **0.08**
+  - Transmission: **0.06**
+  - Fuel Type: **0.04**
+  - District / Location: **0.04**
+  - Condition: **0.04**
+- **Strict Category Matching**: Only listings belonging to the same canonical vehicle category are retrieved.
+- **Data Quality & Privacy**: Read-only extraction via `MLDatasetLoader` enforces `ml_eligible = True` and strictly excludes seller phone, email, and private contact information.
+
+### 4. Results Presentation & Formatting
+- **Clean Table**: Displays Brand, Model, Category, Manufacture Year, Mileage (`km`), Engine CC (`cc`), Fuel Type, Transmission, District, Condition, Advertised Asking Price (`LKR`), and Similarity (`%`).
+- **Privacy Enforcement**: No seller contact details are ever exposed in the table or DOM.
+- **Missing Value Handling**: Incomplete optional specifications are formatted as `N/A` without synthetic imputation.
+
+### 5. Comparable Market Summary
+- **Module Reuse**: Direct call to `create_comparable_market_summary` (`analytics/comparables/market_summary.py`).
+- **Descriptive Statistics**:
+  - **Comparable Count**
+  - **Minimum Advertised Asking Price (LKR)**
+  - **Maximum Advertised Asking Price (LKR)**
+  - **Median Advertised Asking Price (LKR)**
+  - **Average Advertised Asking Price (LKR)**
+  - **Advertised Asking Price Spread (LKR)**
+- **Methodological Disclaimer**: Prominently notes that figures reflect advertised asking prices of retrieved comparables, not verified transaction prices.
+- **Zero / Low-Data Handling**:
+  - Zero comparables: Displays *"No comparable vehicles were found for the selected target."* with null fields safely represented.
+  - Low-sample caution: Displays *"Limited comparable data is available. Interpret the market summary with caution."* when 1–2 comparables are returned.
+
+### 6. Comparison Visualizations
+Four dynamic charts contextualize the retrieved comparables:
+1. **Target Vehicle vs. Comparable Asking Prices**: Bar chart displaying asking prices per listing with a horizontal median reference line.
+2. **Manufacture Year vs. Advertised Asking Price**: Scatter plot with target vehicle year marked by a vertical dashed reference line.
+3. **Odometer Mileage vs. Advertised Asking Price**: Scatter plot with target vehicle mileage marked by a vertical dashed reference line (rendered when $\ge 2$ comparables possess mileage data).
+4. **Comparable Asking Price Distribution**: Frequency histogram of asking prices (rendered only when $\ge 3$ comparables are available to prevent misleading small-sample distributions).
+
+### 7. Result Controls & Display Filters
+- **Maximum Comparables**: User-configurable retrieval cap (1 to 20 listings).
+- **Minimum Similarity Display (%)**: Visual threshold slider filtering displayed results. Does not alter underlying similarity calculations or engine weights.
+- **Multi-Field Sorting**:
+  - Similarity (highest first)
+  - Asking Price (lowest first)
+  - Asking Price (highest first)
+  - Year (newest first)
+
+---
+
 ## 🧪 Testing & Verification
 
-The market intelligence analytics layer is thoroughly tested with unit and integration tests:
+The platform is thoroughly covered by automated test suites:
 
 ```bash
-# Run all market intelligence tests:
+# Run Phase 10.4 Comparable Vehicles Dashboard tests:
+.venv/bin/pytest tests/test_comparable_vehicles_dashboard.py -v
+
+# Run existing comparable engine and market summary tests:
+.venv/bin/pytest tests/test_comparable_engine.py tests/test_comparable_market_summary.py -v
+
+# Run Phase 10.3 Market Intelligence tests:
 .venv/bin/pytest tests/test_market_intelligence.py -q
 
 # Run full project test suite:
 .venv/bin/pytest -q
 ```
 
-All 375 tests pass with zero regressions.
+All **389 tests pass** with zero regressions.
 
 ---
 
@@ -170,4 +269,8 @@ source .venv/bin/activate
 streamlit run dashboard/app.py
 ```
 
-Navigate to `http://localhost:8501` and select **📈 Market Intelligence** from the sidebar navigation.
+Navigate to `http://localhost:8501` and select:
+- **🔎 Comparable Vehicles** for the multi-attribute comparable search workflow (Phase 10.4).
+- **📈 Market Intelligence** for marketplace analytics (Phase 10.3).
+- **🔍 Vehicle Valuation** for ML-driven asking price predictions (Phase 10.2).
+- **🏠 Overview** for platform introduction and API connectivity status.
