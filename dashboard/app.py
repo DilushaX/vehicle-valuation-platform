@@ -1,12 +1,14 @@
 """
-Vehicle Valuation Platform — Streamlit Dashboard (Phase 10.2).
+Vehicle Valuation Platform — Streamlit Dashboard (Phase 10.2 / 10.3 / 10.4).
 
 Entry point: ``streamlit run dashboard/app.py``
 
 Sections
 --------
-- 🏠 Overview          : Platform introduction and API status
-- 🔍 Vehicle Valuation : Interactive valuation form + full result display
+- 🏠 Overview              : Platform introduction and API status
+- 🔍 Vehicle Valuation     : Interactive valuation form + full result display
+- 📈 Market Intelligence   : Descriptive market analytics (Phase 10.3)
+- 🔎 Comparable Vehicles   : Multi-attribute comparable vehicle search (Phase 10.4)
 """
 
 from __future__ import annotations
@@ -28,6 +30,7 @@ from dashboard.api_client import APIClientError, ValuationAPIClient
 from dashboard.pages.valuation_page import render_valuation_page
 from dashboard.pages.overview_page import render_overview_page
 from dashboard.pages.market_intelligence_page import render_market_intelligence_page
+from dashboard.pages.comparable_vehicles_page import render_comparable_vehicles_page
 
 # ---------------------------------------------------------------------------
 # Page configuration
@@ -275,9 +278,25 @@ with st.sidebar:
 
     st.divider()
 
+    # Query param deep-linking support
+    default_nav_idx = 0
+    requested_page = str(st.query_params.get("page", "")).lower()
+    if "comparable" in requested_page or "similar" in requested_page:
+        default_nav_idx = 3
+    elif "market" in requested_page or "intelligence" in requested_page:
+        default_nav_idx = 2
+    elif "valua" in requested_page:
+        default_nav_idx = 1
+
     page = st.radio(
         "Navigation",
-        options=["🏠 Overview", "🔍 Vehicle Valuation", "📈 Market Intelligence"],
+        options=[
+            "🏠 Overview",
+            "🔍 Vehicle Valuation",
+            "📈 Market Intelligence",
+            "🔎 Comparable Vehicles",
+        ],
+        index=default_nav_idx,
         label_visibility="collapsed",
     )
 
@@ -328,5 +347,7 @@ if page == "🏠 Overview":
     render_overview_page(api_url=api_url)
 elif page == "🔍 Vehicle Valuation":
     render_valuation_page(api_url=api_url)
-else:
+elif page == "📈 Market Intelligence":
     render_market_intelligence_page(api_url=api_url)
+else:
+    render_comparable_vehicles_page(api_url=api_url)
