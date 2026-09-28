@@ -21,7 +21,7 @@ Methodological Notices:
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 import pandas as pd
 import plotly.graph_objects as go
@@ -31,7 +31,10 @@ from analytics.comparables.comparable_engine import (
     ComparableVehicle,
     ComparableVehicleEngine,
 )
-from analytics.comparables.market_summary import create_comparable_market_summary
+from analytics.comparables.market_summary import (
+    ComparableMarketSummary,
+    create_comparable_market_summary,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -677,6 +680,18 @@ def _render_results_table(comparables: List[ComparableVehicle]) -> None:
 # Market summary rendering
 # ---------------------------------------------------------------------------
 
+def compute_comparable_market_summary(
+    comparables: Optional[Union[List[ComparableVehicle], pd.DataFrame]] = None,
+) -> ComparableMarketSummary:
+    """
+    Computes asking price summary statistics for comparable vehicles.
+
+    Reuses the existing analytics.comparables.market_summary module.
+    Does NOT recalculate independently.
+    """
+    return create_comparable_market_summary(comparables)
+
+
 def _render_market_summary(comparables: List[ComparableVehicle]) -> None:
     """Renders the comparable market summary using create_comparable_market_summary."""
 
@@ -687,7 +702,7 @@ def _render_market_summary(comparables: List[ComparableVehicle]) -> None:
         unsafe_allow_html=True,
     )
 
-    summary = create_comparable_market_summary(comparables)
+    summary = compute_comparable_market_summary(comparables)
 
     if summary.comparable_count == 0:
         st.info("No comparable vehicles were found for the selected target.")
@@ -699,15 +714,15 @@ def _render_market_summary(comparables: List[ComparableVehicle]) -> None:
     with col1:
         st.metric("Comparable Count", f"{summary.comparable_count}")
     with col2:
-        st.metric("Minimum Asking Price", _fmt_lkr(summary.min_asking_price))
+        st.metric("Minimum Advertised Asking Price", _fmt_lkr(summary.min_asking_price))
     with col3:
-        st.metric("Maximum Asking Price", _fmt_lkr(summary.max_asking_price))
+        st.metric("Maximum Advertised Asking Price", _fmt_lkr(summary.max_asking_price))
     with col4:
-        st.metric("Median Asking Price", _fmt_lkr(summary.median_asking_price))
+        st.metric("Median Advertised Asking Price", _fmt_lkr(summary.median_asking_price))
     with col5:
-        st.metric("Average Asking Price", _fmt_lkr(summary.average_asking_price))
+        st.metric("Average Advertised Asking Price", _fmt_lkr(summary.average_asking_price))
     with col6:
-        st.metric("Price Spread", _fmt_lkr(summary.price_spread))
+        st.metric("Advertised Asking Price Spread", _fmt_lkr(summary.price_spread))
 
     st.markdown(
         '<div style="font-size:0.8rem; color:#64748b; margin-top:0.5rem; font-style:italic;">'
