@@ -35,65 +35,129 @@ The system continuously tracks vehicle listings (primarily from **Riyasewana**),
    - **SHAP TreeExplainer** feature contribution breakdown in Sri Lankan Rupees.
    - Explicit disclaimers regarding unobserved physical conditions and asking price scope.
 
-6. **Interactive Streamlit Dashboard** (Phase 10.2 & Phase 10.3):
-   - **Overview Page**: Platform introduction, live API liveness / model-readiness status, and feature highlights.
-   - **Vehicle Valuation Page**: Interactive input form → calls `POST /api/valuation/predict` → displays Price Estimate Hero, Indicative Range, SHAP Factor Attribution bar chart, Data Quality indicator, Comparable Listings table, Market Summary chart, Audit & Reproducibility metadata, Model Metadata, and Limitations.
-   - **Market Intelligence Page (Phase 10.3)**: Comprehensive market exploration interface featuring multi-factor global filters, market overview KPIs, category breakdown, brand & model analytics with top-N selectors, asking price distributions (linear/log scale), bivariate scatter relationships (Age, Mileage, Engine CC), vehicle characteristics (Fuel, Transmission, Age, Mileage brackets), geographic district mapping, depth-gated historical trend analysis, and data quality audits. See [`dashboard/README.md`](dashboard/README.md) for full details.
+6. **Interactive Streamlit Dashboard** (Phase 10.2 / 10.3 / 10.4):
+   - **Overview Page**: Platform introduction, live API service liveness / model-readiness status, and system architecture highlights.
+   - **Vehicle Valuation Page (Phase 10.2)**: Interactive input form → calls `POST /api/valuation/predict` → displays Price Estimate Hero, Indicative 300-Tree Prediction Range, SHAP Factor Attribution bar chart, Data Quality indicators, Comparable Listings table, Market Summary chart, Audit & Reproducibility metadata, and Model Metadata.
+   - **Market Intelligence Page (Phase 10.3)**: Comprehensive market exploration interface featuring 9 analytical modules, multi-factor global filters, market overview KPIs, category breakdown, brand & model analytics with top-N selectors, asking price distributions (linear/log scale), bivariate scatter relationships (Age, Mileage, Engine CC), vehicle characteristics (Fuel, Transmission, Age, Mileage brackets), geographic district mapping, depth-gated historical trend analysis, and data quality audits. See [`dashboard/README.md`](dashboard/README.md) for full details.
+   - **Comparable Vehicles Page (Phase 10.4)**: Dedicated multi-attribute similarity matching engine featuring weighted specification distance scoring, custom weight tuning, similarity percentages, dynamic sorting/filtering, and comparable market statistics.
 
-7. **FastAPI REST Backend**:
-   - Complete RESTful endpoints for valuation, comparables, market analytics, trends, and quality reports.
+7. **Unified Valuation Workflow Orchestration Layer** (Phase 10.5 Part 1):
+   - End-to-end workflow orchestration pipeline (`VehicleValuationWorkflow`) coordinating input schema validation, ML asking price point prediction, 300-tree empirical dispersion range computation, Tree SHAP factor attribution, data quality completeness checks, multi-factor comparable retrieval, market distribution summaries, and deterministic SHA-256 reproducibility fingerprinting without any database mutations.
+
+8. **FastAPI REST Backend**:
+   - Complete RESTful endpoints for valuation (`/api/valuation/predict`), comparables (`/api/v1/comparables/search`), market analytics (`/api/v1/analytics/*`), trends, quality audits (`/api/v1/quality/*`), and system health (`/health`, `/ready`).
 
 ---
 
 ## 🏗️ Architecture
 
 ```
-                    Riyasewana Listing Pages
-                              │
-                              ▼
-        ┌───────────────────────────────────────────┐
-        │  Polite Async/Sync Scraper (HTTPX / BS4)  │
-        │  - Delta scraping (stop on seen IDs)      │
-        │  - Exponential backoff & rate limiting    │
-        └─────────────────────┬─────────────────────┘
-                              │
-                              ▼
-        ┌───────────────────────────────────────────┐
-        │           Data Quality Engine             │
-        │  - Missing / Type / Pattern Validation    │
-        │  - Statistical Outlier Detection (IQR)    │
-        │  - Categorization: VALID/SUSPICIOUS/      │
-        │    INVALID/MISSING (Raw Data Preserved)   │
-        └─────────────────────┬─────────────────────┘
-                              │
-                              ▼
-        ┌───────────────────────────────────────────┐
-        │      PostgreSQL / SQLite Database         │
-        │  - Vehicles, Listings, Price History      │
-        │  - Status History, Scrape Runs, Quality   │
-        └─────────────────────┬─────────────────────┘
-                              │
-         ┌────────────────────┼────────────────────┐
-         ▼                    ▼                    ▼
-┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐
-│ Market Trend &  │  │   Comparable    │  │  ML Valuation   │
-│ Analytics Engine│  │ Vehicle Engine  │  │ & SHAP Explainer│
-└────────┬────────┘  └────────┬────────┘  └────────┬────────┘
-         │                    │                    │
-         └────────────────────┼────────────────────┘
-                              │
-                              ▼
-        ┌───────────────────────────────────────────┐
-        │            FastAPI Backend                │
-        │  - REST Endpoints (/predict, /compare,    │
-        │    /analytics, /trends, /quality, /health)│
-        └─────────────────────┬─────────────────────┘
-                              │
-                              ▼
-        ┌───────────────────────────────────────────┐
-        │   Streamlit Interactive Dashboard (10 Tab)│
-        └───────────────────────────────────────────┘
+                    Riyasewana Public Listing Pages
+                                  │
+                                  ▼
+         ┌──────────────────────────────────────────────────┐
+         │     Polite Automated Scraper & Scheduler         │
+         │  - Sequential Polite HTTPX / BeautifulSoup4      │
+         │  - Rate-limiting (1.5s delay) & Exponential Retry│
+         │  - Scheduled via macOS launchd / Cron Pipeline   │
+         │  - Non-overlapping lock protection (.lock)       │
+         └────────────────────────┬─────────────────────────┘
+                                  │
+                                  ▼
+         ┌──────────────────────────────────────────────────┐
+         │     Data Quality & Lifecycle Tracking Engine     │
+         │  - Missing / Type / Value Boundary Validation    │
+         │  - Grouped IQR Statistical Outlier Detection     │
+         │  - Decoupled ML Eligibility (ml_eligible)        │
+         │  - 11 Dataset Consistency Invariants Audit       │
+         │  - Status Tracking (ACTIVE / NO_LONGER_OBSERVED) │
+         └────────────────────────┬─────────────────────────┘
+                                  │
+                                  ▼
+         ┌──────────────────────────────────────────────────┐
+         │           PostgreSQL / SQLite Database           │
+         │  - vehicles, listings, price_history             │
+         │  - listing_observations, scrape_runs             │
+         └──────────┬────────────────────────────┬──────────┘
+                    │                            │
+                    ▼                            ▼
+         ┌──────────────────────┐     ┌─────────────────────┐
+         │  Market Intelligence │     │ Feature Engineering │
+         │   & Trends Engine    │     │  & Leakage Guard    │
+         │ (analytics/market/)  │     │(feature_engineering)│
+         └──────────┬───────────┘     └──────────┬──────────┘
+                    │                            │
+                    │                            ▼
+                    │                 ┌─────────────────────┐
+                    │                 │  ML Valuation Model │
+                    │                 │ (RandomForest+log1p)│
+                    │                 └──────────┬──────────┘
+                    │                            │
+                    │         ┌──────────────────┴──────────────────┐
+                    │         ▼                                     ▼
+                    │  ┌───────────────┐                     ┌───────────────┐
+                    │  │   Tree SHAP   │                     │  Comparable   │
+                    │  │  Explainer    │                     │Vehicle Engine │
+                    │  └───────┬───────┘                     └───────┬───────┘
+                    │          │                                     │
+                    │          └──────────────────┬──────────────────┘
+                    │                             │
+                    ▼                             ▼
+         ┌──────────────────────────────────────────────────┐
+         │   Unified Vehicle Valuation Workflow Layer       │
+         │  (ml/valuation/valuation_workflow.py - Ph 10.5)  │
+         │  - Input Validation & Age Derivation             │
+         │  - ML Point Estimate & 300-Tree Dispersion Range │
+         │  - Tree SHAP Feature Contribution Attribution    │
+         │  - Data Quality & Attribute Completeness Checks  │
+         │  - Multi-Factor Weighted Comparable Retrieval    │
+         │  - Comparable Market Distribution Summary        │
+         │  - Deterministic SHA-256 Audit Fingerprinting    │
+         └────────────────────────┬─────────────────────────┘
+                                  │
+                                  ▼
+         ┌──────────────────────────────────────────────────┐
+         │                 FastAPI Backend                  │
+         │  - POST /api/valuation/predict                   │
+         │  - POST /api/v1/comparables/search               │
+         │  - GET  /api/v1/analytics/* (overview, brands..) │
+         │  - GET  /api/v1/quality/* (summary, runs)        │
+         │  - GET  /health, GET /ready                      │
+         └────────────────────────┬─────────────────────────┘
+                                  │
+                                  ▼
+         ┌──────────────────────────────────────────────────┐
+         │     Streamlit Multi-Page Interactive Dashboard   │
+         │  ├─ 🏠 Overview (System Status & Highlights)     │
+         │  ├─ 🔍 Vehicle Valuation (ML + SHAP + Comps)     │
+         │  ├─ 📈 Market Intelligence (9 Analytical Modules)│
+         │  └─ 🔎 Comparable Vehicles (Dedicated Search)    │
+         └──────────────────────────────────────────────────┘
 ```
+
+### Subsystem Architecture Overview
+
+1. **Data Acquisition & Scheduled Pipeline** (`data_pipeline/`, `scripts/`):
+   - Robust, polite scraper traversing public vehicle listings with exponential backoff, rate limiting (1.5s delay), and user-agent rotation.
+   - Production scheduling via macOS `launchd` / Linux cron with non-blocking file locks (`data/.collection.lock`) preventing overlapping executions.
+2. **Data Quality & Lifecycle Engine** (`data_pipeline/quality.py`, `scripts/data_quality_report.py`):
+   - Audits 11 relational invariants, enforces category value boundaries, and flags suspicious patterns (`111111`, `123456`).
+   - Decouples clean data (`is_valid`) from valuation-usable data (`ml_eligible`), ensuring zero data loss.
+   - Implements complete-scope disappearance detection (`ACTIVE` → `NO_LONGER_OBSERVED`, never assuming sold).
+3. **Storage & Persistence Layer** (`data_pipeline/models.py`, PostgreSQL / SQLite):
+   - Relational schema tracking unique vehicle specifications, listings, price change histories, point-in-time observations, and scraper execution telemetry.
+4. **Machine Learning & Explainable AI** (`ml/`):
+   - Scikit-learn `TransformedTargetRegressor` wrapping `ColumnTransformer` and `RandomForestRegressor` trained on `log1p(y)` asking prices.
+   - Evaluates empirical prediction dispersion across all 300 decision trees (10th–90th percentiles).
+   - `TreeExplainer` computes exact additive feature attribution (Tree SHAP) mapped back to human-readable vehicle attributes in LKR.
+5. **Comparable Vehicle Engine** (`analytics/comparables/`):
+   - Multi-attribute weighted similarity scoring (Make, Model, Age, Mileage, Engine CC, Transmission, Fuel, District, Condition).
+   - Computes statistical market distribution summaries across top matching comparables.
+6. **Unified Valuation Workflow Orchestration** (`ml/valuation/valuation_workflow.py`):
+   - Orchestrates the end-to-end valuation process: input validation, ML asking price estimation, ensemble dispersion range, SHAP explanation, data quality completeness indicators, comparable retrieval, market summary stats, and deterministic SHA-256 reproducibility fingerprinting in a single read-only transaction.
+7. **FastAPI Application & Streamlit Presentation** (`api/`, `dashboard/`):
+   - Production-hardened REST API with input validation, domain guards, sanitized error logging, and explicit CORS.
+   - High-performance Streamlit multi-page interface featuring Overview, Vehicle Valuation, Market Intelligence (9 modules), and Comparable Vehicles search.
 
 ---
 
@@ -618,41 +682,55 @@ The **Explainable Valuation Prediction Layer** (`ml/valuation/`, `ml/explainabil
 
 #### 1. System Architecture & Capabilities
 ```
-                  Incoming Vehicle Specification
+                 Incoming Vehicle Specification (ValuationWorkflowInput)
                                │
                                ▼
-        ┌──────────────────────────────────────────────┐
-        │        VehiclePricePredictor Validation      │
-        │  - Strict domain & schema checks             │
-        │  - Zero leakage guard (blocks asking_price)  │
-        │  - Vehicle age derivation (2026 - mfg_year)  │
-        │  - Canonical category normalization          │
-        └──────────────────────┬───────────────────────┘
-                               │
-            ┌──────────────────┼──────────────────┐
-            ▼                  ▼                  ▼
-    ┌───────────────┐  ┌───────────────┐  ┌───────────────┐
-    │  ML Asking    │  │  Model-Based  │  │   Tree SHAP   │
-    │  Price Point  │  │  Prediction   │  │  Explainable  │
-    │   Estimate    │  │     Range     │  │  Attribution  │
-    └───────┬───────┘  └───────┬───────┘  └───────┬───────┘
-            │                  │                  │
-            └──────────────────┼──────────────────┘
-                               │
-                               ▼
-        ┌──────────────────────────────────────────────┐
-        │        ComparableVehicleEngine Search        │
-        │  - Multi-attribute weighted similarity model │
-        │  - Strictly same category matching           │
-        │  - Filter ML-eligible & valid prices only    │
-        └──────────────────────┬───────────────────────┘
-                               │
-                               ▼
-        ┌──────────────────────────────────────────────┐
-        │       Unified VehicleValuationService        │
-        │  - REST API: POST /api/valuation/predict     │
-        │  - ValuationReportFormatter (Text/Markdown)  │
-        └──────────────────────────────────────────────┘
+        ┌────────────────────────────────────────────────────────┐
+        │       Unified VehicleValuationWorkflow Pipeline        │
+        │  (ml/valuation/valuation_workflow.py - Phase 10.5)     │
+        │  - Domain & schema validation; zero leakage guard      │
+        │  - Automatic vehicle age derivation (reference year)   │
+        │  - Canonical category normalization                    │
+        └──────────────────────────┬─────────────────────────────┘
+                                   │
+         ┌─────────────────────────┼─────────────────────────┐
+         ▼                         ▼                         ▼
+┌─────────────────┐       ┌─────────────────┐       ┌─────────────────┐
+│ ML Price Point  │       │   300-Tree      │       │    Tree SHAP    │
+│    Estimate     │       │ Empirical Range │       │   Attribution   │
+│(log1p RF Invert)│       │ (10th–90th pct) │       │ (Exact LKR Shap)│
+└────────┬────────┘       └────────┬────────┘       └────────┬────────┘
+         │                         │                         │
+         └─────────────────────────┼─────────────────────────┘
+                                   │
+         ┌─────────────────────────┴─────────────────────────┐
+         ▼                                                   ▼
+┌──────────────────────────────┐            ┌──────────────────────────────┐
+│  Data Quality Completeness   │            │   Comparable Vehicle Engine  │
+│  - Core vs optional checks   │            │  - Multi-attribute similarity│
+│  - Transparent audit flags   │            │  - Verified listings only    │
+└──────────────┬───────────────┘            └──────────────┬───────────────┘
+               │                                           │
+               │                                           ▼
+               │                            ┌──────────────────────────────┐
+               │                            │  Comparable Market Summary   │
+               │                            │  - Min, Median, Mean, Max    │
+               └───────────────────┬────────┴──────────────────────────────┘
+                                   │
+                                   ▼
+        ┌────────────────────────────────────────────────────────┐
+        │        Deterministic Audit & Provenance Tracking       │
+        │  - Model metadata embedding (version, date, status)    │
+        │  - Canonicalized SHA-256 reproducibility fingerprint   │
+        └──────────────────────────┬─────────────────────────────┘
+                                   │
+                                   ▼
+        ┌────────────────────────────────────────────────────────┐
+        │       ValuationWorkflowResult / Response Delivery      │
+        │  - REST API: POST /api/valuation/predict               │
+        │  - Streamlit UI: Vehicle Valuation Page (Phase 10.2)   │
+        │  - CLI / Report: ValuationReportFormatter (Text / MD)  │
+        └────────────────────────────────────────────────────────┘
 ```
 
 #### 2. Methodology & Component Details
@@ -873,7 +951,7 @@ uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
 - Interactive API Docs: `http://localhost:8000/docs`
 - Health Check: `http://localhost:8000/health`
 
-### 6. Launch Streamlit Dashboard (Phase 10.2 & Phase 10.3)
+### 6. Launch Streamlit Dashboard (Phase 10.2 / 10.3 / 10.4)
 
 Ensure the FastAPI backend is running first (Step 5), then:
 
@@ -895,6 +973,7 @@ streamlit run dashboard/app.py
     - **Geographic Analysis**: Observed asking price differences and listing concentrations across Sri Lankan administrative districts.
     - **Market Trends**: Longitudinal monthly listing activity and pricing dynamics gated by a strict **60-day minimum observation depth** rule to prevent synthetic or fabricated trends.
     - **Data Quality & Scope Notice**: Transparent audit indicators showing ML-eligible records, validation issue breakdown, and prominent disclaimers that asking prices do not equal negotiated selling prices.
+  - 🔎 **Comparable Vehicles** (Phase 10.4) — dedicated multi-attribute similarity matching engine featuring weighted specification distance scoring, custom weight tuning, similarity percentages, dynamic sorting/filtering, and comparable market statistics.
 
 > For in-depth architectural and methodological details, see [`dashboard/README.md`](dashboard/README.md).
 >
