@@ -1,36 +1,62 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🚗 AutoValuate LK — Next.js Dashboard Frontend
 
-## Getting Started
+A modern, responsive, dark-mode web application for the **Sri Lankan Vehicle Market Intelligence & Explainable AI Valuation Platform**.
 
-First, run the development server:
+Built with **Next.js 16 (App Router)**, **React 19**, **TypeScript**, and a custom **Vanilla CSS** design system.
+
+---
+
+## 🌟 Key Capabilities
+
+1. 🏠 **Overview (`/`)**:
+   - System introduction, metrics cards (171 listings, 8 categories, 33 brands, 112 models).
+   - Live backend monitor (FastAPI liveness & RandomForest model readiness).
+   - 6-phase end-to-end architecture pipeline interactive overview.
+
+2. 🔍 **Vehicle Valuation (`/valuation`)**:
+   - Interactive specification form with quick presets (Toyota Premio, Honda Vezel, Toyota Prado, Suzuki Alto).
+   - **Hero Estimated Asking Price**: Formatted in Sri Lankan Rupees (Rs. / LKR).
+   - **Indicative 300-Tree Prediction Range**: Empirical 10th to 90th percentile decision-tree dispersion with lower bound, point estimate, upper bound, and spread.
+   - **Tree SHAP Factor Attribution**: Bidirectional horizontal contribution bars showing positive (emerald) and negative (rose) impacts in LKR with human-readable rationale.
+   - **Top Matching Comparable Listings**: Peer listings from verified dataset with similarity percentages (e.g. 96% Match, 88% Match).
+
+3. 📈 **Market Intelligence (`/market-intelligence`)**:
+   - 9 descriptive analytical modules covering public listings from Riyasewana.
+   - Category distribution, Top brands by volume and price spreads, Fuel type breakdown, Transmission comparison, and Geographic district mapping across Sri Lanka.
+   - 11 dataset consistency invariants audit and strict 60-day observation depth warning.
+
+4. 🔎 **Comparable Vehicles (`/comparables`)**:
+   - Dedicated peer vehicle retrieval engine based on multi-factor weighted specification distance.
+   - Customizable criteria weights (Brand, Model, Year, Mileage, Engine CC, Transmission, etc.).
+   - Cohort asking price distribution summary (Min, Median, Mean, Max).
+
+---
+
+## 🛠️ Technology Stack & Design System
+
+- **Framework**: Next.js 16 (App Router) + React 19 + TypeScript
+- **Styling**: Vanilla CSS with custom CSS variables, glassmorphism (`backdrop-filter: blur(16px)`), and radial background gradient meshes.
+- **Icons**: Lucide React
+- **API Proxy**: Rewrites `/api/py/:path*` directly to FastAPI backend (`http://127.0.0.1:8000/:path*`).
+
+---
+
+## 🚀 Running Locally
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# Navigate to frontend directory
+cd frontend
+
+# Install dependencies
+npm install
+
+# Start development server on port 3000
+npm run dev -- -p 3000
+
+# Or build production bundle
+npm run build
+npm start
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Web UI: `http://localhost:3000`
+- Requires FastAPI backend running on `http://localhost:8000`.

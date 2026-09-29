@@ -17,3 +17,5 @@ data/*.db
 .vscode/
 .databricks/
 .gemini/
+frontend/node_modules/
+frontend/.next/
