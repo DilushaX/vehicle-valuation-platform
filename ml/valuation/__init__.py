@@ -12,6 +12,19 @@ from ml.valuation.audit import (
 )
 from ml.valuation.data_quality import ValuationDataQuality, assess_valuation_data_quality
 from ml.valuation.valuation_service import ValuationResult, VehicleValuationService
+from ml.valuation.valuation_workflow import (
+    AuditSection,
+    ComparablesSection,
+    DataQualitySection,
+    ExplanationSection,
+    MarketSummarySection,
+    RangeSection,
+    ValuationSection,
+    ValuationWorkflowInput,
+    ValuationWorkflowResult,
+    VehicleValuationWorkflow,
+    run_valuation_workflow,
+)
 
 __all__ = [
     "ValuationResult",
@@ -22,6 +35,17 @@ __all__ = [
     "ValuationReproducibility",
     "compute_reproducibility_fingerprint",
     "create_valuation_audit",
+    "VehicleValuationWorkflow",
+    "ValuationWorkflowResult",
+    "ValuationWorkflowInput",
+    "ValuationSection",
+    "RangeSection",
+    "ExplanationSection",
+    "DataQualitySection",
+    "ComparablesSection",
+    "MarketSummarySection",
+    "AuditSection",
+    "run_valuation_workflow",
 ]
 
 
