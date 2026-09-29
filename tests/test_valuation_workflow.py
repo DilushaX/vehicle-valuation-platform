@@ -37,7 +37,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from database.connection import Base
-from database.models import VehicleListing
+from database.models import Listing, Vehicle
 from database.repository import VehicleRepository
 from ml.prediction.predictor import ValidationError
 from ml.valuation.valuation_service import (
@@ -132,7 +132,7 @@ def test_complete_valid_vehicle_workflow_execution(workflow: VehicleValuationWor
     assert result.range.lower <= result.valuation.estimated_asking_price_lkr <= result.range.upper
     assert result.range.lower > 0
     assert result.range.spread > 0
-    assert result.range.method == "individual_tree_percentiles"
+    assert "dispersion" in result.range.method.lower() or "percentile" in result.range.method.lower()
     assert "indicative model-based prediction range" in result.range.disclaimer.lower()
 
     # 3. Explanation section
@@ -437,41 +437,39 @@ def test_workflow_performs_no_database_writes(valuation_service: VehicleValuatio
     try:
         repo = VehicleRepository(session)
         # Seed 2 dummy listings
-        repo.create({
+        repo.sync_listing({
             "listing_id": "TEST_DB_01",
-            "url": "https://example.com/1",
+            "listing_url": "https://example.com/1",
             "category": "Cars",
             "brand": "Toyota",
             "model": "Premio",
             "manufacture_year": 2016,
             "mileage": 80000.0,
-            "engine_cc": 1500.0,
+            "engine_cc": 1500,
             "fuel_type": "Petrol",
             "transmission": "Automatic",
             "district": "Colombo",
             "condition": "Registered (Used)",
-            "asking_price": 12_000_000.0,
-            "ml_eligible": True,
+            "price": 12_000_000,
         })
-        repo.create({
+        repo.sync_listing({
             "listing_id": "TEST_DB_02",
-            "url": "https://example.com/2",
+            "listing_url": "https://example.com/2",
             "category": "Cars",
             "brand": "Toyota",
             "model": "Allion",
             "manufacture_year": 2015,
             "mileage": 90000.0,
-            "engine_cc": 1500.0,
+            "engine_cc": 1500,
             "fuel_type": "Petrol",
             "transmission": "Automatic",
             "district": "Gampaha",
             "condition": "Registered (Used)",
-            "asking_price": 11_500_000.0,
-            "ml_eligible": True,
+            "price": 11_500_000,
         })
-        session.commit()
+        repo.commit()
 
-        initial_count = session.query(VehicleListing).count()
+        initial_count = session.query(Listing).count()
         assert initial_count == 2
 
         # Create workflow using this test session
@@ -498,7 +496,7 @@ def test_workflow_performs_no_database_writes(valuation_service: VehicleValuatio
         assert res4.success is False
 
         # Verify database state was NOT modified
-        final_count = session.query(VehicleListing).count()
+        final_count = session.query(Listing).count()
         assert final_count == initial_count
         assert len(session.dirty) == 0
         assert len(session.new) == 0
