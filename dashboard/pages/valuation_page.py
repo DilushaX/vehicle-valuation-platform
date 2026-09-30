@@ -20,6 +20,10 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from dashboard.api_client import APIClientError, ValuationAPIClient
+from ml.prediction.valuation_report import (
+    ValuationReportFormatter,
+    generate_report_filename,
+)
 
 # ---------------------------------------------------------------------------
 # Domain constants (mirroring canonical values in cleaners.py)
@@ -466,6 +470,37 @@ def _render_limitations(limitations: List[str]) -> None:
         st.markdown("</div>", unsafe_allow_html=True)
 
 
+def render_final_report_section(result: Dict[str, Any], vehicle_spec: Dict[str, Any]) -> None:
+    """
+    Renders the consolidated Final Valuation Report preview and download button (Phase 10.5 Part 3).
+    Guarantees single source of truth: preview and download file use identical text.
+    """
+    report_text = ValuationReportFormatter.format_text(result, vehicle_spec)
+    report_filename = generate_report_filename(vehicle_spec)
+
+    with st.expander("📄 Final Valuation Report", expanded=False):
+        st.markdown(
+            "<div style='color:#94a3b8; font-size:0.88rem; margin-bottom:0.75rem;'>"
+            "Consolidated plain-text vehicle valuation report containing vehicle specifications, "
+            "market asking price estimates, 300-tree prediction ranges, SHAP factor attributions, "
+            "comparables, market summaries, audit trails, and legal limitations."
+            "</div>",
+            unsafe_allow_html=True,
+        )
+        st.download_button(
+            label="📥 Download Valuation Report",
+            data=report_text,
+            file_name=report_filename,
+            mime="text/plain",
+            use_container_width=True,
+            key="download_final_valuation_report",
+        )
+        st.code(report_text, language="text")
+
+
+_render_final_report_section = render_final_report_section
+
+
 # ---------------------------------------------------------------------------
 # Main page renderer
 # ---------------------------------------------------------------------------
@@ -714,6 +749,11 @@ def render_valuation_page(api_url: str = "http://localhost:8000") -> None:
         _render_model_meta(result.get("model", {}))
         _render_audit(result.get("audit"), result.get("reproducibility"))
         _render_limitations(result.get("limitations", []))
+
+        st.divider()
+
+        # ── Final Valuation Report & Export (Phase 10.5 Part 3) ────────────
+        _render_final_report_section(result, payload)
 
         st.divider()
 
