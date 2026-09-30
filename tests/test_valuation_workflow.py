@@ -61,13 +61,31 @@ from ml.valuation.valuation_workflow import (
 
 
 @pytest.fixture
-def valuation_service() -> VehicleValuationService:
-    """Loads existing valuation service with trained model artifact."""
+def valuation_service(db_session) -> VehicleValuationService:
+    """Loads existing valuation service with trained model artifact and seeded in-memory listing."""
     model_path = Path("data/analysis/ml/models/model.joblib")
     meta_path = Path("data/analysis/ml/models/model_metadata.json")
     if not model_path.exists():
         pytest.skip(f"Model artifact not found at {model_path}")
-    return VehicleValuationService(model_path=model_path, metadata_path=meta_path)
+    repo = VehicleRepository(db_session)
+    repo.sync_listing({
+        "listing_id": "TEST_SEED_01",
+        "listing_url": "https://example.com/1",
+        "category": "Cars",
+        "brand": "Toyota",
+        "model": "Premio",
+        "manufacture_year": 2016,
+        "mileage": 80000.0,
+        "engine_cc": 1500,
+        "fuel_type": "Petrol",
+        "transmission": "Automatic",
+        "district": "Colombo",
+        "condition": "Registered (Used)",
+        "price": 12_000_000,
+        "ml_eligible": True,
+    })
+    repo.commit()
+    return VehicleValuationService(db_session=db_session, model_path=model_path, metadata_path=meta_path)
 
 
 @pytest.fixture
@@ -559,9 +577,9 @@ def test_conversion_to_legacy_valuation_result(workflow: VehicleValuationWorkflo
     assert legacy_res.reproducibility["algorithm"] == "SHA-256"
 
 
-def test_run_valuation_workflow_functional_helper(valid_car_spec: Dict[str, Any]):
+def test_run_valuation_workflow_functional_helper(valid_car_spec: Dict[str, Any], db_session):
     """Verifies module-level run_valuation_workflow helper function."""
-    result = run_valuation_workflow(valid_car_spec, top_k_factors=2, top_k_comparables=2)
+    result = run_valuation_workflow(valid_car_spec, session=db_session, top_k_factors=2, top_k_comparables=2)
 
     assert isinstance(result, ValuationWorkflowResult)
     assert result.success is True
