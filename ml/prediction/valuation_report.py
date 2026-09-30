@@ -11,9 +11,10 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 import re
-from typing import Any, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
-from ml.valuation.valuation_service import ValuationResult
+if TYPE_CHECKING:
+    from ml.valuation.valuation_service import ValuationResult
 
 
 def round_sensible_lkr(amount: float) -> int:
@@ -113,17 +114,25 @@ class ValuationReportFormatter:
 
         # Round figures sensibly
         est_raw = data.get("estimated_asking_price_lkr")
+        if est_raw is None:
+            est_raw = data.get("estimated_asking_price")
         if est_raw is None and "valuation" in data and isinstance(data["valuation"], dict):
-            est_raw = data["valuation"].get("estimated_asking_price_lkr", 0.0)
+            est_raw = data["valuation"].get("estimated_asking_price_lkr") or data["valuation"].get("estimated_asking_price", 0.0)
         est_raw = float(est_raw or 0.0)
         est_rounded = round_sensible_lkr(est_raw)
 
-        range_dict = data.get("prediction_range_lkr")
+        range_dict = (
+            data.get("prediction_range_lkr")
+            or data.get("indicative_prediction_range")
+            or data.get("prediction_range")
+        )
         if range_dict is None and "range" in data and isinstance(data["range"], dict):
             range_dict = data["range"]
         range_dict = range_dict or {}
-        lower_rounded = round_sensible_lkr(range_dict.get("lower", est_raw * 0.85))
-        upper_rounded = round_sensible_lkr(range_dict.get("upper", est_raw * 1.15))
+        lower_raw = range_dict.get("lower") or range_dict.get("lower_bound") or (est_raw * 0.85 if est_raw > 0 else 0.0)
+        upper_raw = range_dict.get("upper") or range_dict.get("upper_bound") or (est_raw * 1.15 if est_raw > 0 else 0.0)
+        lower_rounded = round_sensible_lkr(lower_raw)
+        upper_rounded = round_sensible_lkr(upper_raw)
 
         # Model details
         model_dict = data.get("model") or (data.get("valuation", {}).get("model") if isinstance(data.get("valuation"), dict) else {}) or {}
@@ -385,17 +394,25 @@ class ValuationReportFormatter:
         spec = vehicle_spec or data.get("vehicle_spec") or {}
 
         est_raw = data.get("estimated_asking_price_lkr")
+        if est_raw is None:
+            est_raw = data.get("estimated_asking_price")
         if est_raw is None and "valuation" in data and isinstance(data["valuation"], dict):
-            est_raw = data["valuation"].get("estimated_asking_price_lkr", 0.0)
+            est_raw = data["valuation"].get("estimated_asking_price_lkr") or data["valuation"].get("estimated_asking_price", 0.0)
         est_raw = float(est_raw or 0.0)
         est_rounded = round_sensible_lkr(est_raw)
 
-        range_dict = data.get("prediction_range_lkr")
+        range_dict = (
+            data.get("prediction_range_lkr")
+            or data.get("indicative_prediction_range")
+            or data.get("prediction_range")
+        )
         if range_dict is None and "range" in data and isinstance(data["range"], dict):
             range_dict = data["range"]
         range_dict = range_dict or {}
-        lower_rounded = round_sensible_lkr(range_dict.get("lower", est_raw * 0.85))
-        upper_rounded = round_sensible_lkr(range_dict.get("upper", est_raw * 1.15))
+        lower_raw = range_dict.get("lower") or range_dict.get("lower_bound") or (est_raw * 0.85 if est_raw > 0 else 0.0)
+        upper_raw = range_dict.get("upper") or range_dict.get("upper_bound") or (est_raw * 1.15 if est_raw > 0 else 0.0)
+        lower_rounded = round_sensible_lkr(lower_raw)
+        upper_rounded = round_sensible_lkr(upper_raw)
 
         brand = spec.get("brand") or spec.get("make") or "Vehicle"
         model = spec.get("model") or ""
