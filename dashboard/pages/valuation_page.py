@@ -14,6 +14,7 @@ then renders all result sections:
 
 from __future__ import annotations
 
+import logging
 from typing import Any, Dict, List, Optional
 
 import plotly.graph_objects as go
@@ -24,6 +25,8 @@ from ml.prediction.valuation_report import (
     ValuationReportFormatter,
     generate_report_filename,
 )
+
+logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
 # Domain constants (mirroring canonical values in cleaners.py)
@@ -475,8 +478,13 @@ def render_final_report_section(result: Dict[str, Any], vehicle_spec: Dict[str, 
     Renders the consolidated Final Valuation Report preview and download button (Phase 10.5 Part 3).
     Guarantees single source of truth: preview and download file use identical text.
     """
-    report_text = ValuationReportFormatter.format_text(result, vehicle_spec)
-    report_filename = generate_report_filename(vehicle_spec)
+    try:
+        report_text = ValuationReportFormatter.format_text(result, vehicle_spec)
+        report_filename = generate_report_filename(vehicle_spec)
+    except Exception as exc:
+        logger.error(f"Failed to generate final valuation report: {exc}", exc_info=True)
+        st.error("❌ Unable to generate final valuation report at this time.")
+        return
 
     with st.expander("📄 Final Valuation Report", expanded=False):
         st.markdown(
@@ -713,7 +721,8 @@ def render_valuation_page(api_url: str = "http://localhost:8000") -> None:
                     st.caption(f"HTTP status: {exc.status_code}")
                 return
             except Exception as exc:
-                st.error(f"❌ Unexpected error: {exc}")
+                logger.error(f"Valuation execution error: {exc}", exc_info=True)
+                st.error("❌ An unexpected error occurred while computing the valuation. Please check your inputs and try again.")
                 return
 
         st.success("✅ Valuation complete!")

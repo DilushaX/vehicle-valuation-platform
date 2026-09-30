@@ -57,6 +57,7 @@ class ValuationResult:
     comparable_market_summary: Optional[Dict[str, Any]] = None
     audit: Optional[Dict[str, Any]] = None
     reproducibility: Optional[Dict[str, Any]] = None
+    comparables_error: Optional[str] = None
 
     def to_dict(self) -> Dict[str, Any]:
         dq = self.data_quality
@@ -100,6 +101,8 @@ class ValuationResult:
             out["audit"] = aud
         if rep is not None:
             out["reproducibility"] = rep
+        if self.comparables_error is not None:
+            out["comparables_error"] = self.comparables_error
 
         return out
 
@@ -209,12 +212,24 @@ class VehicleValuationService:
         )
 
         # 5. Comparable Vehicles Retrieval
-        comps = self.comparable_engine.find_comparables(
-            query=df_formatted,
-            top_k=top_k_comparables,
-            match_category_strictly=True,
-            exclude_listing_id=exclude_listing_id,
-        )
+        comps = []
+        comparables_error = None
+        try:
+            comps = self.comparable_engine.find_comparables(
+                query=df_formatted,
+                top_k=top_k_comparables,
+                match_category_strictly=True,
+                exclude_listing_id=exclude_listing_id,
+            )
+        except Exception as exc:
+            logger.warning(
+                f"Comparable vehicle retrieval failed ({type(exc).__name__}: {exc}). "
+                "Proceeding with valuation estimate and empty comparables list.",
+                exc_info=True,
+            )
+            comps = []
+            comparables_error = f"Comparable retrieval unavailable: {str(exc)}"
+
         comparables_dict_list = [c.to_dict() for c in comps]
 
         # 6. Comparable Market Summary
@@ -258,6 +273,7 @@ class VehicleValuationService:
             comparable_market_summary=market_summary.to_dict(),
             audit=audit_info["audit"],
             reproducibility=audit_info["reproducibility"],
+            comparables_error=comparables_error,
         )
 
     def plot_explanation(

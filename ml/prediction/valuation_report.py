@@ -110,6 +110,10 @@ class ValuationReportFormatter:
         Single source of truth for both display preview and download export.
         """
         data = ValuationReportFormatter._extract_dict(result)
+        if data.get("success") is False:
+            raise ValueError(
+                f"Cannot generate valuation report from failed result: {data.get('error', 'Valuation failed')}"
+            )
         spec = vehicle_spec or data.get("vehicle_spec") or {}
 
         # Round figures sensibly
@@ -241,16 +245,24 @@ class ValuationReportFormatter:
 
         # Comparables (Section F)
         comparables = data.get("comparables")
+        comp_status = "AVAILABLE"
+        comp_error = data.get("comparables_error")
         if isinstance(comparables, dict):
+            comp_status = comparables.get("status", "AVAILABLE")
+            comp_error = comp_error or comparables.get("error")
             comparables = comparables.get("items", [])
         elif not isinstance(comparables, list):
             comparables = []
+
+        is_comp_unavailable = bool(comp_error or comp_status == "UNAVAILABLE")
 
         lines.extend([
             "",
             "COMPARABLE MARKET LISTINGS (Riyasewana):",
         ])
-        if comparables:
+        if is_comp_unavailable:
+            lines.append("  (Comparable market listings unavailable due to search error)")
+        elif comparables:
             for idx, comp in enumerate(comparables[:5], start=1):
                 c_id = comp.get("listing_id", "")
                 c_brand = comp.get("brand", "")
@@ -271,11 +283,18 @@ class ValuationReportFormatter:
         cms = data.get("comparable_market_summary")
         if cms is None and "market_summary" in data:
             cms = data["market_summary"]
-        if not cms and comparables:
+        if not cms and comparables and not is_comp_unavailable:
             from analytics.comparables.market_summary import create_comparable_market_summary
             cms = create_comparable_market_summary(comparables).to_dict()
 
-        if cms and cms.get("comparable_count", 0) > 0:
+        if is_comp_unavailable:
+            lines.extend([
+                "",
+                "COMPARABLE MARKET SUMMARY:",
+                "  Comparable Count      : 0",
+                "  (Comparable market summary unavailable due to search error)",
+            ])
+        elif cms and cms.get("comparable_count", 0) > 0:
             c_cnt = cms.get("comparable_count")
             min_p = round_sensible_lkr(cms.get("min_asking_price", 0.0))
             max_p = round_sensible_lkr(cms.get("max_asking_price", 0.0))
@@ -391,6 +410,10 @@ class ValuationReportFormatter:
         Formats valuation output as structured GitHub/Streamlit Markdown.
         """
         data = ValuationReportFormatter._extract_dict(result)
+        if data.get("success") is False:
+            raise ValueError(
+                f"Cannot generate valuation report from failed result: {data.get('error', 'Valuation failed')}"
+            )
         spec = vehicle_spec or data.get("vehicle_spec") or {}
 
         est_raw = data.get("estimated_asking_price_lkr")
@@ -461,12 +484,20 @@ class ValuationReportFormatter:
         ])
 
         comparables = data.get("comparables")
+        comp_status = "AVAILABLE"
+        comp_error = data.get("comparables_error")
         if isinstance(comparables, dict):
+            comp_status = comparables.get("status", "AVAILABLE")
+            comp_error = comp_error or comparables.get("error")
             comparables = comparables.get("items", [])
         elif not isinstance(comparables, list):
             comparables = []
 
-        if comparables:
+        is_comp_unavailable = bool(comp_error or comp_status == "UNAVAILABLE")
+
+        if is_comp_unavailable:
+            md.append("*(Comparable market listings unavailable due to search error)*")
+        elif comparables:
             md.extend([
                 "| Listing ID | Vehicle | Specs | Location | Asking Price (LKR) | Similarity |",
                 "| :--- | :--- | :--- | :--- | :--- | :--- |",
@@ -487,11 +518,17 @@ class ValuationReportFormatter:
         cms = data.get("comparable_market_summary")
         if cms is None and "market_summary" in data:
             cms = data["market_summary"]
-        if not cms and comparables:
+        if not cms and comparables and not is_comp_unavailable:
             from analytics.comparables.market_summary import create_comparable_market_summary
             cms = create_comparable_market_summary(comparables).to_dict()
 
-        if cms and cms.get("comparable_count", 0) > 0:
+        if is_comp_unavailable:
+            md.extend([
+                "",
+                "#### 📊 Comparable Market Summary",
+                "*(Comparable market summary unavailable due to search error)*",
+            ])
+        elif cms and cms.get("comparable_count", 0) > 0:
             c_cnt = cms.get("comparable_count")
             min_p = round_sensible_lkr(cms.get("min_asking_price", 0.0))
             max_p = round_sensible_lkr(cms.get("max_asking_price", 0.0))

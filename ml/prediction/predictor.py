@@ -162,9 +162,23 @@ class VehiclePricePredictor:
             if num_col not in df.columns:
                 df[num_col] = np.nan
             else:
-                df[num_col] = pd.to_numeric(df[num_col], errors="coerce")
+                raw_series = df[num_col]
+                # Detect non-numeric entries where a value was provided
+                non_null_mask = raw_series.notna() & (raw_series.astype(str).str.strip() != "")
+                converted = pd.to_numeric(raw_series, errors="coerce")
+                invalid_numeric = non_null_mask & converted.isna()
+                if invalid_numeric.any():
+                    raise ValidationError(f"{num_col} contains non-numeric values.")
+                df[num_col] = converted
 
         # Bounds checks
+        if "manufacture_year" in df.columns and df["manufacture_year"].notna().any():
+            mfg_clean = pd.to_numeric(df["manufacture_year"], errors="coerce")
+            if (mfg_clean.dropna() > self.reference_year).any():
+                raise ValidationError("manufacture_year cannot be in the future (vehicle_age cannot be negative).")
+            if (mfg_clean.dropna() < 1920).any():
+                raise ValidationError("manufacture_year precedes minimum supported year (1920).")
+
         if (df["vehicle_age"].dropna() < 0).any():
             raise ValidationError("vehicle_age cannot be negative.")
         if (df["vehicle_age"].dropna() > 100).any():
@@ -178,7 +192,12 @@ class VehiclePricePredictor:
         if "registration_year" not in df.columns:
             df["registration_year"] = np.nan
         else:
-            df["registration_year"] = pd.to_numeric(df["registration_year"], errors="coerce")
+            raw_reg = df["registration_year"]
+            non_null_reg = raw_reg.notna() & (raw_reg.astype(str).str.strip() != "")
+            conv_reg = pd.to_numeric(raw_reg, errors="coerce")
+            if (non_null_reg & conv_reg.isna()).any():
+                raise ValidationError("registration_year contains non-numeric values.")
+            df["registration_year"] = conv_reg
 
         # 7. Construct brand_model interaction feature
         brand_s = df["brand"].fillna("Unknown").astype(str).str.strip()

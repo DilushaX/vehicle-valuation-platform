@@ -164,6 +164,8 @@ class ComparablesSection(BaseModel):
     """
     items: List[Dict[str, Any]] = Field(default_factory=list, description="Retrieved comparable vehicle listings")
     total_found: int = Field(0, ge=0, description="Total count of comparables retrieved")
+    status: str = Field("AVAILABLE", description="Availability status: 'AVAILABLE' or 'UNAVAILABLE'")
+    error: Optional[str] = Field(None, description="Error message if comparable retrieval failed")
     disclaimer: str = Field(
         "Comparable similarity is not a probability, confidence score, accuracy score, "
         "or proof that two vehicles are the same physical vehicle.",
@@ -284,6 +286,10 @@ class ValuationWorkflowResult(BaseModel):
         """
         Formats workflow result into a plain-text consolidated valuation report (Phase 10.5 Part 3).
         """
+        if not self.success or self.valuation is None:
+            raise ValueError(
+                f"Cannot generate valuation report from failed workflow result: {self.error or 'Invalid valuation result'}"
+            )
         from ml.prediction.valuation_report import ValuationReportFormatter
         return ValuationReportFormatter.format_text(self, vehicle_spec)
 
@@ -291,6 +297,10 @@ class ValuationWorkflowResult(BaseModel):
         """
         Formats workflow result into structured Markdown (Phase 10.5 Part 3).
         """
+        if not self.success or self.valuation is None:
+            raise ValueError(
+                f"Cannot generate valuation report from failed workflow result: {self.error or 'Invalid valuation result'}"
+            )
         from ml.prediction.valuation_report import ValuationReportFormatter
         return ValuationReportFormatter.format_markdown(self, vehicle_spec)
 
@@ -335,9 +345,13 @@ class ValuationWorkflowResult(BaseModel):
             comparable_count=dq_dict.get("comparable_count", len(val_result.comparables)),
         )
 
+        comp_err = getattr(val_result, "comparables_error", None)
+        comp_status = "UNAVAILABLE" if comp_err else "AVAILABLE"
         comparables_sec = ComparablesSection(
             items=val_result.comparables or [],
             total_found=len(val_result.comparables or []),
+            status=comp_status,
+            error=comp_err,
         )
 
         cms = val_result.comparable_market_summary or {}
