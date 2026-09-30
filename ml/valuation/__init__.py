@@ -26,6 +26,12 @@ from ml.valuation.valuation_workflow import (
     run_valuation_workflow,
 )
 
+from ml.prediction.valuation_report import (
+    ValuationReportFormatter,
+    generate_report_filename,
+    round_sensible_lkr,
+)
+
 __all__ = [
     "ValuationResult",
     "VehicleValuationService",
@@ -46,6 +52,9 @@ __all__ = [
     "MarketSummarySection",
     "AuditSection",
     "run_valuation_workflow",
+    "ValuationReportFormatter",
+    "generate_report_filename",
+    "round_sensible_lkr",
 ]
 
 

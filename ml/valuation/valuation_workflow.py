@@ -280,6 +280,20 @@ class ValuationWorkflowResult(BaseModel):
             reproducibility=self.audit.reproducibility if self.audit else None,
         )
 
+    def to_report_text(self, vehicle_spec: Optional[Dict[str, Any]] = None) -> str:
+        """
+        Formats workflow result into a plain-text consolidated valuation report (Phase 10.5 Part 3).
+        """
+        from ml.prediction.valuation_report import ValuationReportFormatter
+        return ValuationReportFormatter.format_text(self, vehicle_spec)
+
+    def to_report_markdown(self, vehicle_spec: Optional[Dict[str, Any]] = None) -> str:
+        """
+        Formats workflow result into structured Markdown (Phase 10.5 Part 3).
+        """
+        from ml.prediction.valuation_report import ValuationReportFormatter
+        return ValuationReportFormatter.format_markdown(self, vehicle_spec)
+
     @classmethod
     def from_valuation_result(
         cls,
